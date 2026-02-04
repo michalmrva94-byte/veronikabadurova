@@ -29,6 +29,7 @@ export const ROUTES = {
   REFERRAL: '/odporucanie',
   NOTIFICATIONS: '/notifikacie',
   ADMIN: {
+    LOGIN: '/admin/prihlasenie',
     DASHBOARD: '/admin',
     CALENDAR: '/admin/kalendar',
     CLIENTS: '/admin/klienti',

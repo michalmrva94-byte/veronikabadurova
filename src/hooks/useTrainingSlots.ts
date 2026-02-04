@@ -25,6 +25,8 @@ export function useTrainingSlots(selectedDate?: Date) {
       return data as TrainingSlot[];
     },
     enabled: !!selectedDate,
+    staleTime: 60 * 1000, // 1 minúta
+    gcTime: 5 * 60 * 1000, // 5 minút
   });
 
   const createSlot = useMutation({

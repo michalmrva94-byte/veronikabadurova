@@ -1,66 +1,92 @@
 
-# Prepojenie klientskeho kalendára s databázou
 
-## Problém
-Klientský kalendár (`CalendarPage.tsx`) má hardcoded prázdne pole `slots: any[] = []` a vôbec nenačítava dáta z databázy. Admin kalendár funguje správne, pretože používa `useTrainingSlots` hook.
+# Implementácia rezervácie tréningov a optimalizácia kalendára
+
+## Prehľad problémov
+
+### 1. Tlačidlo "Rezervovať" nefunguje
+Karta pre slot obsahuje tlačidlo s `onClick={() => onBook?.(slot.id)}`, ale CalendarPage nepredáva žiadnu `onBook` funkciu - preto kliknutie na tlačidlo nič nerobí.
+
+### 2. Pomalé načítanie
+React Query nemá nastavenú optimalizáciu cache - pri každej zmene dátumu sa robí nový request na server bez využitia už načítaných dát.
 
 ## Riešenie
-Prepojíme klientský kalendár s rovnakým hookom `useTrainingSlots` a pridáme zobrazenie dostupných slotov s možnosťou rezervácie.
 
-## Čo sa zmení
+### 1. Nový hook pre rezervácie (`src/hooks/useBookings.ts`)
 
-### 1. Klientský kalendár (`src/pages/client/CalendarPage.tsx`)
+Vytvoríme hook na správu rezervácií:
+- Funkcia `createBooking` - vytvorí novú rezerváciu v databáze
+- Kontrola, či slot nie je už rezervovaný
+- Automatická invalidácia cache po úspešnej rezervácii
 
-- Import `useTrainingSlots` hook
-- Načítavanie slotov pre vybraný dátum z databázy
-- Zobrazenie loading stavu počas načítavania
-- Renderovanie kariet pre každý dostupný slot s:
-  - Časom tréningu (napr. "08:00 - 09:00")
-  - Tlačidlom "Rezervovať" (zatiaľ bez funkcionality)
-  - Prípadnými poznámkami od admina
+### 2. Aktualizácia CalendarPage
 
-### 2. Nový komponent pre slot (`src/components/client/AvailableSlotCard.tsx`)
+Pridáme:
+- Import `useAuth` pre získanie profilu klienta
+- Import nového `useBookings` hook
+- Stav pre načítanie počas rezervácie
+- Handler `handleBook` funkciu, ktorá:
+  - Vytvorí rezerváciu v `bookings` tabuľke
+  - Zobrazí toast s potvrdením
+  - Aktualizuje zoznam slotov
 
-Vytvoríme kartu pre zobrazenie dostupného slotu:
+### 3. Optimalizácia React Query v `useTrainingSlots.ts`
 
-```text
-┌─────────────────────────────────┐
-│ 🕐 08:00 - 09:00               │
-│ Poznámka: Skupinový tréning    │
-│ ┌─────────────────────────────┐│
-│ │      Rezervovať             ││
-│ └─────────────────────────────┘│
-└─────────────────────────────────┘
-```
+Pridáme:
+- `staleTime: 60 * 1000` - dáta sú "čerstvé" 1 minútu
+- `gcTime: 5 * 60 * 1000` - cache sa drží 5 minút
 
 ## Technické detaily
 
-### CalendarPage.tsx - zmeny
+### Nový hook useBookings.ts
 
 ```text
-Pred:
-  import { Clock, AlertCircle } from 'lucide-react';
-  
-  const slots: any[] = [];
-
-Po:
-  import { Clock, AlertCircle, Loader2 } from 'lucide-react';
-  import { useTrainingSlots } from '@/hooks/useTrainingSlots';
-  import { AvailableSlotCard } from '@/components/client/AvailableSlotCard';
-  
-  const { slots, isLoading } = useTrainingSlots(selectedDate);
+- createBooking mutácia:
+  - Prijíma: slot_id, client_id, price
+  - Vytvára záznam v bookings tabuľke
+  - Nastavuje status: 'booked'
+  - Invaliduje training-slots query
 ```
 
-### AvailableSlotCard.tsx - nový komponent
+### CalendarPage.tsx zmeny
 
-Zobrazí:
-- Čas tréningu formátovaný ako "HH:mm - HH:mm"
-- Poznámky (ak existujú)
-- Tlačidlo "Rezervovať" (zatiaľ len vizuálne, funkcia rezervácie bude ďalší krok)
+```text
+Nové importy:
+- useAuth z AuthContext
+- useBookings hook
+- toast z sonner
 
-## Výsledok
+Nová funkcia:
+- handleBook(slotId: string) - zavolá createBooking a zobrazí potvrdenie
 
-- Klient uvidí všetky dostupné sloty vytvorené adminom
-- Pri výbere dátumu sa načítajú sloty pre daný deň
-- Zobrazí sa loading indikátor počas načítavania
-- Sloty budú mať tlačidlo "Rezervovať" pripravené na ďalšiu implementáciu
+Aktualizovaný render:
+- AvailableSlotCard dostane onBook={handleBook} a isBooking prop
+```
+
+### useTrainingSlots.ts optimalizácia
+
+```text
+slotsQuery pridá:
+  staleTime: 60 * 1000,
+  gcTime: 5 * 60 * 1000,
+```
+
+## Flow rezervácie
+
+```text
+1. Klient vyberie dátum v kalendári
+2. Zobrazí sa zoznam voľných slotov
+3. Klient klikne "Rezervovať"
+4. Systém vytvorí booking v databáze
+5. Zobrazí sa toast "Tréning úspešne rezervovaný"
+6. Zoznam slotov sa aktualizuje
+```
+
+## Súbory na úpravu
+
+| Súbor | Zmena |
+|-------|-------|
+| `src/hooks/useBookings.ts` | Nový súbor - hook pre rezervácie |
+| `src/hooks/useTrainingSlots.ts` | Pridanie staleTime a gcTime |
+| `src/pages/client/CalendarPage.tsx` | Pridanie rezervačnej logiky |
+

@@ -14,7 +14,7 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, signOut, waitForRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -31,6 +31,20 @@ export default function AdminLoginPage() {
         description: error.message === 'Invalid login credentials' 
           ? 'Nesprávny email alebo heslo'
           : error.message,
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Počkať na načítanie role pred navigáciou
+    const userRole = await waitForRole();
+    
+    if (userRole !== 'admin') {
+      await signOut();
+      toast({
+        variant: 'destructive',
+        title: 'Prístup zamietnutý',
+        description: 'Tento účet nemá admin oprávnenia.',
       });
       setIsLoading(false);
       return;

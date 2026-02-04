@@ -32,6 +32,20 @@ export function useAdminBookings() {
     (b) => b.status === 'pending'
   );
 
+  const confirmedBookings = (bookingsQuery.data || []).filter(
+    (b) => b.status === 'booked' && new Date(b.slot.start_time) >= new Date()
+  );
+
+  const todayBookings = confirmedBookings.filter((b) => {
+    const slotDate = new Date(b.slot.start_time);
+    const today = new Date();
+    return (
+      slotDate.getDate() === today.getDate() &&
+      slotDate.getMonth() === today.getMonth() &&
+      slotDate.getFullYear() === today.getFullYear()
+    );
+  });
+
   const approveBooking = useMutation({
     mutationFn: async (bookingId: string) => {
       // Aktualizovať booking na 'booked'
@@ -117,12 +131,68 @@ export function useAdminBookings() {
     },
   });
 
+  const cancelBooking = useMutation({
+    mutationFn: async ({ bookingId, reason }: { bookingId: string; reason?: string }) => {
+      // Získať booking
+      const { data: booking, error: fetchError } = await supabase
+        .from('bookings')
+        .select(`*, slot:training_slots(*), client:profiles(*)`)
+        .eq('id', bookingId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Aktualizovať booking na 'cancelled'
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({
+          status: 'cancelled',
+          cancellation_reason: reason || 'Zrušené administrátorom',
+          cancelled_at: new Date().toISOString(),
+        })
+        .eq('id', bookingId);
+
+      if (updateError) throw updateError;
+
+      // Uvolniť slot
+      const { error: slotError } = await supabase
+        .from('training_slots')
+        .update({ is_available: true })
+        .eq('id', booking.slot_id);
+
+      if (slotError) console.error('Slot update error:', slotError);
+
+      // Vytvoriť notifikáciu pre klienta
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: booking.client_id,
+          title: 'Tréning zrušený',
+          message: reason || 'Váš tréning bol zrušený trénerom.',
+          type: 'booking_cancelled',
+          related_slot_id: booking.slot_id,
+        });
+
+      if (notifError) console.error('Notification error:', notifError);
+
+      return booking;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
   return {
     bookings: bookingsQuery.data || [],
     pendingBookings,
+    confirmedBookings,
+    todayBookings,
     isLoading: bookingsQuery.isLoading,
     error: bookingsQuery.error,
     approveBooking,
     rejectBooking,
+    cancelBooking,
   };
 }

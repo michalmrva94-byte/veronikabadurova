@@ -14,18 +14,28 @@ import {
   Megaphone,
   ChevronRight,
   Bell,
-  Loader2
+  Loader2,
+  CalendarCheck
 } from 'lucide-react';
 import { useAdminBookings } from '@/hooks/useAdminBookings';
 import { PendingBookingCard } from '@/components/admin/PendingBookingCard';
+import { ConfirmedBookingCard } from '@/components/admin/ConfirmedBookingCard';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
 export default function AdminDashboardPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [processingAction, setProcessingAction] = useState<'approve' | 'reject' | null>(null);
+  const [processingAction, setProcessingAction] = useState<'approve' | 'reject' | 'cancel' | null>(null);
   
-  const { pendingBookings, isLoading, approveBooking, rejectBooking } = useAdminBookings();
+  const { 
+    pendingBookings, 
+    confirmedBookings, 
+    todayBookings, 
+    isLoading, 
+    approveBooking, 
+    rejectBooking,
+    cancelBooking 
+  } = useAdminBookings();
 
   const handleApprove = async (bookingId: string) => {
     setProcessingId(bookingId);
@@ -55,11 +65,25 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleCancel = async (bookingId: string, reason?: string) => {
+    setProcessingId(bookingId);
+    setProcessingAction('cancel');
+    try {
+      await cancelBooking.mutateAsync({ bookingId, reason });
+      toast.success('Tréning zrušený');
+    } catch (error: any) {
+      toast.error(error.message || 'Nepodarilo sa zrušiť tréning');
+    } finally {
+      setProcessingId(null);
+      setProcessingAction(null);
+    }
+  };
+
   // Placeholder stats - will be replaced with real data
   const stats = {
     totalClients: 0,
-    todayTrainings: 0,
-    weekTrainings: 0,
+    todayTrainings: todayBookings.length,
+    weekTrainings: confirmedBookings.length,
     totalRevenue: 0,
     pendingPayments: 0,
     completedThisMonth: 0,
@@ -248,23 +272,65 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Today's trainings placeholder */}
+        {/* Today's trainings */}
         <div className="space-y-2">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-4">
-            Dnešné tréningy
+            Dnešné tréningy ({todayBookings.length})
           </h2>
-          <div className="ios-card">
-            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 mb-4">
-                <Calendar className="h-8 w-8 text-muted-foreground/50" />
+          {todayBookings.length === 0 ? (
+            <div className="ios-card">
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 mb-4">
+                  <Calendar className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+                <p className="text-muted-foreground mb-4">Dnes nemáš naplánované žiadne tréningy</p>
+                <Button asChild className="rounded-xl ios-press">
+                  <Link to={ROUTES.ADMIN.CALENDAR}>Pridať tréning</Link>
+                </Button>
               </div>
-              <p className="text-muted-foreground mb-4">Dnes nemáš naplánované žiadne tréningy</p>
-              <Button asChild className="rounded-xl ios-press">
-                <Link to={ROUTES.ADMIN.CALENDAR}>Pridať tréning</Link>
-              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {todayBookings.map((booking) => (
+                <ConfirmedBookingCard
+                  key={booking.id}
+                  booking={booking}
+                  onCancel={handleCancel}
+                  isCancelling={processingId === booking.id && processingAction === 'cancel'}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Upcoming confirmed trainings */}
+        {confirmedBookings.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 px-4">
+              <CalendarCheck className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Naplánované tréningy ({confirmedBookings.length})
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {confirmedBookings.slice(0, 10).map((booking) => (
+                <ConfirmedBookingCard
+                  key={booking.id}
+                  booking={booking}
+                  onCancel={handleCancel}
+                  isCancelling={processingId === booking.id && processingAction === 'cancel'}
+                />
+              ))}
+              {confirmedBookings.length > 10 && (
+                <Button asChild variant="outline" className="w-full">
+                  <Link to={ROUTES.ADMIN.CALENDAR}>
+                    Zobraziť všetky ({confirmedBookings.length})
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </AdminLayout>
   );

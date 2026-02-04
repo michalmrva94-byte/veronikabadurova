@@ -19,6 +19,7 @@ export function BookingCard({ booking, onCancel, showCancelButton = false }: Boo
   const dateFormatted = format(new Date(booking.slot.start_time), 'EEEE, d. MMMM', { locale: sk });
 
   const statusVariant = {
+    pending: 'secondary',
     booked: 'default',
     cancelled: 'destructive',
     completed: 'secondary',

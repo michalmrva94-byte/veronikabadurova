@@ -28,10 +28,10 @@ export function useTrainingSlots(selectedDate?: Date) {
 
       if (error) throw error;
 
-      // Filtrovať len voľné sloty (bez aktívnej rezervácie)
+      // Filtrovať len voľné sloty (bez aktívnej rezervácie - pending alebo booked)
       const availableSlots = (data || []).filter((slot: any) => {
         const activeBooking = slot.bookings?.find(
-          (b: any) => b.status === 'booked'
+          (b: any) => b.status === 'booked' || b.status === 'pending'
         );
         return !activeBooking;
       });

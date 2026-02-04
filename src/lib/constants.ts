@@ -52,7 +52,8 @@ export const TRANSACTION_LABELS = {
 
 // Booking status labels in Slovak
 export const BOOKING_STATUS_LABELS = {
-  booked: 'Rezervované',
+  pending: 'Čaká na potvrdenie',
+  booked: 'Potvrdené',
   cancelled: 'Zrušené',
   completed: 'Dokončené',
   no_show: 'Neprišiel/a',

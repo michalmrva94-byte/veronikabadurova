@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, Info, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { TrainingSlot } from '@/types/database';
@@ -63,6 +63,17 @@ export function BookingConfirmDialog({
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
             <span className="text-muted-foreground">Cena tréningu</span>
             <span className="font-semibold text-lg">{DEFAULT_TRAINING_PRICE}€</span>
+          </div>
+
+          {/* Approval info */}
+          <div className="flex gap-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+            <Info className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-foreground mb-1">Čaká na potvrdenie</p>
+              <p className="text-muted-foreground">
+                Po odoslaní rezervácie vás trénerka potvrdí a dostanete notifikáciu.
+              </p>
+            </div>
           </div>
 
           {/* Cancellation warning */}

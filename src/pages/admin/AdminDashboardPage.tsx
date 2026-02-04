@@ -12,11 +12,49 @@ import {
   CheckCircle,
   XCircle,
   Megaphone,
-  ChevronRight
+  ChevronRight,
+  Bell,
+  Loader2
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useAdminBookings } from '@/hooks/useAdminBookings';
+import { PendingBookingCard } from '@/components/admin/PendingBookingCard';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 export default function AdminDashboardPage() {
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [processingAction, setProcessingAction] = useState<'approve' | 'reject' | null>(null);
+  
+  const { pendingBookings, isLoading, approveBooking, rejectBooking } = useAdminBookings();
+
+  const handleApprove = async (bookingId: string) => {
+    setProcessingId(bookingId);
+    setProcessingAction('approve');
+    try {
+      await approveBooking.mutateAsync(bookingId);
+      toast.success('Rezervácia potvrdená');
+    } catch (error: any) {
+      toast.error(error.message || 'Nepodarilo sa potvrdiť rezerváciu');
+    } finally {
+      setProcessingId(null);
+      setProcessingAction(null);
+    }
+  };
+
+  const handleReject = async (bookingId: string) => {
+    setProcessingId(bookingId);
+    setProcessingAction('reject');
+    try {
+      await rejectBooking.mutateAsync({ bookingId });
+      toast.success('Rezervácia zamietnutá');
+    } catch (error: any) {
+      toast.error(error.message || 'Nepodarilo sa zamietnuť rezerváciu');
+    } finally {
+      setProcessingId(null);
+      setProcessingAction(null);
+    }
+  };
+
   // Placeholder stats - will be replaced with real data
   const stats = {
     totalClients: 0,
@@ -38,6 +76,30 @@ export default function AdminDashboardPage() {
             Prehľad tréningov a klientov
           </p>
         </div>
+
+        {/* Pending Bookings Section */}
+        {pendingBookings.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 px-4">
+              <Bell className="h-4 w-4 text-warning" />
+              <h2 className="text-sm font-semibold text-warning uppercase tracking-wide">
+                Čakajúce rezervácie ({pendingBookings.length})
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {pendingBookings.map((booking) => (
+                <PendingBookingCard
+                  key={booking.id}
+                  booking={booking}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                  isApproving={processingId === booking.id && processingAction === 'approve'}
+                  isRejecting={processingId === booking.id && processingAction === 'reject'}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* iOS Inset Grouped Stats */}
         <div className="ios-card overflow-hidden">

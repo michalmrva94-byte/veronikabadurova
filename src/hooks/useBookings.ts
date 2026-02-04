@@ -12,18 +12,37 @@ export function useBookings() {
 
   const createBooking = useMutation({
     mutationFn: async ({ slot_id, client_id, price }: CreateBookingParams) => {
+      // Najprv skontrolovať, či slot nie je už rezervovaný
+      const { data: existingBooking, error: checkError } = await supabase
+        .from('bookings')
+        .select('id, status')
+        .eq('slot_id', slot_id)
+        .in('status', ['booked', 'pending'])
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingBooking) {
+        throw new Error('Tento termín už nie je dostupný. Prosím, vyberte iný.');
+      }
+
       const { data, error } = await supabase
         .from('bookings')
         .insert({
           slot_id,
           client_id,
           price,
-          status: 'pending', // Nový status - čaká na schválenie
+          status: 'pending',
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('Tento termín už nie je dostupný. Prosím, vyberte iný.');
+        }
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {

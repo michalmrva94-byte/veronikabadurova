@@ -39,8 +39,9 @@ export function useTrainingSlots(selectedDate?: Date) {
       return availableSlots as TrainingSlot[];
     },
     enabled: !!selectedDate,
-    staleTime: 60 * 1000, // 1 minúta
-    gcTime: 5 * 60 * 1000, // 5 minút
+    staleTime: 10 * 1000, // 10 sekúnd - kratší interval pre aktuálnejšie dáta
+    gcTime: 60 * 1000, // 1 minúta
+    refetchOnWindowFocus: true,
   });
 
   const createSlot = useMutation({

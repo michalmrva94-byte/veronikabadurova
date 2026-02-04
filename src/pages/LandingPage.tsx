@@ -145,7 +145,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="ios-card p-4 card-hover">
+            <Link to={ROUTES.CANCELLATION_POLICY} className="ios-card p-4 card-hover block">
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <Shield className="h-6 w-6 text-primary" />
@@ -156,7 +156,7 @@ export default function LandingPage() {
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground/40" />
               </div>
-            </div>
+            </Link>
 
             <div className="ios-card p-4 card-hover">
               <div className="flex items-center gap-4">
@@ -187,40 +187,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing - Clean pill style */}
-      <section className="py-6 px-5">
-        <div className="mx-auto max-w-sm">
-          <h2 className="text-xl font-bold mb-4 px-1">Storno pravidlá</h2>
-          
-          <div className="ios-card-elevated overflow-hidden">
-            <div className="p-4 space-y-2">
-              <div className="flex items-center justify-between rounded-2xl bg-success/8 p-4">
-                <span className="font-medium text-sm">Viac ako 48h vopred</span>
-                <span className="font-bold text-success text-sm">Zadarmo ✓</span>
-              </div>
-              <div className="flex items-center justify-between rounded-2xl bg-warning/8 p-4">
-                <span className="font-medium text-sm">24 – 48 hodín</span>
-                <span className="font-bold text-warning text-sm">50%</span>
-              </div>
-              <div className="flex items-center justify-between rounded-2xl bg-destructive/8 p-4">
-                <span className="font-medium text-sm">Menej ako 24h</span>
-                <span className="font-bold text-destructive text-sm">80%</span>
-              </div>
-            </div>
-            <div className="px-4 pb-4 pt-2 border-t border-border/30">
-              <p className="text-center text-muted-foreground">
-                Cena tréningu: <span className="font-bold text-foreground text-lg">25€</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
       <section className="py-10 px-5">
         <div className="mx-auto max-w-sm text-center">
           <div className="ios-card-elevated p-8">
-            <p className="text-3xl mb-3">💦</p>
             <h2 className="text-2xl font-bold mb-2">Pripravená?</h2>
             <p className="text-muted-foreground mb-6">
               Registrácia trvá len minútku

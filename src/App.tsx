@@ -12,6 +12,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import NotFound from "./pages/NotFound";
+import CancellationPolicyPage from "./pages/CancellationPolicyPage";
 
 // Client pages
 import ClientDashboardPage from "./pages/client/DashboardPage";
@@ -43,6 +44,7 @@ const App = () => (
           <Routes>
             {/* Public routes */}
             <Route path={ROUTES.HOME} element={<LandingPage />} />
+            <Route path={ROUTES.CANCELLATION_POLICY} element={<CancellationPolicyPage />} />
             <Route path={ROUTES.LOGIN} element={<LoginPage />} />
             <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
 

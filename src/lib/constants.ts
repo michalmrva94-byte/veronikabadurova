@@ -19,6 +19,7 @@ export const REFERRAL_BONUS = 25.00;
 // App routes
 export const ROUTES = {
   HOME: '/',
+  CANCELLATION_POLICY: '/storno-pravidla',
   LOGIN: '/prihlasenie',
   REGISTER: '/registracia',
   DASHBOARD: '/prehlad',

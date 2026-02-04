@@ -12,106 +12,113 @@
 
 @layer base {
   :root {
-    /* iOS-inspired light theme */
-    --background: 0 0% 97%;
-    --foreground: 0 0% 0%;
+    /* Modern Teal/Turquoise Theme */
+    --background: 180 25% 97%;
+    --foreground: 200 20% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 200 20% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 200 20% 10%;
 
-    /* Primary - iOS Blue */
-    --primary: 211 100% 50%;
+    /* Primary - Vibrant Teal */
+    --primary: 178 70% 42%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - iOS Gray */
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 0 0% 20%;
+    /* Secondary - Soft Mint */
+    --secondary: 175 30% 95%;
+    --secondary-foreground: 180 30% 25%;
 
-    /* Muted */
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    /* Muted - Light Teal Tint */
+    --muted: 175 20% 96%;
+    --muted-foreground: 180 10% 45%;
 
-    /* Accent - Teal/Turquoise */
-    --accent: 180 60% 45%;
+    /* Accent - Bright Turquoise */
+    --accent: 175 80% 45%;
     --accent-foreground: 0 0% 100%;
 
-    /* Destructive - iOS Red */
-    --destructive: 0 100% 59%;
+    /* Destructive - Coral Red */
+    --destructive: 0 85% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Success - iOS Green */
-    --success: 142 70% 45%;
+    /* Success - Fresh Green */
+    --success: 160 65% 45%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning - iOS Orange */
-    --warning: 28 100% 55%;
+    /* Warning - Warm Amber */
+    --warning: 38 95% 55%;
     --warning-foreground: 0 0% 100%;
 
     /* Borders and inputs */
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 211 100% 50%;
+    --border: 180 15% 88%;
+    --input: 180 15% 90%;
+    --ring: 178 70% 42%;
 
     /* iOS-style radius */
     --radius: 1rem;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 10%;
-    --sidebar-primary: 211 100% 50%;
+    /* Sidebar - Teal themed */
+    --sidebar-background: 178 25% 98%;
+    --sidebar-foreground: 200 20% 15%;
+    --sidebar-primary: 178 70% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 95%;
-    --sidebar-accent-foreground: 0 0% 20%;
-    --sidebar-border: 0 0% 92%;
-    --sidebar-ring: 211 100% 50%;
+    --sidebar-accent: 175 30% 95%;
+    --sidebar-accent-foreground: 180 30% 25%;
+    --sidebar-border: 180 15% 90%;
+    --sidebar-ring: 178 70% 42%;
+
+    /* Gradient colors */
+    --gradient-start: 185 75% 50%;
+    --gradient-end: 175 70% 40%;
   }
 
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 98%;
+    --background: 195 25% 8%;
+    --foreground: 175 15% 95%;
 
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 98%;
+    --card: 195 20% 12%;
+    --card-foreground: 175 15% 95%;
 
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 195 20% 12%;
+    --popover-foreground: 175 15% 95%;
 
-    --primary: 211 100% 55%;
+    --primary: 178 65% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 90%;
+    --secondary: 195 20% 18%;
+    --secondary-foreground: 175 15% 85%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 195 15% 18%;
+    --muted-foreground: 175 10% 55%;
 
-    --accent: 180 60% 50%;
+    --accent: 175 70% 50%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 90% 55%;
+    --destructive: 0 80% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 65% 40%;
+    --success: 160 60% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 28 90% 50%;
+    --warning: 38 85% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 211 100% 55%;
+    --border: 195 15% 22%;
+    --input: 195 15% 22%;
+    --ring: 178 65% 50%;
 
-    --sidebar-background: 0 0% 8%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 211 100% 55%;
+    --sidebar-background: 195 20% 10%;
+    --sidebar-foreground: 175 15% 95%;
+    --sidebar-primary: 178 65% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 211 100% 55%;
+    --sidebar-accent: 195 20% 18%;
+    --sidebar-accent-foreground: 175 15% 85%;
+    --sidebar-border: 195 15% 22%;
+    --sidebar-ring: 178 65% 50%;
+
+    --gradient-start: 185 70% 45%;
+    --gradient-end: 175 65% 35%;
   }
 }
 
@@ -161,7 +168,7 @@
 }
 
 @layer utilities {
-  /* iOS Glass effect */
+  /* iOS Glass effect - teal tinted */
   .glass {
     @apply bg-card/70 backdrop-blur-xl;
   }
@@ -170,9 +177,22 @@
     @apply bg-card/85 backdrop-blur-2xl backdrop-saturate-150;
   }
 
-  /* iOS Card style */
+  /* Teal gradient background */
+  .gradient-teal {
+    background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
+  }
+
+  .gradient-teal-soft {
+    background: linear-gradient(180deg, hsl(var(--primary) / 0.1), hsl(var(--background)));
+  }
+
+  /* iOS Card style with subtle teal shadow */
   .ios-card {
     @apply bg-card rounded-2xl shadow-sm;
+  }
+
+  .ios-card-elevated {
+    @apply bg-card rounded-2xl shadow-teal;
   }
 
   /* iOS Inset grouped style */
@@ -213,13 +233,17 @@
     display: none;
   }
 
-  /* iOS-style shadow */
+  /* iOS-style shadows with teal tint */
   .shadow-ios {
-    box-shadow: 0 2px 10px -3px rgba(0, 0, 0, 0.1), 0 1px 3px -1px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 10px -3px hsl(var(--primary) / 0.1), 0 1px 3px -1px rgba(0, 0, 0, 0.05);
   }
 
   .shadow-ios-lg {
-    box-shadow: 0 8px 30px -5px rgba(0, 0, 0, 0.15), 0 4px 10px -3px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 30px -5px hsl(var(--primary) / 0.15), 0 4px 10px -3px rgba(0, 0, 0, 0.08);
+  }
+
+  .shadow-teal {
+    box-shadow: 0 4px 20px -4px hsl(var(--primary) / 0.2), 0 2px 8px -2px hsl(var(--primary) / 0.1);
   }
 }
 

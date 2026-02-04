@@ -6,12 +6,41 @@ import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { useTrainingSlots } from '@/hooks/useTrainingSlots';
+import { useBookings } from '@/hooks/useBookings';
+import { useAuth } from '@/contexts/AuthContext';
 import { AvailableSlotCard } from '@/components/client/AvailableSlotCard';
+import { toast } from 'sonner';
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [bookingSlotId, setBookingSlotId] = useState<string | null>(null);
   
   const { slots, isLoading } = useTrainingSlots(selectedDate);
+  const { createBooking } = useBookings();
+  const { profile } = useAuth();
+
+  const handleBook = async (slotId: string) => {
+    if (!profile) {
+      toast.error('Pre rezerváciu sa musíte prihlásiť');
+      return;
+    }
+
+    setBookingSlotId(slotId);
+    
+    try {
+      await createBooking.mutateAsync({
+        slot_id: slotId,
+        client_id: profile.id,
+        price: 25, // Default price, can be fetched from settings
+      });
+      
+      toast.success('Tréning úspešne rezervovaný!');
+    } catch (error: any) {
+      toast.error(error.message || 'Nepodarilo sa rezervovať tréning');
+    } finally {
+      setBookingSlotId(null);
+    }
+  };
 
   return (
     <ClientLayout>
@@ -66,6 +95,8 @@ export default function CalendarPage() {
                   <AvailableSlotCard
                     key={slot.id}
                     slot={slot}
+                    onBook={handleBook}
+                    isBooking={bookingSlotId === slot.id}
                   />
                 ))}
               </div>

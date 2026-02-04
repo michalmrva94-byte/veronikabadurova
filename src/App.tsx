@@ -3,8 +3,32 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ROUTES } from "@/lib/constants";
+
+// Pages
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
 import NotFound from "./pages/NotFound";
+
+// Client pages
+import ClientDashboardPage from "./pages/client/DashboardPage";
+import CalendarPage from "./pages/client/CalendarPage";
+import MyTrainingsPage from "./pages/client/MyTrainingsPage";
+import ProfilePage from "./pages/client/ProfilePage";
+import FinancesPage from "./pages/client/FinancesPage";
+import ReferralPage from "./pages/client/ReferralPage";
+import NotificationsPage from "./pages/client/NotificationsPage";
+
+// Admin pages
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminCalendarPage from "./pages/admin/AdminCalendarPage";
+import AdminClientsPage from "./pages/admin/AdminClientsPage";
+import AdminFinancesPage from "./pages/admin/AdminFinancesPage";
+import AdminBroadcastPage from "./pages/admin/AdminBroadcastPage";
+import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -14,11 +38,125 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path={ROUTES.HOME} element={<LandingPage />} />
+            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+            <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+
+            {/* Client routes */}
+            <Route
+              path={ROUTES.DASHBOARD}
+              element={
+                <ProtectedRoute>
+                  <ClientDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.CALENDAR}
+              element={
+                <ProtectedRoute>
+                  <CalendarPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.MY_TRAININGS}
+              element={
+                <ProtectedRoute>
+                  <MyTrainingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.PROFILE}
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.FINANCES}
+              element={
+                <ProtectedRoute>
+                  <FinancesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.REFERRAL}
+              element={
+                <ProtectedRoute>
+                  <ReferralPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.NOTIFICATIONS}
+              element={
+                <ProtectedRoute>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin routes */}
+            <Route
+              path={ROUTES.ADMIN.DASHBOARD}
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.ADMIN.CALENDAR}
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminCalendarPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.ADMIN.CLIENTS}
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminClientsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.ADMIN.FINANCES}
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminFinancesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.ADMIN.BROADCAST}
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminBroadcastPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.ADMIN.SETTINGS}
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminSettingsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Catch-all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

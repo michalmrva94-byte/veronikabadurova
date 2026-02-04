@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import veronikaPhoto from '@/assets/veronika-photo.png';
-import { Waves } from 'lucide-react';
+import { Gift } from 'lucide-react';
 
 interface WelcomeScreenProps {
   onComplete: () => void;
@@ -39,16 +39,26 @@ export default function WelcomeScreen({ onComplete }: WelcomeScreenProps) {
           transition={{ duration: 0.5, delay: 0.2 }}
         />
         
-        {/* Wave icon badge */}
+        {/* Gift icon badge */}
         <motion.div 
           className="absolute -bottom-2 -right-2 bg-primary rounded-full p-3 shadow-soft"
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
         >
-          <Waves className="h-5 w-5 text-primary-foreground" />
+          <Gift className="h-5 w-5 text-primary-foreground" />
         </motion.div>
       </motion.div>
+
+      {/* Birthday message */}
+      <motion.p
+        className="mt-8 text-xl font-semibold text-foreground text-center px-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+      >
+        Všetko najlepšie k meninkám láska 💖
+      </motion.p>
 
       {/* Animated dots/loading indicator */}
       <motion.div 

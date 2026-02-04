@@ -45,7 +45,7 @@ export default function CalendarPage() {
         price: DEFAULT_TRAINING_PRICE,
       });
       
-      toast.success('Tréning úspešne rezervovaný!');
+      toast.success('Žiadosť o rezerváciu bola odoslaná. Čakajte na potvrdenie.');
       setIsConfirmDialogOpen(false);
       setSelectedSlot(null);
     } catch (error: any) {

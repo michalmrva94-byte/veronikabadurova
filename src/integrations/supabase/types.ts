@@ -382,7 +382,12 @@ export type Database = {
     }
     Enums: {
       app_role: "client" | "admin"
-      booking_status: "booked" | "cancelled" | "completed" | "no_show"
+      booking_status:
+        | "booked"
+        | "cancelled"
+        | "completed"
+        | "no_show"
+        | "pending"
       transaction_type:
         | "deposit"
         | "training"
@@ -517,7 +522,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["client", "admin"],
-      booking_status: ["booked", "cancelled", "completed", "no_show"],
+      booking_status: [
+        "booked",
+        "cancelled",
+        "completed",
+        "no_show",
+        "pending",
+      ],
       transaction_type: [
         "deposit",
         "training",

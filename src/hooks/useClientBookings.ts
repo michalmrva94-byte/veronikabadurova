@@ -76,15 +76,18 @@ export function useClientBookings() {
 
   // Rozdeliť na nadchádzajúce a minulé
   const now = new Date();
+  
+  // Nadchádzajúce = pending alebo booked, v budúcnosti
   const upcomingBookings = (bookingsQuery.data || []).filter(
     (booking) =>
-      booking.status === 'booked' &&
+      (booking.status === 'booked' || booking.status === 'pending') &&
       new Date(booking.slot.start_time) > now
   );
 
+  // Minulé = cancelled, completed, no_show alebo v minulosti
   const pastBookings = (bookingsQuery.data || []).filter(
     (booking) =>
-      booking.status !== 'booked' ||
+      (booking.status !== 'booked' && booking.status !== 'pending') ||
       new Date(booking.slot.start_time) <= now
   );
 

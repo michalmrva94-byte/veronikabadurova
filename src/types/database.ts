@@ -4,7 +4,7 @@
 
 export type AppRole = 'client' | 'admin';
 
-export type BookingStatus = 'booked' | 'cancelled' | 'completed' | 'no_show';
+export type BookingStatus = 'pending' | 'booked' | 'cancelled' | 'completed' | 'no_show';
 
 export type TransactionType = 'deposit' | 'training' | 'cancellation' | 'referral_bonus' | 'manual_adjustment';
 

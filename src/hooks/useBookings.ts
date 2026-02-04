@@ -18,7 +18,7 @@ export function useBookings() {
           slot_id,
           client_id,
           price,
-          status: 'booked',
+          status: 'pending', // Nový status - čaká na schválenie
         })
         .select()
         .single();

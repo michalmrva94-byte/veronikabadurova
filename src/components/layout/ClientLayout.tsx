@@ -10,10 +10,10 @@ import {
   CreditCard, 
   Gift, 
   Bell,
-  LogOut,
-  Waves
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -36,18 +36,18 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 safe-top">
         <div className="container flex h-14 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Waves className="h-5 w-5" />
-            </div>
-            <span className="font-semibold text-foreground">Veronika Swim</span>
-          </div>
+          <Link to={ROUTES.DASHBOARD} className="flex items-center gap-2">
+            <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+              <AvatarImage src="/veronika-avatar.jpg" alt="Veronika" />
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">V</AvatarFallback>
+            </Avatar>
+            <span className="font-semibold text-foreground">Veronika</span>
+          </Link>
           
           <div className="flex items-center gap-2">
             <Link to={ROUTES.NOTIFICATIONS}>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-                {/* Notification badge - placeholder */}
               </Button>
             </Link>
             <Button variant="ghost" size="icon" onClick={signOut}>

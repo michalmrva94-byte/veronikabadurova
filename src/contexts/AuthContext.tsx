@@ -14,6 +14,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string, referralCode?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  waitForRole: () => Promise<AppRole | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -147,6 +148,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null);
   };
 
+  const waitForRole = async (): Promise<AppRole | null> => {
+    // Ak už máme rolu, vrátiť ju okamžite
+    if (role !== null) return role;
+    
+    // Ak máme user-a, priamo načítať rolu z databázy
+    const currentSession = await supabase.auth.getSession();
+    const currentUserId = currentSession.data.session?.user?.id;
+    
+    if (!currentUserId) return null;
+    
+    const { data: roleData, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', currentUserId)
+      .single();
+    
+    if (error || !roleData) {
+      console.error('Error fetching role in waitForRole:', error);
+      return 'client';
+    }
+    
+    const fetchedRole = roleData.role as AppRole;
+    setRole(fetchedRole);
+    return fetchedRole;
+  };
+
   const value = {
     user,
     session,
@@ -158,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signOut,
     refreshProfile,
+    waitForRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

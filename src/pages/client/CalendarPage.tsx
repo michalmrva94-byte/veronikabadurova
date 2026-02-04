@@ -1,16 +1,18 @@
 import { ClientLayout } from '@/components/layout/ClientLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, startOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { sk } from 'date-fns/locale';
-import { Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { Clock, AlertCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTrainingSlots } from '@/hooks/useTrainingSlots';
-import { useSlotsForMonth, useClientMonthBookings } from '@/hooks/useWeeklySlots';
+import { useSlotsForMonth, useClientMonthBookings, useWeeklySlots } from '@/hooks/useWeeklySlots';
 import { useBookings } from '@/hooks/useBookings';
 import { useAuth } from '@/contexts/AuthContext';
 import { AvailableSlotCard } from '@/components/client/AvailableSlotCard';
 import { BookingConfirmDialog } from '@/components/client/BookingConfirmDialog';
+import { WeeklyAvailableSlots } from '@/components/client/WeeklyAvailableSlots';
 import { toast } from 'sonner';
 import { TrainingSlot } from '@/types/database';
 import { DEFAULT_TRAINING_PRICE } from '@/lib/constants';
@@ -18,12 +20,14 @@ import { DEFAULT_TRAINING_PRICE } from '@/lib/constants';
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedSlot, setSelectedSlot] = useState<TrainingSlot | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   
   const { slots, isLoading } = useTrainingSlots(selectedDate);
   const { data: monthSlots } = useSlotsForMonth(currentMonth);
+  const { data: weeklySlots, isLoading: weeklyLoading } = useWeeklySlots(weekStart);
   const { createBooking } = useBookings();
   const { profile } = useAuth();
   const { data: myBookingDates } = useClientMonthBookings(currentMonth, profile?.id);
@@ -136,40 +140,47 @@ export default function CalendarPage() {
           </CardContent>
         </Card>
 
-        {/* Available slots */}
+        {/* Weekly Available Slots */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">
-              {selectedDate ? (
-                <>Voľné termíny - {format(selectedDate, 'd. MMMM yyyy', { locale: sk })}</>
-              ) : (
-                'Vyberte dátum'
-              )}
-            </CardTitle>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Voľné termíny</CardTitle>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setWeekStart(subWeeks(weekStart, 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground min-w-[100px] text-center">
+                  {format(weekStart, 'd. MMM', { locale: sk })} - {format(addWeeks(weekStart, 1), 'd. MMM', { locale: sk })}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setWeekStart(addWeeks(weekStart, 1))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {weeklyLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : slots.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Clock className="mb-4 h-12 w-12 text-muted-foreground/50" />
-                <p className="text-muted-foreground">
-                  Na vybraný deň nie sú dostupné žiadne termíny
-                </p>
-              </div>
             ) : (
-              <div className="space-y-3">
-                {slots.map((slot) => (
-                  <AvailableSlotCard
-                    key={slot.id}
-                    slot={slot}
-                    onBook={() => handleSlotClick(slot)}
-                    isBooking={false}
-                  />
-                ))}
-              </div>
+              <WeeklyAvailableSlots
+                weekStart={weekStart}
+                slots={weeklySlots || []}
+                onSlotClick={handleSlotClick}
+                selectedDate={selectedDate}
+                onDateSelect={setSelectedDate}
+              />
             )}
           </CardContent>
         </Card>

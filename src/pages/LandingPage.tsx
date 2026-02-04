@@ -229,9 +229,12 @@ export default function LandingPage() {
           <p className="text-xs text-muted-foreground">
             S 💙 vytvorené pre teba
           </p>
-          <p className="text-xs text-muted-foreground mt-1 opacity-60">
+          <Link 
+            to={ROUTES.ADMIN.LOGIN}
+            className="text-xs text-muted-foreground mt-1 opacity-60 hover:opacity-100 transition-opacity"
+          >
             © 2024 Veronika Swim
-          </p>
+          </Link>
         </div>
       </footer>
     </div>

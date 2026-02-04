@@ -86,6 +86,7 @@ export default {
 				'medium': '0 4px 16px -4px rgba(0, 0, 0, 0.12)',
 				'ios': '0 2px 10px -3px rgba(0, 0, 0, 0.1), 0 1px 3px -1px rgba(0, 0, 0, 0.05)',
 				'ios-lg': '0 8px 30px -5px rgba(0, 0, 0, 0.15), 0 4px 10px -3px rgba(0, 0, 0, 0.08)',
+				'teal': '0 4px 20px -4px hsl(178 70% 42% / 0.2), 0 2px 8px -2px hsl(178 70% 42% / 0.1)',
 			},
 			keyframes: {
 				'accordion-down': {

@@ -76,17 +76,17 @@ export default {
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)',
-				'2xl': '1rem',
-				'3xl': '1.5rem',
+				md: 'calc(var(--radius) - 4px)',
+				sm: 'calc(var(--radius) - 8px)',
+				'2xl': '1.25rem',
+				'3xl': '1.75rem',
 			},
 			boxShadow: {
-				'soft': '0 2px 8px -2px rgba(0, 0, 0, 0.08)',
-				'medium': '0 4px 16px -4px rgba(0, 0, 0, 0.12)',
-				'ios': '0 2px 10px -3px rgba(0, 0, 0, 0.1), 0 1px 3px -1px rgba(0, 0, 0, 0.05)',
-				'ios-lg': '0 8px 30px -5px rgba(0, 0, 0, 0.15), 0 4px 10px -3px rgba(0, 0, 0, 0.08)',
-				'teal': '0 4px 20px -4px hsl(178 70% 42% / 0.2), 0 2px 8px -2px hsl(178 70% 42% / 0.1)',
+				'soft': '0 2px 20px -5px rgba(0, 0, 0, 0.06), 0 4px 12px -4px rgba(0, 0, 0, 0.04)',
+				'float': '0 8px 30px -10px rgba(0, 0, 0, 0.1), 0 4px 15px -5px rgba(0, 0, 0, 0.05)',
+				'glow': '0 4px 25px -5px hsl(170 50% 45% / 0.25)',
+				'ios': '0 2px 20px -5px rgba(0, 0, 0, 0.06), 0 4px 12px -4px rgba(0, 0, 0, 0.04)',
+				'ios-lg': '0 8px 30px -10px rgba(0, 0, 0, 0.1), 0 4px 15px -5px rgba(0, 0, 0, 0.05)',
 			},
 			keyframes: {
 				'accordion-down': {

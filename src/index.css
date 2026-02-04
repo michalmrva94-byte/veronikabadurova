@@ -12,113 +12,113 @@
 
 @layer base {
   :root {
-    /* Modern Teal/Turquoise Theme */
-    --background: 180 25% 97%;
-    --foreground: 200 20% 10%;
+    /* Minimal Mint/Sage Design System */
+    --background: 160 25% 94%;
+    --foreground: 0 0% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 200 20% 10%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 200 20% 10%;
+    --popover-foreground: 0 0% 10%;
 
-    /* Primary - Vibrant Teal */
-    --primary: 178 70% 42%;
+    /* Primary - Soft Teal/Mint */
+    --primary: 170 50% 45%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Soft Mint */
-    --secondary: 175 30% 95%;
-    --secondary-foreground: 180 30% 25%;
+    /* Secondary - Light Mint */
+    --secondary: 160 20% 96%;
+    --secondary-foreground: 0 0% 25%;
 
-    /* Muted - Light Teal Tint */
-    --muted: 175 20% 96%;
-    --muted-foreground: 180 10% 45%;
+    /* Muted - Subtle Gray */
+    --muted: 160 10% 95%;
+    --muted-foreground: 0 0% 45%;
 
-    /* Accent - Bright Turquoise */
-    --accent: 175 80% 45%;
+    /* Accent - Black for emphasis */
+    --accent: 0 0% 10%;
     --accent-foreground: 0 0% 100%;
 
-    /* Destructive - Coral Red */
-    --destructive: 0 85% 60%;
+    /* Destructive - Soft Coral */
+    --destructive: 0 70% 60%;
     --destructive-foreground: 0 0% 100%;
 
     /* Success - Fresh Green */
-    --success: 160 65% 45%;
+    --success: 160 55% 45%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning - Warm Amber */
-    --warning: 38 95% 55%;
+    /* Warning - Warm Peach */
+    --warning: 30 80% 60%;
     --warning-foreground: 0 0% 100%;
 
-    /* Borders and inputs */
-    --border: 180 15% 88%;
-    --input: 180 15% 90%;
-    --ring: 178 70% 42%;
+    /* Borders - Very subtle */
+    --border: 160 10% 90%;
+    --input: 160 10% 92%;
+    --ring: 170 50% 45%;
 
-    /* iOS-style radius */
-    --radius: 1rem;
+    /* Large radius for modern feel */
+    --radius: 1.25rem;
 
-    /* Sidebar - Teal themed */
-    --sidebar-background: 178 25% 98%;
-    --sidebar-foreground: 200 20% 15%;
-    --sidebar-primary: 178 70% 42%;
+    /* Sidebar - Mint themed */
+    --sidebar-background: 160 20% 96%;
+    --sidebar-foreground: 0 0% 15%;
+    --sidebar-primary: 170 50% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 175 30% 95%;
-    --sidebar-accent-foreground: 180 30% 25%;
-    --sidebar-border: 180 15% 90%;
-    --sidebar-ring: 178 70% 42%;
+    --sidebar-accent: 160 15% 94%;
+    --sidebar-accent-foreground: 0 0% 25%;
+    --sidebar-border: 160 10% 90%;
+    --sidebar-ring: 170 50% 45%;
 
     /* Gradient colors */
-    --gradient-start: 185 75% 50%;
-    --gradient-end: 175 70% 40%;
+    --gradient-start: 170 45% 50%;
+    --gradient-end: 165 40% 42%;
   }
 
   .dark {
-    --background: 195 25% 8%;
-    --foreground: 175 15% 95%;
+    --background: 160 15% 8%;
+    --foreground: 160 10% 95%;
 
-    --card: 195 20% 12%;
-    --card-foreground: 175 15% 95%;
+    --card: 160 12% 12%;
+    --card-foreground: 160 10% 95%;
 
-    --popover: 195 20% 12%;
-    --popover-foreground: 175 15% 95%;
+    --popover: 160 12% 12%;
+    --popover-foreground: 160 10% 95%;
 
-    --primary: 178 65% 50%;
+    --primary: 170 45% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 195 20% 18%;
-    --secondary-foreground: 175 15% 85%;
+    --secondary: 160 12% 18%;
+    --secondary-foreground: 160 10% 85%;
 
-    --muted: 195 15% 18%;
-    --muted-foreground: 175 10% 55%;
+    --muted: 160 10% 18%;
+    --muted-foreground: 160 8% 55%;
 
-    --accent: 175 70% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 0 0% 95%;
+    --accent-foreground: 0 0% 10%;
 
-    --destructive: 0 80% 55%;
+    --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 160 60% 45%;
+    --success: 160 50% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 85% 50%;
+    --warning: 30 70% 55%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 195 15% 22%;
-    --input: 195 15% 22%;
-    --ring: 178 65% 50%;
+    --border: 160 10% 20%;
+    --input: 160 10% 20%;
+    --ring: 170 45% 50%;
 
-    --sidebar-background: 195 20% 10%;
-    --sidebar-foreground: 175 15% 95%;
-    --sidebar-primary: 178 65% 50%;
+    --sidebar-background: 160 12% 10%;
+    --sidebar-foreground: 160 10% 95%;
+    --sidebar-primary: 170 45% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 195 20% 18%;
-    --sidebar-accent-foreground: 175 15% 85%;
-    --sidebar-border: 195 15% 22%;
-    --sidebar-ring: 178 65% 50%;
+    --sidebar-accent: 160 12% 18%;
+    --sidebar-accent-foreground: 160 10% 85%;
+    --sidebar-border: 160 10% 20%;
+    --sidebar-ring: 170 45% 50%;
 
-    --gradient-start: 185 70% 45%;
-    --gradient-end: 175 65% 35%;
+    --gradient-start: 170 40% 45%;
+    --gradient-end: 165 35% 38%;
   }
 }
 
@@ -168,53 +168,65 @@
 }
 
 @layer utilities {
-  /* iOS Glass effect - teal tinted */
+  /* Glass effect - ultra light */
   .glass {
-    @apply bg-card/70 backdrop-blur-xl;
+    @apply bg-card/80 backdrop-blur-xl;
   }
 
   .glass-strong {
-    @apply bg-card/85 backdrop-blur-2xl backdrop-saturate-150;
+    @apply bg-card/90 backdrop-blur-2xl backdrop-saturate-150;
   }
 
-  /* Teal gradient background */
+  /* Soft gradient */
   .gradient-teal {
     background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
   }
 
-  .gradient-teal-soft {
-    background: linear-gradient(180deg, hsl(var(--primary) / 0.1), hsl(var(--background)));
+  .gradient-soft {
+    background: linear-gradient(180deg, hsl(var(--background)), hsl(160 20% 92%));
   }
 
-  /* iOS Card style with subtle teal shadow */
+  /* Modern floating card with soft shadow */
   .ios-card {
-    @apply bg-card rounded-2xl shadow-sm;
+    @apply bg-card rounded-3xl;
+    box-shadow: 0 2px 20px -5px rgba(0, 0, 0, 0.06), 0 4px 12px -4px rgba(0, 0, 0, 0.04);
   }
 
   .ios-card-elevated {
-    @apply bg-card rounded-2xl shadow-teal;
+    @apply bg-card rounded-3xl;
+    box-shadow: 0 8px 30px -10px rgba(0, 0, 0, 0.1), 0 4px 15px -5px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Floating effect on hover */
+  .card-hover {
+    @apply transition-all duration-300;
+  }
+
+  .card-hover:hover {
+    box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.12), 0 6px 20px -8px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
   }
 
   /* iOS Inset grouped style */
   .ios-inset {
-    @apply bg-card rounded-xl mx-4;
+    @apply bg-card rounded-2xl mx-4;
   }
 
-  /* iOS Button press effect */
+  /* Button press effect */
   .ios-press {
     @apply active:scale-[0.97] active:opacity-90 transition-all duration-150;
   }
 
-  /* iOS List item */
+  /* Modern list item */
   .ios-list-item {
-    @apply flex items-center justify-between py-3 px-4 bg-card;
+    @apply flex items-center justify-between py-4 px-5 bg-card;
   }
 
   .ios-list-item:not(:last-child) {
-    @apply border-b border-border;
+    @apply border-b border-border/50;
   }
 
-  /* Safe area padding for mobile */
+  /* Safe area padding */
   .safe-top {
     padding-top: max(env(safe-area-inset-top), 0.5rem);
   }
@@ -223,7 +235,7 @@
     padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
   }
 
-  /* Hide scrollbar but keep functionality */
+  /* Hide scrollbar */
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -233,17 +245,27 @@
     display: none;
   }
 
-  /* iOS-style shadows with teal tint */
-  .shadow-ios {
-    box-shadow: 0 2px 10px -3px hsl(var(--primary) / 0.1), 0 1px 3px -1px rgba(0, 0, 0, 0.05);
+  /* Modern shadows */
+  .shadow-soft {
+    box-shadow: 0 2px 20px -5px rgba(0, 0, 0, 0.06), 0 4px 12px -4px rgba(0, 0, 0, 0.04);
   }
 
-  .shadow-ios-lg {
-    box-shadow: 0 8px 30px -5px hsl(var(--primary) / 0.15), 0 4px 10px -3px rgba(0, 0, 0, 0.08);
+  .shadow-float {
+    box-shadow: 0 8px 30px -10px rgba(0, 0, 0, 0.1), 0 4px 15px -5px rgba(0, 0, 0, 0.05);
   }
 
-  .shadow-teal {
-    box-shadow: 0 4px 20px -4px hsl(var(--primary) / 0.2), 0 2px 8px -2px hsl(var(--primary) / 0.1);
+  .shadow-glow {
+    box-shadow: 0 4px 25px -5px hsl(var(--primary) / 0.25);
+  }
+
+  /* Pill shape for tags and badges */
+  .pill {
+    @apply rounded-full px-4 py-2 text-sm font-medium;
+  }
+
+  /* Black button style from reference */
+  .btn-dark {
+    @apply bg-accent text-accent-foreground rounded-2xl font-semibold transition-all hover:opacity-90;
   }
 }
 

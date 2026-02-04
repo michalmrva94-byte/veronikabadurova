@@ -14,15 +14,29 @@ export function useTrainingSlots(selectedDate?: Date) {
       const dayStart = startOfDay(selectedDate).toISOString();
       const dayEnd = endOfDay(selectedDate).toISOString();
 
+      // Načítať sloty s ich bookingami
       const { data, error } = await supabase
         .from('training_slots')
-        .select('*')
+        .select(`
+          *,
+          bookings(id, status)
+        `)
         .gte('start_time', dayStart)
         .lte('start_time', dayEnd)
+        .eq('is_available', true)
         .order('start_time', { ascending: true });
 
       if (error) throw error;
-      return data as TrainingSlot[];
+
+      // Filtrovať len voľné sloty (bez aktívnej rezervácie)
+      const availableSlots = (data || []).filter((slot: any) => {
+        const activeBooking = slot.bookings?.find(
+          (b: any) => b.status === 'booked'
+        );
+        return !activeBooking;
+      });
+
+      return availableSlots as TrainingSlot[];
     },
     enabled: !!selectedDate,
     staleTime: 60 * 1000, // 1 minúta

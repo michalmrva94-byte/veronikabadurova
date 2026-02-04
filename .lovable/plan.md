@@ -1,37 +1,66 @@
 
-# Skrytý odkaz na admin prihlásenie
+# Prepojenie klientskeho kalendára s databázou
 
-## Prehľad
-Pridanie klikateľného odkazu na text "© 2024 Veronika Swim" vo footeri landing page, ktorý presmeruje na admin login stránku `/admin/prihlasenie`.
+## Problém
+Klientský kalendár (`CalendarPage.tsx`) má hardcoded prázdne pole `slots: any[] = []` a vôbec nenačítava dáta z databázy. Admin kalendár funguje správne, pretože používa `useTrainingSlots` hook.
+
+## Riešenie
+Prepojíme klientský kalendár s rovnakým hookom `useTrainingSlots` a pridáme zobrazenie dostupných slotov s možnosťou rezervácie.
 
 ## Čo sa zmení
 
-### Landing Page Footer
-Text "© 2024 Veronika Swim" vo footeri sa stane klikateľným odkazom:
-- Vzhľad zostane rovnaký (sivý, malý text)
-- Pri hoveri sa text jemne zvýrazní
-- Kliknutím sa otvorí admin login stránka
+### 1. Klientský kalendár (`src/pages/client/CalendarPage.tsx`)
+
+- Import `useTrainingSlots` hook
+- Načítavanie slotov pre vybraný dátum z databázy
+- Zobrazenie loading stavu počas načítavania
+- Renderovanie kariet pre každý dostupný slot s:
+  - Časom tréningu (napr. "08:00 - 09:00")
+  - Tlačidlom "Rezervovať" (zatiaľ bez funkcionality)
+  - Prípadnými poznámkami od admina
+
+### 2. Nový komponent pre slot (`src/components/client/AvailableSlotCard.tsx`)
+
+Vytvoríme kartu pre zobrazenie dostupného slotu:
+
+```text
+┌─────────────────────────────────┐
+│ 🕐 08:00 - 09:00               │
+│ Poznámka: Skupinový tréning    │
+│ ┌─────────────────────────────┐│
+│ │      Rezervovať             ││
+│ └─────────────────────────────┘│
+└─────────────────────────────────┘
+```
 
 ## Technické detaily
 
-### Zmeny v `src/pages/LandingPage.tsx`
+### CalendarPage.tsx - zmeny
 
 ```text
 Pred:
-  <p className="text-xs text-muted-foreground mt-1 opacity-60">
-    © 2024 Veronika Swim
-  </p>
+  import { Clock, AlertCircle } from 'lucide-react';
+  
+  const slots: any[] = [];
 
 Po:
-  <Link 
-    to={ROUTES.ADMIN.LOGIN}
-    className="text-xs text-muted-foreground mt-1 opacity-60 hover:opacity-100 transition-opacity"
-  >
-    © 2024 Veronika Swim
-  </Link>
+  import { Clock, AlertCircle, Loader2 } from 'lucide-react';
+  import { useTrainingSlots } from '@/hooks/useTrainingSlots';
+  import { AvailableSlotCard } from '@/components/client/AvailableSlotCard';
+  
+  const { slots, isLoading } = useTrainingSlots(selectedDate);
 ```
 
+### AvailableSlotCard.tsx - nový komponent
+
+Zobrazí:
+- Čas tréningu formátovaný ako "HH:mm - HH:mm"
+- Poznámky (ak existujú)
+- Tlačidlo "Rezervovať" (zatiaľ len vizuálne, funkcia rezervácie bude ďalší krok)
+
 ## Výsledok
-- Veronika bude môcť jednoducho pristúpiť k admin panelu kliknutím na copyright text
-- Bežní používatelia si tento odkaz nevšimnú (vyzerá ako obyčajný text)
-- Žiadne vizuálne zmeny - text zostáva rovnaký, len je klikateľný
+
+- Klient uvidí všetky dostupné sloty vytvorené adminom
+- Pri výbere dátumu sa načítajú sloty pre daný deň
+- Zobrazí sa loading indikátor počas načítavania
+- Sloty budú mať tlačidlo "Rezervovať" pripravené na ďalšiu implementáciu

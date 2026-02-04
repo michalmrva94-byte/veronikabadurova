@@ -1,17 +1,35 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { ClientLayout } from '@/components/layout/ClientLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CreditCard, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Clock } from 'lucide-react';
+import { CreditCard, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Clock, XCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TRANSACTION_LABELS } from '@/lib/constants';
+import { useTransactions } from '@/hooks/useTransactions';
+import { format } from 'date-fns';
+import { sk } from 'date-fns/locale';
 
 export default function FinancesPage() {
   const { profile } = useAuth();
+  const { transactions, totalDeposits, totalExpenses, totalCancellationFees, isLoading } = useTransactions();
+  
   const balance = profile?.balance ?? 0;
   const isPositive = balance >= 0;
 
-  // Placeholder transactions - will be replaced with real data
-  const transactions: any[] = [];
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'deposit':
+      case 'referral_bonus':
+        return <ArrowUpRight className="h-4 w-4 text-success" />;
+      case 'cancellation':
+        return <XCircle className="h-4 w-4 text-destructive" />;
+      default:
+        return <ArrowDownRight className="h-4 w-4 text-destructive" />;
+    }
+  };
+
+  const getTransactionLabel = (type: string) => {
+    return TRANSACTION_LABELS[type as keyof typeof TRANSACTION_LABELS] || type;
+  };
 
   return (
     <ClientLayout>
@@ -69,7 +87,7 @@ export default function FinancesPage() {
                 <ArrowUpRight className="h-4 w-4 text-success" />
                 <span className="text-sm font-medium text-muted-foreground">Vklady</span>
               </div>
-              <p className="text-xl font-bold text-success">0.00 €</p>
+              <p className="text-xl font-bold text-success">{totalDeposits.toFixed(2)} €</p>
             </CardContent>
           </Card>
           
@@ -79,10 +97,27 @@ export default function FinancesPage() {
                 <ArrowDownRight className="h-4 w-4 text-destructive" />
                 <span className="text-sm font-medium text-muted-foreground">Výdavky</span>
               </div>
-              <p className="text-xl font-bold text-destructive">0.00 €</p>
+              <p className="text-xl font-bold text-destructive">{totalExpenses.toFixed(2)} €</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Cancellation fees summary - only show if there are fees */}
+        {totalCancellationFees > 0 && (
+          <Card className="border-destructive/30 bg-destructive/5">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <XCircle className="h-5 w-5 text-destructive" />
+                  <span className="font-medium text-foreground">Storno poplatky celkom</span>
+                </div>
+                <span className="text-xl font-bold text-destructive">
+                  -{totalCancellationFees.toFixed(2)} €
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Transaction history */}
         <Card>
@@ -93,14 +128,59 @@ export default function FinancesPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {transactions.length === 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : transactions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Clock className="mb-4 h-12 w-12 text-muted-foreground/50" />
                 <p className="text-muted-foreground">Zatiaľ nemáte žiadne transakcie</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Transactions will be rendered here */}
+                {transactions.map((transaction) => {
+                  const isPositiveAmount = transaction.amount > 0;
+                  return (
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "flex h-10 w-10 items-center justify-center rounded-full",
+                          isPositiveAmount ? "bg-success/10" : "bg-destructive/10"
+                        )}>
+                          {getTransactionIcon(transaction.type)}
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {getTransactionLabel(transaction.type)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(transaction.created_at), 'd. MMM yyyy, HH:mm', { locale: sk })}
+                          </p>
+                          {transaction.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {transaction.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={cn(
+                          "font-bold",
+                          isPositiveAmount ? "text-success" : "text-destructive"
+                        )}>
+                          {isPositiveAmount ? '+' : ''}{transaction.amount.toFixed(2)} €
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Zostatok: {transaction.balance_after.toFixed(2)} €
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>

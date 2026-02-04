@@ -1,17 +1,17 @@
 import { ClientLayout } from '@/components/layout/ClientLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
-import { Clock, AlertCircle } from 'lucide-react';
+import { Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { useTrainingSlots } from '@/hooks/useTrainingSlots';
+import { AvailableSlotCard } from '@/components/client/AvailableSlotCard';
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-
-  // Placeholder - no slots yet
-  const slots: any[] = [];
+  
+  const { slots, isLoading } = useTrainingSlots(selectedDate);
 
   return (
     <ClientLayout>
@@ -49,7 +49,11 @@ export default function CalendarPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {slots.length === 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : slots.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Clock className="mb-4 h-12 w-12 text-muted-foreground/50" />
                 <p className="text-muted-foreground">
@@ -58,7 +62,12 @@ export default function CalendarPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Slots will be rendered here */}
+                {slots.map((slot) => (
+                  <AvailableSlotCard
+                    key={slot.id}
+                    slot={slot}
+                  />
+                ))}
               </div>
             )}
           </CardContent>

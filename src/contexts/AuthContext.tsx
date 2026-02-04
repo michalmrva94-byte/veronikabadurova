@@ -27,27 +27,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      // Fetch profile and role in parallel
+      const [profileResult, roleResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single(),
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .single()
+      ]);
 
-      if (profileError) throw profileError;
-      setProfile(profileData as Profile);
+      if (profileResult.error) {
+        console.error('Error fetching profile:', profileResult.error);
+        throw profileResult.error;
+      }
+      
+      setProfile(profileResult.data as Profile);
 
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
-
-      if (roleError) throw roleError;
-      setRole(roleData?.role as AppRole || 'client');
+      if (roleResult.error) {
+        console.error('Error fetching role:', roleResult.error);
+        // Default to client if role fetch fails
+        setRole('client');
+      } else {
+        const fetchedRole = roleResult.data?.role as AppRole || 'client';
+        console.log('Fetched role:', fetchedRole);
+        setRole(fetchedRole);
+      }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error in fetchProfile:', error);
       setProfile(null);
-      setRole(null);
+      setRole('client');
     }
   };
 

@@ -1,10 +1,12 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/lib/constants';
 import { Calendar, Shield, CreditCard, Users, ArrowRight, Heart, ChevronRight } from 'lucide-react';
 import veronikaPhoto from '@/assets/veronika-photo.png';
+import WelcomeScreen from '@/components/landing/WelcomeScreen';
 
 // Animation variants
 const fadeInUp = {
@@ -28,6 +30,7 @@ const scaleIn = {
 };
 
 export default function LandingPage() {
+  const [showWelcome, setShowWelcome] = useState(true);
   const { user, isAdmin } = useAuth();
 
   // If user is logged in, show welcome back screen
@@ -74,7 +77,19 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background overflow-x-hidden">
+    <>
+      <AnimatePresence>
+        {showWelcome && (
+          <WelcomeScreen onComplete={() => setShowWelcome(false)} />
+        )}
+      </AnimatePresence>
+      
+      <motion.div 
+        className="flex min-h-screen flex-col bg-background overflow-x-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showWelcome ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+      >
       {/* Hero section */}
       <motion.section 
         className="relative py-12 safe-top"
@@ -311,6 +326,7 @@ export default function LandingPage() {
           </Link>
         </div>
       </motion.footer>
-    </div>
+      </motion.div>
+    </>
   );
 }

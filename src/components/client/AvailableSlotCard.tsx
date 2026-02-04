@@ -32,7 +32,12 @@ export function AvailableSlotCard({ slot, onBook, isBooking }: AvailableSlotCard
             </div>
           </div>
           <Button
-            onClick={() => onBook?.(slot.id)}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onBook?.(slot.id);
+            }}
             disabled={isBooking}
             size="sm"
             className="ios-press"

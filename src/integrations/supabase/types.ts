@@ -379,6 +379,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      process_booking_cancellation: {
+        Args: {
+          p_booking_id: string
+          p_cancellation_fee: number
+          p_client_id: string
+          p_fee_percentage: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "client" | "admin"

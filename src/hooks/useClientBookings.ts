@@ -33,6 +33,8 @@ export function useClientBookings() {
 
   const cancelBooking = useMutation({
     mutationFn: async (bookingId: string) => {
+      if (!profile?.id) throw new Error('Nie ste prihlásený');
+
       // Najprv získať booking pre výpočet storno poplatku
       const { data: booking, error: fetchError } = await supabase
         .from('bookings')
@@ -66,11 +68,28 @@ export function useClientBookings() {
 
       if (updateError) throw updateError;
 
+      // Spracovať storno poplatok cez databázovú funkciu (SECURITY DEFINER)
+      if (cancellationFee > 0) {
+        const { error: feeError } = await supabase.rpc('process_booking_cancellation', {
+          p_booking_id: bookingId,
+          p_client_id: profile.id,
+          p_cancellation_fee: cancellationFee,
+          p_fee_percentage: cancellationFeePercentage,
+        });
+
+        if (feeError) {
+          console.error('Failed to process cancellation fee:', feeError);
+          // Continue even if fee processing fails - booking is already cancelled
+        }
+      }
+
       return { cancellationFee };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
   });
 

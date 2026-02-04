@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { useTrainingSlots } from '@/hooks/useTrainingSlots';
+import { useSlotsForMonth, useClientMonthBookings } from '@/hooks/useWeeklySlots';
 import { useBookings } from '@/hooks/useBookings';
 import { useAuth } from '@/contexts/AuthContext';
 import { AvailableSlotCard } from '@/components/client/AvailableSlotCard';
@@ -16,13 +17,16 @@ import { DEFAULT_TRAINING_PRICE } from '@/lib/constants';
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedSlot, setSelectedSlot] = useState<TrainingSlot | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   
   const { slots, isLoading } = useTrainingSlots(selectedDate);
+  const { data: monthSlots } = useSlotsForMonth(currentMonth);
   const { createBooking } = useBookings();
   const { profile } = useAuth();
+  const { data: myBookingDates } = useClientMonthBookings(currentMonth, profile?.id);
 
   const handleSlotClick = (slot: TrainingSlot) => {
     if (!profile) {
@@ -62,6 +66,35 @@ export default function CalendarPage() {
     }
   };
 
+  // Modifiers for calendar highlighting
+  const getDayModifiers = () => {
+    const hasAvailable: Date[] = [];
+    const myBookings: Date[] = [];
+    
+    // Days with available slots
+    if (monthSlots) {
+      monthSlots.forEach((value, key) => {
+        if (value.hasAvailable) {
+          hasAvailable.push(new Date(key));
+        }
+      });
+    }
+    
+    // Days with my bookings
+    if (myBookingDates) {
+      myBookingDates.forEach((dateStr) => {
+        myBookings.push(new Date(dateStr));
+      });
+    }
+    
+    return {
+      hasAvailable,
+      myBookings,
+    };
+  };
+
+  const modifiers = getDayModifiers();
+
   return (
     <ClientLayout>
       <div className="space-y-6 animate-fade-in">
@@ -72,17 +105,34 @@ export default function CalendarPage() {
           </p>
         </div>
 
-        {/* Calendar */}
+        {/* Calendar with highlights */}
         <Card>
           <CardContent className="p-4">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
+              onMonthChange={setCurrentMonth}
               locale={sk}
               className="rounded-md"
               disabled={(date) => date < new Date()}
+              modifiers={modifiers}
+              modifiersClassNames={{
+                hasAvailable: 'bg-emerald-100 dark:bg-emerald-950/50 font-bold text-emerald-700 dark:text-emerald-300',
+                myBookings: 'ring-2 ring-primary ring-inset',
+              }}
             />
+            {/* Calendar legend */}
+            <div className="flex gap-4 text-xs text-muted-foreground justify-center mt-4 pt-4 border-t">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-emerald-100 dark:bg-emerald-950/50" />
+                <span>Voľné termíny</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded ring-2 ring-primary ring-inset" />
+                <span>Moje rezervácie</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

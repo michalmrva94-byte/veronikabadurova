@@ -9,36 +9,56 @@ import { useTrainingSlots } from '@/hooks/useTrainingSlots';
 import { useBookings } from '@/hooks/useBookings';
 import { useAuth } from '@/contexts/AuthContext';
 import { AvailableSlotCard } from '@/components/client/AvailableSlotCard';
+import { BookingConfirmDialog } from '@/components/client/BookingConfirmDialog';
 import { toast } from 'sonner';
+import { TrainingSlot } from '@/types/database';
+import { DEFAULT_TRAINING_PRICE } from '@/lib/constants';
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [bookingSlotId, setBookingSlotId] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<TrainingSlot | null>(null);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
   
   const { slots, isLoading } = useTrainingSlots(selectedDate);
   const { createBooking } = useBookings();
   const { profile } = useAuth();
 
-  const handleBook = async (slotId: string) => {
+  const handleSlotClick = (slot: TrainingSlot) => {
     if (!profile) {
       toast.error('Pre rezerváciu sa musíte prihlásiť');
       return;
     }
+    setSelectedSlot(slot);
+    setIsConfirmDialogOpen(true);
+  };
 
-    setBookingSlotId(slotId);
+  const handleConfirmBooking = async () => {
+    if (!profile || !selectedSlot) return;
+
+    setIsBooking(true);
     
     try {
       await createBooking.mutateAsync({
-        slot_id: slotId,
+        slot_id: selectedSlot.id,
         client_id: profile.id,
-        price: 25, // Default price, can be fetched from settings
+        price: DEFAULT_TRAINING_PRICE,
       });
       
       toast.success('Tréning úspešne rezervovaný!');
+      setIsConfirmDialogOpen(false);
+      setSelectedSlot(null);
     } catch (error: any) {
       toast.error(error.message || 'Nepodarilo sa rezervovať tréning');
     } finally {
-      setBookingSlotId(null);
+      setIsBooking(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    if (!isBooking) {
+      setIsConfirmDialogOpen(false);
+      setSelectedSlot(null);
     }
   };
 
@@ -95,8 +115,8 @@ export default function CalendarPage() {
                   <AvailableSlotCard
                     key={slot.id}
                     slot={slot}
-                    onBook={handleBook}
-                    isBooking={bookingSlotId === slot.id}
+                    onBook={() => handleSlotClick(slot)}
+                    isBooking={false}
                   />
                 ))}
               </div>
@@ -117,6 +137,15 @@ export default function CalendarPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Confirmation Dialog */}
+      <BookingConfirmDialog
+        slot={selectedSlot}
+        isOpen={isConfirmDialogOpen}
+        onClose={handleCloseDialog}
+        onConfirm={handleConfirmBooking}
+        isLoading={isBooking}
+      />
     </ClientLayout>
   );
 }

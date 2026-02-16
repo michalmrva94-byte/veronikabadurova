@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { startOfWeek, endOfWeek, startOfMonth } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, subWeeks } from 'date-fns';
+
+export type DashboardPeriod = 'week' | '2weeks' | 'month';
 
 export interface AdminDashboardStats {
   activeClients: number;
@@ -11,36 +13,42 @@ export interface AdminDashboardStats {
   monthlyRevenue: number;
 }
 
-export function useAdminDashboardStats() {
-  return useQuery({
-    queryKey: ['admin-dashboard-stats'],
-    queryFn: async (): Promise<AdminDashboardStats> => {
-      const now = new Date();
-      const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-      const monthStart = startOfMonth(now);
+function getPeriodRange(period: DashboardPeriod) {
+  const now = new Date();
+  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
 
-      // Parallel queries
-      const [profilesRes, weekBookingsRes, unconfirmedRes, monthTransRes] = await Promise.all([
-        // All client profiles
+  switch (period) {
+    case 'week':
+      return { start: startOfWeek(now, { weekStartsOn: 1 }), end: weekEnd };
+    case '2weeks':
+      return { start: subWeeks(startOfWeek(now, { weekStartsOn: 1 }), 1), end: weekEnd };
+    case 'month':
+      return { start: startOfMonth(now), end: now };
+  }
+}
+
+export function useAdminDashboardStats(period: DashboardPeriod = 'week') {
+  return useQuery({
+    queryKey: ['admin-dashboard-stats', period],
+    queryFn: async (): Promise<AdminDashboardStats> => {
+      const { start, end } = getPeriodRange(period);
+
+      const [profilesRes, periodBookingsRes, unconfirmedRes, periodTransRes] = await Promise.all([
         supabase.from('profiles').select('approval_status, balance'),
-        // Booked trainings this week
         supabase
           .from('bookings')
           .select('id, slot:training_slots(start_time)')
           .eq('status', 'booked')
-          .gte('created_at', '2000-01-01'), // need all, filter by slot time below
-        // Unconfirmed bookings
+          .gte('created_at', '2000-01-01'),
         supabase
           .from('bookings')
           .select('id')
           .in('status', ['pending', 'proposed', 'awaiting_confirmation']),
-        // Monthly deposits
         supabase
           .from('transactions')
           .select('amount')
           .eq('type', 'deposit')
-          .gte('created_at', monthStart.toISOString()),
+          .gte('created_at', start.toISOString()),
       ]);
 
       if (profilesRes.error) throw profilesRes.error;
@@ -50,17 +58,16 @@ export function useAdminDashboardStats() {
       const pendingClients = profiles.filter(p => p.approval_status === 'pending').length;
       const clientsWithDebt = profiles.filter(p => (p.balance ?? 0) < 0).length;
 
-      // Filter week trainings by slot start_time
-      const weekTrainings = (weekBookingsRes.data || []).filter((b: any) => {
+      const weekTrainings = (periodBookingsRes.data || []).filter((b: any) => {
         const slotTime = b.slot?.start_time;
         if (!slotTime) return false;
         const d = new Date(slotTime);
-        return d >= weekStart && d <= weekEnd;
+        return d >= start && d <= end;
       }).length;
 
       const unconfirmedBookings = unconfirmedRes.data?.length ?? 0;
 
-      const monthlyRevenue = (monthTransRes.data || [])
+      const monthlyRevenue = (periodTransRes.data || [])
         .reduce((sum, t) => sum + t.amount, 0);
 
       return {

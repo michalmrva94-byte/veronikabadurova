@@ -5,10 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ROUTES } from '@/lib/constants';
+import { ROUTES, DAY_NAMES } from '@/lib/constants';
 import { Loader2, Waves } from 'lucide-react';
+
+const DAYS_OPTIONS = DAY_NAMES.slice(1).concat(DAY_NAMES.slice(0, 1)); // Po-Ne order
 
 export default function RegisterPage() {
   const [searchParams] = useSearchParams();
@@ -17,7 +20,9 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    referralCode: searchParams.get('ref') || '',
+    trainingGoal: '',
+    preferredDays: [] as string[],
+    flexibilityNote: '',
     agreeToTerms: false,
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -29,29 +34,17 @@ export default function RegisterPage() {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        variant: 'destructive',
-        title: 'Chyba',
-        description: 'Heslá sa nezhodujú',
-      });
+      toast({ variant: 'destructive', title: 'Chyba', description: 'Heslá sa nezhodujú' });
       return;
     }
 
     if (formData.password.length < 6) {
-      toast({
-        variant: 'destructive',
-        title: 'Chyba',
-        description: 'Heslo musí mať aspoň 6 znakov',
-      });
+      toast({ variant: 'destructive', title: 'Chyba', description: 'Heslo musí mať aspoň 6 znakov' });
       return;
     }
 
     if (!formData.agreeToTerms) {
-      toast({
-        variant: 'destructive',
-        title: 'Chyba',
-        description: 'Musíte súhlasiť s obchodnými podmienkami',
-      });
+      toast({ variant: 'destructive', title: 'Chyba', description: 'Musíte súhlasiť s obchodnými podmienkami' });
       return;
     }
 
@@ -61,29 +54,37 @@ export default function RegisterPage() {
       formData.email,
       formData.password,
       formData.fullName,
-      formData.referralCode || undefined
+      undefined,
+      formData.trainingGoal,
+      formData.preferredDays.join(', '),
+      formData.flexibilityNote
     );
 
     if (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Chyba registrácie',
-        description: error.message,
-      });
+      toast({ variant: 'destructive', title: 'Chyba registrácie', description: error.message });
       setIsLoading(false);
       return;
     }
 
     toast({
-      title: 'Registrácia úspešná!',
-      description: 'Skontrolujte svoj email pre potvrdenie účtu.',
+      title: 'Žiadosť odoslaná!',
+      description: 'Vaša žiadosť o spoluprácu bola odoslaná. Čakajte na schválenie trénerom.',
     });
 
     navigate(ROUTES.LOGIN);
   };
 
-  const updateField = (field: string, value: string | boolean) => {
+  const updateField = (field: string, value: string | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleDay = (day: string) => {
+    setFormData(prev => ({
+      ...prev,
+      preferredDays: prev.preferredDays.includes(day)
+        ? prev.preferredDays.filter(d => d !== day)
+        : [...prev.preferredDays, day],
+    }));
   };
 
   return (
@@ -97,9 +98,9 @@ export default function RegisterPage() {
 
       <Card className="w-full max-w-md shadow-soft">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Registrácia</CardTitle>
+          <CardTitle className="text-2xl font-bold">Žiadosť o spoluprácu</CardTitle>
           <CardDescription>
-            Vytvorte si účet a začnite rezervovať tréningy
+            Vyplňte formulár a počkajte na schválenie trénerom
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -152,17 +153,54 @@ export default function RegisterPage() {
                 disabled={isLoading}
               />
             </div>
+
+            {/* Onboarding fields */}
             <div className="space-y-2">
-              <Label htmlFor="referralCode">Odporúčací kód (voliteľné)</Label>
-              <Input
-                id="referralCode"
-                type="text"
-                placeholder="ABCD1234"
-                value={formData.referralCode}
-                onChange={(e) => updateField('referralCode', e.target.value.toUpperCase())}
+              <Label htmlFor="trainingGoal">Aký je váš cieľ? *</Label>
+              <Textarea
+                id="trainingGoal"
+                placeholder="Napr. naučiť sa plávať, zlepšiť techniku, kondičné plávanie..."
+                value={formData.trainingGoal}
+                onChange={(e) => updateField('trainingGoal', e.target.value)}
+                required
                 disabled={isLoading}
+                className="min-h-[80px]"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label>Preferované dni tréningov</Label>
+              <div className="flex flex-wrap gap-2">
+                {DAYS_OPTIONS.map((day) => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    disabled={isLoading}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      formData.preferredDays.includes(day)
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="flexibilityNote">Poznámka o flexibilite (voliteľné)</Label>
+              <Textarea
+                id="flexibilityNote"
+                placeholder="Napr. môžem len popoludní, víkendy preferujem ráno..."
+                value={formData.flexibilityNote}
+                onChange={(e) => updateField('flexibilityNote', e.target.value)}
+                disabled={isLoading}
+                className="min-h-[60px]"
+              />
+            </div>
+
             <div className="flex items-start space-x-2">
               <Checkbox
                 id="agreeToTerms"
@@ -175,13 +213,9 @@ export default function RegisterPage() {
                 className="text-sm leading-relaxed text-muted-foreground cursor-pointer"
               >
                 Súhlasím s{' '}
-                <span className="font-medium text-primary hover:underline">
-                  obchodnými podmienkami
-                </span>{' '}
-                a{' '}
-                <span className="font-medium text-primary hover:underline">
-                  storno pravidlami
-                </span>
+                <span className="font-medium text-primary hover:underline">obchodnými podmienkami</span>
+                {' '}a{' '}
+                <span className="font-medium text-primary hover:underline">storno pravidlami</span>
               </label>
             </div>
           </CardContent>
@@ -190,18 +224,15 @@ export default function RegisterPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Registrujem...
+                  Odosielam žiadosť...
                 </>
               ) : (
-                'Zaregistrovať sa'
+                'Odoslať žiadosť'
               )}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Už máte účet?{' '}
-              <Link 
-                to={ROUTES.LOGIN} 
-                className="font-medium text-primary hover:underline"
-              >
+              <Link to={ROUTES.LOGIN} className="font-medium text-primary hover:underline">
                 Prihláste sa
               </Link>
             </p>

@@ -1,17 +1,19 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, AppRole } from '@/types/database';
+import { Profile, AppRole, ClientApprovalStatus } from '@/types/database';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   role: AppRole | null;
+  approvalStatus: ClientApprovalStatus | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isApproved: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, referralCode?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, referralCode?: string, trainingGoal?: string, preferredDays?: string, flexibilityNote?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   waitForRole: () => Promise<AppRole | null>;
@@ -121,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string, referralCode?: string) => {
+  const signUp = async (email: string, password: string, fullName: string, referralCode?: string, trainingGoal?: string, preferredDays?: string, flexibilityNote?: string) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -131,6 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           data: {
             full_name: fullName,
             referral_code: referralCode,
+            training_goal: trainingGoal,
+            preferred_days: preferredDays,
+            flexibility_note: flexibilityNote,
           },
         },
       });
@@ -174,13 +179,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return fetchedRole;
   };
 
+  const approvalStatus = (profile?.approval_status as ClientApprovalStatus) ?? null;
+
   const value = {
     user,
     session,
     profile,
     role,
+    approvalStatus,
     isLoading,
     isAdmin: role === 'admin',
+    isApproved: approvalStatus === 'approved' || role === 'admin',
     signIn,
     signUp,
     signOut,

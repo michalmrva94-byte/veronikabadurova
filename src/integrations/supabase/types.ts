@@ -44,10 +44,12 @@ export type Database = {
           cancellation_reason: string | null
           cancelled_at: string | null
           client_id: string
+          confirmation_deadline: string | null
           created_at: string
           id: string
           is_last_minute: boolean | null
           price: number
+          proposed_by: string | null
           slot_id: string
           status: Database["public"]["Enums"]["booking_status"] | null
           updated_at: string
@@ -57,10 +59,12 @@ export type Database = {
           cancellation_reason?: string | null
           cancelled_at?: string | null
           client_id: string
+          confirmation_deadline?: string | null
           created_at?: string
           id?: string
           is_last_minute?: boolean | null
           price: number
+          proposed_by?: string | null
           slot_id: string
           status?: Database["public"]["Enums"]["booking_status"] | null
           updated_at?: string
@@ -70,10 +74,12 @@ export type Database = {
           cancellation_reason?: string | null
           cancelled_at?: string | null
           client_id?: string
+          confirmation_deadline?: string | null
           created_at?: string
           id?: string
           is_last_minute?: boolean | null
           price?: number
+          proposed_by?: string | null
           slot_id?: string
           status?: Database["public"]["Enums"]["booking_status"] | null
           updated_at?: string
@@ -148,44 +154,62 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approval_status: Database["public"]["Enums"]["client_approval_status"]
+          approved_at: string | null
           balance: number | null
+          client_type: Database["public"]["Enums"]["client_type"] | null
           created_at: string
           email: string
           email_notifications: boolean | null
+          flexibility_note: string | null
           full_name: string
           id: string
           notifications_enabled: boolean | null
           phone: string | null
+          preferred_days: string | null
           referral_code: string | null
           referred_by: string | null
+          training_goal: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          approval_status?: Database["public"]["Enums"]["client_approval_status"]
+          approved_at?: string | null
           balance?: number | null
+          client_type?: Database["public"]["Enums"]["client_type"] | null
           created_at?: string
           email: string
           email_notifications?: boolean | null
+          flexibility_note?: string | null
           full_name: string
           id?: string
           notifications_enabled?: boolean | null
           phone?: string | null
+          preferred_days?: string | null
           referral_code?: string | null
           referred_by?: string | null
+          training_goal?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          approval_status?: Database["public"]["Enums"]["client_approval_status"]
+          approved_at?: string | null
           balance?: number | null
+          client_type?: Database["public"]["Enums"]["client_type"] | null
           created_at?: string
           email?: string
           email_notifications?: boolean | null
+          flexibility_note?: string | null
           full_name?: string
           id?: string
           notifications_enabled?: boolean | null
           phone?: string | null
+          preferred_days?: string | null
           referral_code?: string | null
           referred_by?: string | null
+          training_goal?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -398,6 +422,10 @@ export type Database = {
         | "completed"
         | "no_show"
         | "pending"
+        | "proposed"
+        | "awaiting_confirmation"
+      client_approval_status: "pending" | "approved" | "rejected"
+      client_type: "fixed" | "flexible"
       transaction_type:
         | "deposit"
         | "training"
@@ -538,7 +566,11 @@ export const Constants = {
         "completed",
         "no_show",
         "pending",
+        "proposed",
+        "awaiting_confirmation",
       ],
+      client_approval_status: ["pending", "approved", "rejected"],
+      client_type: ["fixed", "flexible"],
       transaction_type: [
         "deposit",
         "training",

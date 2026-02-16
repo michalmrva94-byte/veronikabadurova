@@ -54,11 +54,24 @@ export const TRANSACTION_LABELS = {
 
 // Booking status labels in Slovak
 export const BOOKING_STATUS_LABELS = {
-  pending: 'Čaká na potvrdenie',
+  pending: 'Čaká na schválenie',
   booked: 'Potvrdené',
   cancelled: 'Zrušené',
   completed: 'Dokončené',
   no_show: 'Neprišiel/a',
+  proposed: 'Navrhnutý',
+  awaiting_confirmation: 'Čaká na potvrdenie',
+} as const;
+
+export const APPROVAL_STATUS_LABELS = {
+  pending: 'Čaká na schválenie',
+  approved: 'Schválený',
+  rejected: 'Zamietnutý',
+} as const;
+
+export const CLIENT_TYPE_LABELS = {
+  fixed: 'Fixný',
+  flexible: 'Flexibilný',
 } as const;
 
 // Day names in Slovak

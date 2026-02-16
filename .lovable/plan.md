@@ -1,65 +1,124 @@
 
 
-# Prepinanie casoveho obdobia na dashboarde
+# Inteligentne KPI insighty - Plan implementacie
 
 ## Prehlad
 
-Pridat prepinac casoveho obdobia (Tyzden / 2 tyzdne / Mesiac) do hornej KPI listy na admin dashboarde, aby Veronika mohla sledovat klucove metriky na roznych casovych horizontoch.
+Rozsirit existujuce KPI karty a pridat novu sekciu "Statistiky" s inteligentnymi insightmi - kazda metrika bude mat cislo, farebny stav a 1-vetovy akcny insight. Pridat nove metriky: miera storna, priemer treningov/klient, obsadenost slotov, celkovy dlh a CLV.
 
 ---
 
-## 1. UI zmena: Prepinac obdobia
+## 1. Rozsirenie useAdminDashboardStats
 
-Pridat `Tabs` komponent nad KPI karty s tromi moznostami:
-- **Tento tyzden** (default)
-- **2 tyzdne**
-- **Tento mesiac**
+Pridat nove metriky do existujuceho hooku:
 
-Styl: kompaktne tab pills v ios-style, zarovnane nalavo pod nadpisom "Dashboard".
+- **Miera storna (%)**: query bookings za dane obdobie so statusom `cancelled` + `no_show` vs vsetky (`cancelled` + `no_show` + `booked` + `completed`)
+- **Priemer treningov/klient/tyzden**: pocet `booked` + `completed` treningov / aktivni klienti / pocet tyzdnov v obdobi
+- **Obsadenost slotov (%)**: pocet slotov s bookingom / celkovy pocet slotov v obdobi * 100
+- **Celkovy dlh (€)**: sucet negativnych zostatkov z profiles (absolutna hodnota)
+- **CLV data**: pre klientov s min. 1 completed treningom - priemerna dlzka spoluprace (mesiace) * priemerny mesacny prijem na klienta
+
+Novy interface:
+
+```text
+AdminDashboardStats {
+  // existujuce
+  activeClients, pendingClients, weekTrainings,
+  unconfirmedBookings, clientsWithDebt, monthlyRevenue
+
+  // nove
+  stornoRate: number          // percento
+  avgTrainingsPerClient: number
+  slotOccupancy: number       // percento
+  totalDebt: number           // absolutna hodnota v €
+  clv: number                 // € odhadovana hodnota
+  avgCooperationMonths: number
+  avgMonthlyRevenuePerClient: number
+}
+```
+
+Nove queries:
+- `bookings` s filtrom na obdobie pre vsetky statusy (pre vypocet storna)
+- `training_slots` v obdobi (pre obsadenost)
+- `transactions` typu `training` zoskupene po klientoch (pre CLV)
+- `bookings` s `completed` statusom s min/max datumami per klient (pre dlzku spoluprace)
 
 ---
 
-## 2. Uprava useAdminDashboardStats
+## 2. Novy komponent: AdminStatsSection
 
-Pridat parameter `period: 'week' | '2weeks' | 'month'` do hooku:
+Vytvorit `src/components/admin/AdminStatsSection.tsx`:
 
-- `week`: startOfWeek(now) az endOfWeek(now)
-- `2weeks`: startOfWeek(now) - 7 dni az endOfWeek(now)
-- `month`: startOfMonth(now) az now
+### Struktura - 3 riadky kariet
 
-Metriky ovplyvnene obdobim:
-- **Treningy**: pocet booked treningov v danom obdobi (namiesto len "tento tyzden")
-- **Prijem**: sucet depositov v danom obdobi (namiesto len "tento mesiac")
+**Riadok 1: Operativne KPI (4 karty)**
+- Miera storna: cislo + farba + insight
+- Priemer treningov/klient: cislo + farba + insight
+- Obsadenost slotov: cislo + farba + insight
+- Celkovy dlh: cislo + farba + insight
 
-Label KPI karty sa dynamicky zmeni:
-- "Treningy / tyzden" -> "Treningy / 2 tyzdne" -> "Treningy / mesiac"
-- "Prijem / tyzden" -> "Prijem / 2 tyzdne" -> "Prijem / mesiac"
+**Riadok 2: CLV panel (1 sirsie ios-card)**
+- Priemerna dlzka spoluprace (mesiace)
+- Priem. mesacny prijem/klient (€)
+- CLV (€)
+- CLV insight text
 
-Metriky **neovplyvnene** obdobim (vzdy aktualne):
-- Aktivni klienti
-- Nepotvrdene
-- Rizikove (dlhy)
+### Insight logika (ciasto v komponente)
+
+Miera storna:
+- < 15% -> zelena dot + "Vybornu stabilita treningov."
+- 15-25% -> oranzova dot + "Sleduj potvrdenia treningov."
+- > 25% -> cervena dot + "Zvaz sprisnenie potvrdzovania alebo upravu kapacity."
+
+Priemer treningov/klient:
+- >= 2 -> zelena + "Klienti trenuju optimalne."
+- 1-1.9 -> oranzova + "Podpor pravidelnost treningov."
+- < 1 -> cervena + "Nizka pravidelnost klientov."
+
+Obsadenost slotov:
+- < 70% -> oranzova + "Kapacita nie je efektivne vyuzita."
+- 70-90% -> zelena + "Idealna vytazenost."
+- > 95% -> cervena + "Riziko pretazenia."
+
+Celkovy dlh:
+- 0 -> zelena + "Ziadne otvorene pohladavky."
+- 1-100€ -> oranzova + "Skontroluj otvorene pohladavky."
+- > 100€ -> cervena + vyrazne zvyraznenie + "Urgentne skontroluj pohladavky."
+
+CLV:
+- Zobrazit orientacne cislo s tooltip vysvetlenim
+
+### UI styl
+- Kazda karta: velke cislo hore, maly label, pod nim 1-riadkovy insight text v jemnej farbe
+- Farebny dot (maly kruzok) vedla insight textu indikuje stav
+- Bez alarmo-bannerov - posobí ako "poradca"
+- iOS-style karty (ios-card), mobilne responsive (grid-cols-2)
 
 ---
 
-## 3. Uprava AdminDashboardPage
+## 3. Integrace do AdminDashboardPage
 
-- Pridat `useState` pre vybranu periodu
-- Predat periodu do `useAdminDashboardStats(period)`
-- Pridat `queryKey` s periodou pre spravny caching
-- Dynamicky menit labely KPI kariet podla vybranej periody
+Pridat `AdminStatsSection` do dashboardu:
+- Umiestnit medzi period toggle a sekciu "Caka na potvrdenie"
+- Zabalit do `Collapsible` s nadpisom "Statistiky" (default zbaleny)
+- Pouzit existujuce stats data z `useAdminDashboardStats`
 
 ---
 
 ## Technicke detaily
 
-### Upravene subory
-- `src/hooks/useAdminDashboardStats.ts` - pridanie `period` parametra a vypocet datumovych rozsahov
-- `src/pages/admin/AdminDashboardPage.tsx` - pridanie Tabs prepinaca a state pre periodu
+### Nove subory
+- `src/components/admin/AdminStatsSection.tsx`
 
-### Pouzite komponenty
-- `Tabs`, `TabsList`, `TabsTrigger` z `@/components/ui/tabs` (uz existuje)
-- `subWeeks` z `date-fns` (uz nainstalovane)
+### Upravene subory
+- `src/hooks/useAdminDashboardStats.ts` - rozsirenie o nove metriky
+- `src/pages/admin/AdminDashboardPage.tsx` - pridanie AdminStatsSection
 
 ### Ziadne DB zmeny
 Vsetky data su dostupne z existujucich tabuliek.
+
+### Pouzite existujuce komponenty
+- `Tooltip`, `TooltipContent`, `TooltipTrigger`, `TooltipProvider`
+- `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`
+- ios-card CSS trieda
+

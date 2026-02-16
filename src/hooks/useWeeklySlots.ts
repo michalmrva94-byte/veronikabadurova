@@ -7,10 +7,12 @@ export interface SlotWithBooking extends TrainingSlot {
   booking?: {
     id: string;
     status: string;
+    price?: number;
     client?: {
       id: string;
       full_name: string;
       email: string;
+      client_type?: string;
     };
   };
 }
@@ -31,7 +33,8 @@ export function useWeeklySlots(weekStart: Date) {
           bookings(
             id,
             status,
-            client:profiles(id, full_name, email)
+            price,
+            client:profiles(id, full_name, email, client_type)
           )
         `)
         .gte('start_time', weekStartDate.toISOString())
@@ -43,7 +46,7 @@ export function useWeeklySlots(weekStart: Date) {
       // Transform data to include booking info
       return (data || []).map((slot: any) => {
         const activeBooking = slot.bookings?.find(
-          (b: any) => b.status === 'booked' || b.status === 'pending'
+          (b: any) => b.status === 'booked' || b.status === 'pending' || b.status === 'proposed' || b.status === 'awaiting_confirmation' || b.status === 'completed' || b.status === 'no_show'
         );
         return {
           ...slot,
@@ -51,6 +54,7 @@ export function useWeeklySlots(weekStart: Date) {
             id: activeBooking.id,
             status: activeBooking.status,
             client: activeBooking.client,
+            price: activeBooking.price,
           } : undefined,
         };
       }) as SlotWithBooking[];

@@ -16,8 +16,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ClientType } from '@/types/database';
 import { Badge } from '@/components/ui/badge';
 
+type FilterType = 'all' | 'active' | 'pending' | 'debt' | 'fixed' | 'flexible';
+
 export default function AdminClientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<FilterType>('all');
   const { data: clients = [], isLoading, error } = useClients();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -26,10 +29,34 @@ export default function AdminClientsPage() {
   const approvedClients = clients.filter(c => c.approval_status === 'approved');
   const rejectedClients = clients.filter(c => c.approval_status === 'rejected');
 
-  const filteredApproved = approvedClients.filter(client =>
-    client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Apply filter
+  const getFilteredClients = () => {
+    let filtered = approvedClients;
+    switch (filter) {
+      case 'debt':
+        filtered = approvedClients.filter(c => (c.balance ?? 0) < 0);
+        break;
+      case 'fixed':
+        filtered = approvedClients.filter(c => c.client_type === 'fixed');
+        break;
+      case 'flexible':
+        filtered = approvedClients.filter(c => c.client_type === 'flexible');
+        break;
+      case 'pending':
+        return pendingClients.filter(c =>
+          c.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.email.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      default:
+        break;
+    }
+    return filtered.filter(client =>
+      client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
+
+  const filteredClients = getFilteredClients();
 
   const handleApprove = async (clientId: string, clientType: ClientType) => {
     const { error } = await supabase
@@ -63,6 +90,15 @@ export default function AdminClientsPage() {
     }
   };
 
+  const filters: { key: FilterType; label: string }[] = [
+    { key: 'all', label: 'Všetci' },
+    { key: 'active', label: 'Aktívni' },
+    { key: 'pending', label: 'Čakajúci' },
+    { key: 'debt', label: 'Dlžníci' },
+    { key: 'fixed', label: 'Fixní' },
+    { key: 'flexible', label: 'Flexibilní' },
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6 animate-fade-in">
@@ -71,8 +107,8 @@ export default function AdminClientsPage() {
           <p className="text-muted-foreground">Správa vašich klientov</p>
         </div>
 
-        {/* Pending approvals */}
-        {pendingClients.length > 0 && (
+        {/* Pending approvals (show when not filtered to pending) */}
+        {filter !== 'pending' && pendingClients.length > 0 && (
           <Card className="border-warning/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg text-warning">
@@ -82,16 +118,34 @@ export default function AdminClientsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {pendingClients.map((client) => (
-                <PendingClientCard
-                  key={client.id}
-                  client={client}
-                  onApprove={handleApprove}
-                  onReject={handleReject}
-                />
+                <PendingClientCard key={client.id} client={client} onApprove={handleApprove} onReject={handleReject} />
               ))}
             </CardContent>
           </Card>
         )}
+
+        {/* Filter chips */}
+        <div className="flex gap-2 flex-wrap">
+          {filters.map(f => (
+            <Button
+              key={f.key}
+              variant={filter === f.key ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-full"
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}
+              {f.key === 'pending' && pendingClients.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-[10px] px-1.5">{pendingClients.length}</Badge>
+              )}
+              {f.key === 'debt' && (
+                <Badge variant="destructive" className="ml-1 text-[10px] px-1.5">
+                  {approvedClients.filter(c => (c.balance ?? 0) < 0).length}
+                </Badge>
+              )}
+            </Button>
+          ))}
+        </div>
 
         {/* Search */}
         <div className="relative">
@@ -104,12 +158,12 @@ export default function AdminClientsPage() {
           />
         </div>
 
-        {/* Approved clients list */}
+        {/* Clients list */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Users className="h-5 w-5" />
-              Aktívni klienti ({filteredApproved.length})
+              {filter === 'pending' ? 'Čakajúci' : 'Klienti'} ({filteredClients.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -123,16 +177,14 @@ export default function AdminClientsPage() {
                 <Users className="mb-4 h-12 w-12 text-destructive/50" />
                 <p className="text-destructive">Chyba pri načítaní klientov</p>
               </div>
-            ) : filteredApproved.length === 0 ? (
+            ) : filteredClients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Users className="mb-4 h-12 w-12 text-muted-foreground/50" />
-                <p className="text-muted-foreground">
-                  {searchQuery ? 'Žiadni klienti nezodpovedajú vyhľadávaniu' : 'Zatiaľ nemáte žiadnych schválených klientov'}
-                </p>
+                <p className="text-muted-foreground">Žiadni klienti</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredApproved.map((client) => (
+                {filteredClients.map((client) => (
                   <Link
                     key={client.id}
                     to={ROUTES.ADMIN.CLIENT_DETAIL.replace(':id', client.id)}
@@ -158,11 +210,9 @@ export default function AdminClientsPage() {
                       <div className="text-right hidden sm:block">
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                           <CreditCard className="h-4 w-4" />
-                          <span>{client.balance?.toFixed(2) ?? '0.00'}€</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>{format(new Date(client.created_at), 'd. MMM yyyy', { locale: sk })}</span>
+                          <span className={`${(client.balance ?? 0) < 0 ? 'text-destructive font-medium' : ''}`}>
+                            {client.balance?.toFixed(2) ?? '0.00'}€
+                          </span>
                         </div>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -175,7 +225,7 @@ export default function AdminClientsPage() {
         </Card>
 
         {/* Rejected clients */}
-        {rejectedClients.length > 0 && (
+        {rejectedClients.length > 0 && filter === 'all' && (
           <Card className="border-destructive/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg text-muted-foreground">
@@ -191,11 +241,7 @@ export default function AdminClientsPage() {
                       <p className="font-medium text-foreground">{client.full_name}</p>
                       <p className="text-sm text-muted-foreground">{client.email}</p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleApprove(client.id, 'flexible')}
-                    >
+                    <Button size="sm" variant="outline" onClick={() => handleApprove(client.id, 'flexible')}>
                       Schváliť dodatočne
                     </Button>
                   </div>

@@ -33,6 +33,7 @@ import AdminClientsPage from "./pages/admin/AdminClientsPage";
 import AdminFinancesPage from "./pages/admin/AdminFinancesPage";
 import AdminBroadcastPage from "./pages/admin/AdminBroadcastPage";
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
+import AdminClientDetailPage from "./pages/admin/AdminClientDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -97,6 +98,10 @@ const App = () => (
             <Route
               path={ROUTES.ADMIN.CLIENTS}
               element={<ProtectedRoute requireAdmin><AdminClientsPage /></ProtectedRoute>}
+            />
+            <Route
+              path={ROUTES.ADMIN.CLIENT_DETAIL}
+              element={<ProtectedRoute requireAdmin><AdminClientDetailPage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.ADMIN.FINANCES}

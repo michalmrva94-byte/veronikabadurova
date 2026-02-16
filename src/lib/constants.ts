@@ -19,6 +19,8 @@ export const REFERRAL_BONUS = 25.00;
 // App routes
 export const ROUTES = {
   HOME: '/',
+  CLIENTS_LANDING: '/klienti',
+  REFERRAL_LANDING: '/referral',
   CANCELLATION_POLICY: '/storno-pravidla',
   LOGIN: '/prihlasenie',
   REGISTER: '/registracia',
@@ -27,7 +29,7 @@ export const ROUTES = {
   MY_TRAININGS: '/moje-treningy',
   PROFILE: '/profil',
   FINANCES: '/financie',
-  REFERRAL: '/odporucanie',
+  REFERRAL_PAGE: '/odporucanie',
   NOTIFICATIONS: '/notifikacie',
   ADMIN: {
     LOGIN: '/admin/prihlasenie',

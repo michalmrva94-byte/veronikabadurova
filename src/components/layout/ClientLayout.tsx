@@ -23,7 +23,7 @@ const navItems = [
   { icon: Home, label: 'Domov', path: ROUTES.DASHBOARD },
   { icon: Calendar, label: 'Rezervácie', path: ROUTES.CALENDAR },
   { icon: CreditCard, label: 'Platby', path: ROUTES.FINANCES },
-  { icon: Gift, label: 'Odmeny', path: ROUTES.REFERRAL },
+  { icon: Gift, label: 'Odmeny', path: ROUTES.REFERRAL_PAGE },
   { icon: User, label: 'Profil', path: ROUTES.PROFILE },
 ];
 

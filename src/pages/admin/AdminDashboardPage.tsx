@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCompleteTraining } from '@/hooks/useCompleteTraining';
 import { PendingBookingCard } from '@/components/admin/PendingBookingCard';
 import { ConfirmedBookingCard } from '@/components/admin/ConfirmedBookingCard';
+import { AdminStatsSection } from '@/components/admin/AdminStatsSection';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -176,6 +177,9 @@ export default function AdminDashboardPage() {
             className="col-span-2 sm:col-span-1"
           />
         </div>
+
+        {/* Intelligent Stats Section */}
+        <AdminStatsSection stats={stats} isLoading={statsLoading} />
 
         {/* Unconfirmed bookings section */}
         {unconfirmedBookings.length > 0 && (

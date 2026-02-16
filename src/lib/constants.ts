@@ -24,6 +24,8 @@ export const ROUTES = {
   CANCELLATION_POLICY: '/storno-pravidla',
   LOGIN: '/prihlasenie',
   REGISTER: '/registracia',
+  FORGOT_PASSWORD: '/zabudnute-heslo',
+  RESET_PASSWORD: '/reset-hesla',
   DASHBOARD: '/prehlad',
   CALENDAR: '/kalendar',
   MY_TRAININGS: '/moje-treningy',

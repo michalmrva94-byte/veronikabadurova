@@ -160,7 +160,7 @@ export default function AdminClientDetailPage() {
             <div className="pt-3 border-t">
               <Button onClick={() => setProposeDialogOpen(true)} className="w-full gap-2">
                 <CalendarDays className="h-4 w-4" />
-                Navrhnúť fixné tréningy
+                Navrhnúť tréningy
               </Button>
             </div>
           </CardContent>

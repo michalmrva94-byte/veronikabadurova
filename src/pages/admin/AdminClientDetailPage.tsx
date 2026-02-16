@@ -17,11 +17,13 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ClientType, BookingStatus } from '@/types/database';
+import { ProposeFixedTrainingsDialog } from '@/components/admin/ProposeFixedTrainingsDialog';
 
 export default function AdminClientDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [proposeDialogOpen, setProposeDialogOpen] = useState(false);
 
   const { data: client, isLoading } = useQuery({
     queryKey: ['client-detail', id],
@@ -155,8 +157,21 @@ export default function AdminClientDetailPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="pt-3 border-t">
+              <Button onClick={() => setProposeDialogOpen(true)} className="w-full gap-2">
+                <CalendarDays className="h-4 w-4" />
+                Navrhnúť fixné tréningy
+              </Button>
+            </div>
           </CardContent>
         </Card>
+
+        <ProposeFixedTrainingsDialog
+          open={proposeDialogOpen}
+          onOpenChange={setProposeDialogOpen}
+          clientId={id!}
+          clientName={client.full_name}
+        />
 
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-3">

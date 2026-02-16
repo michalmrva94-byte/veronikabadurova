@@ -106,14 +106,22 @@ export function useClientBookings() {
   // Minulé = cancelled, completed, no_show alebo v minulosti
   const pastBookings = (bookingsQuery.data || []).filter(
     (booking) =>
-      (booking.status !== 'booked' && booking.status !== 'pending') ||
+      (booking.status !== 'booked' && booking.status !== 'pending' && booking.status !== 'awaiting_confirmation') ||
       new Date(booking.slot.start_time) <= now
+  );
+
+  // Navrhnuté = awaiting_confirmation, v budúcnosti
+  const proposedBookings = (bookingsQuery.data || []).filter(
+    (booking) =>
+      booking.status === 'awaiting_confirmation' &&
+      new Date(booking.slot.start_time) > now
   );
 
   return {
     bookings: bookingsQuery.data || [],
     upcomingBookings,
     pastBookings,
+    proposedBookings,
     isLoading: bookingsQuery.isLoading,
     error: bookingsQuery.error,
     cancelBooking,

@@ -8,6 +8,7 @@ import { Calendar, CreditCard, Clock, TrendingUp, TrendingDown, XCircle, Loader2
 import { cn } from '@/lib/utils';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useClientBookings } from '@/hooks/useClientBookings';
+import { ProposedTrainingsSection } from '@/components/client/ProposedTrainingsSection';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 
@@ -79,7 +80,7 @@ export default function ClientDashboardPage() {
 function ApprovedDashboard() {
   const { profile } = useAuth();
   const { totalCancellationFees, isLoading: transactionsLoading } = useTransactions();
-  const { upcomingBookings, isLoading: bookingsLoading } = useClientBookings();
+  const { upcomingBookings, proposedBookings, isLoading: bookingsLoading } = useClientBookings();
   
   const balance = profile?.balance ?? 0;
   const isPositive = balance >= 0;
@@ -177,6 +178,9 @@ function ApprovedDashboard() {
             </Card>
           </Link>
         </div>
+
+        {/* Proposed trainings */}
+        {!bookingsLoading && <ProposedTrainingsSection proposedBookings={proposedBookings} />}
 
         {/* Upcoming trainings */}
         <Card>

@@ -96,7 +96,7 @@ export default function LoginPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-3">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -107,6 +107,12 @@ export default function LoginPage() {
                 'Prihlásiť sa'
               )}
             </Button>
+            <Link
+              to={ROUTES.FORGOT_PASSWORD}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Zabudli ste heslo?
+            </Link>
             <p className="text-center text-sm text-muted-foreground">
               Nemáte účet?{' '}
               <Link 

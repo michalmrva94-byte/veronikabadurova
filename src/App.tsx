@@ -13,6 +13,8 @@ import ClientsLandingPage from "./pages/ClientsLandingPage";
 import ReferralLandingPage from "./pages/ReferralLandingPage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
 import CancellationPolicyPage from "./pages/CancellationPolicyPage";
 
@@ -52,6 +54,8 @@ const App = () => (
             <Route path={ROUTES.CANCELLATION_POLICY} element={<CancellationPolicyPage />} />
             <Route path={ROUTES.LOGIN} element={<LoginPage />} />
             <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+            <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+            <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
 
             {/* Client routes */}
             <Route

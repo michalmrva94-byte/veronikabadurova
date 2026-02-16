@@ -26,7 +26,7 @@ import ReferralPage from "./pages/client/ReferralPage";
 import NotificationsPage from "./pages/client/NotificationsPage";
 
 // Admin pages
-import AdminLoginPage from "./pages/admin/AdminLoginPage";
+import { Navigate } from "react-router-dom";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminCalendarPage from "./pages/admin/AdminCalendarPage";
 import AdminClientsPage from "./pages/admin/AdminClientsPage";
@@ -86,7 +86,7 @@ const App = () => (
             />
 
             {/* Admin routes */}
-            <Route path={ROUTES.ADMIN.LOGIN} element={<AdminLoginPage />} />
+            <Route path={ROUTES.ADMIN.LOGIN} element={<Navigate to={ROUTES.LOGIN} replace />} />
             <Route
               path={ROUTES.ADMIN.DASHBOARD}
               element={<ProtectedRoute requireAdmin><AdminDashboardPage /></ProtectedRoute>}

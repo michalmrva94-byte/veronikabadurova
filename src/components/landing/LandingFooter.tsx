@@ -16,7 +16,7 @@ export default function LandingFooter() {
           S 💙 vytvorené pre teba
         </p>
         <Link 
-          to={ROUTES.ADMIN.LOGIN}
+          to={ROUTES.LOGIN}
           className="text-xs text-muted-foreground/50 mt-2 block hover:text-muted-foreground transition-colors"
         >
           © 2024 Veronika Swim

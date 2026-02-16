@@ -1,192 +1,90 @@
 
-# Oprava Admin Prihlásenia a Zobrazenia Klientov
 
-## Identifikované problémy
+# Rozdelenie Landing Page + Referral Flow
 
-### 1. Admin presmerovanie nefunguje (Race Condition)
-Keď sa admin prihlási cez `/admin/prihlasenie`:
-1. `signIn()` sa dokončí úspešne
-2. Okamžite sa zavolá `navigate(ROUTES.ADMIN.DASHBOARD)`
-3. **ALE** rola sa načítava asynchrónne a ešte nie je dostupná
-4. `ProtectedRoute` vidí `role === null` alebo `isAdmin === false`
-5. Presmeruje používateľa na `/prehlad` (klientský dashboard)
+## Prehľad
 
-### 2. Zoznam klientov je prázdny
-Stránka `AdminClientsPage` má hardcoded prázdne pole:
-```typescript
-const clients: any[] = [];
-```
-Klienti sa vôbec nenačítavajú z databázy!
+Aplikácia zostane jedna -- rovnaky backend, auth a dashboard. Pridame dva nove vstupne body:
+- `/` -- nova verejna marketingova landing pre novych klientov
+- `/klienti` -- existujuca landing pre sucasnych klientov
+- `/referral?code=XYZ` -- referral landing s personalizaciou
 
----
+## Zmeny v routingu
 
-## Riešenie
+### `src/lib/constants.ts`
+- Pridat nove routy: `CLIENTS_LANDING: '/klienti'` a `REFERRAL: '/referral'` (pre verejnu referral landing, nie klientsku stranku)
+- Existujuci `REFERRAL` premenovai na `REFERRAL_PAGE` (klientsky profil) a novy `REFERRAL_LANDING` pre verejnu landing
 
-### Časť 1: Oprava Admin Login Flow
+### `src/App.tsx`
+- `/` -- nova `PublicLandingPage`
+- `/klienti` -- existujuca `LandingPage` (premenovana na `ClientsLandingPage`)
+- `/referral` -- nova `ReferralLandingPage`
+- Ostatne routy bez zmeny
 
-**Zmeny v `AdminLoginPage.tsx`:**
-- Po úspešnom prihlásení **počkať na načítanie role** pred navigáciou
-- Skontrolovať, či je používateľ admin, a až potom presmerovať
-- Ak nie je admin, zobraziť chybovú hlášku
+## Nove stranky a komponenty
 
-**Zmeny v `AuthContext.tsx`:**
-- Pridať funkciu `waitForRole()` ktorá vráti Promise s rolou
-- Umožniť čakanie na asynchrónne načítanie role
+### 1. Verejna landing (`/`) -- `src/pages/PublicLandingPage.tsx`
+Nova marketingovo silnejsia stranka s sekciami:
+- **Hero**: "Individualne treningy plavania v Pezinku" + CTA "Rezervovat prvy trening"
+- **O Veronike**: strucna bio karta (14 rokov, certifikovana, PK Pezinok, individualny pristup)
+- **Pre koho je trening**: zoznam cielovych skupin (technika, skusky, kraul, strach z vody, zdravy pohyb)
+- **Referencie**: placeholder sekcia pre buduce referencie
+- **Ako prebieha rezervacia**: kratka veta bez detailov storna
+- **CTA**: "Zacat trenovat"
 
-### Časť 2: Načítanie klientov z databázy
+Pouzije rovnaku vizualnu identitu (farby, fonty, framer-motion animacie), ale profesionalnejsi ton.
 
-**Nový hook `useClients.ts`:**
-- Vytvorenie React Query hooku pre načítanie klientov
-- Spojenie tabuliek `profiles` a `user_roles` 
-- Filtrovanie len klientov (role = 'client')
+### 2. Klientska landing (`/klienti`) -- premenovanie existujucej `LandingPage.tsx`
+Existujuca verzia so vsetkymi sekciami (Hero, O mne, Ako funguje system, Rezervacne pravidla, CTA). Minimalne zmeny -- iba presun na novu URL.
 
-**Zmeny v `AdminClientsPage.tsx`:**
-- Nahradenie hardcoded poľa reálnymi dátami z hooku
-- Pridanie loading a error stavov
-- Implementácia vyhľadávania
+### 3. Referral landing (`/referral?code=XYZ`) -- `src/pages/ReferralLandingPage.tsx`
+- Nacita `code` z URL query parametra
+- Dotaz do databazy: vyhladanie profilu odporucatela podla `referral_code`
+- Zobrazenie banneru: "Odporucil vam trening: [Meno klienta]" alebo "Prisli ste na odporucanie."
+- Pod bannerom: zjednodusena verzia verejnej landing (hero + kluocve benefity)
+- CTA smeruje na `/registracia?ref=XYZ` (existujuca registracia uz podporuje `ref` parameter)
 
----
+## Zmeny v existujucich suboroch
 
-## Technické detaily
+### `src/pages/client/ReferralPage.tsx`
+- Zmena referral linku z `/registracia?ref=CODE` na `/referral?code=CODE`
+- Ziadne ine zmeny
 
-### 1. AuthContext - Nová funkcia na čakanie role
+### `src/components/landing/HeroSection.tsx` a dalsie landing komponenty
+- Bez zmien -- pouzite na `/klienti`
 
-```typescript
-// Pridať do AuthContext
-const waitForRole = async (): Promise<AppRole | null> => {
-  // Ak už máme rolu, vrátiť ju
-  if (role !== null) return role;
-  
-  // Počkať max 5 sekúnd na načítanie role
-  return new Promise((resolve) => {
-    const checkInterval = setInterval(() => {
-      if (role !== null) {
-        clearInterval(checkInterval);
-        resolve(role);
-      }
-    }, 100);
-    
-    setTimeout(() => {
-      clearInterval(checkInterval);
-      resolve(role);
-    }, 5000);
-  });
-};
-```
+### `src/pages/LandingPage.tsx`
+- Premenovanie / presun na `ClientsLandingPage.tsx` pre jasnost
+- Ak je pouzivatel prihlaseny, redirect na dashboard (existujuca logika zostava)
 
-### 2. AdminLoginPage - Čakanie na rolu
+## Databazove zmeny
+Ziadne -- existujuca schema uz podporuje:
+- `profiles.referral_code` pre ulozenie kodu
+- `profiles.referred_by` pre ulozenme odporucatela
+- `referral_rewards` tabulka pre sledovanie odmien
+- `handle_new_user()` trigger pre vytvorenie referral kodu
 
-```typescript
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoading(true);
+Jedina uprava: dotaz na profil odporucatela v referral landing -- pouzije sa existujuci SELECT cez Supabase klienta. RLS politika pre profily vsak neumoznuje anonymnym pouzivatelom citat profily. Preto:
+- Vytvorime databazovu funkciu `get_referrer_name(code TEXT)` ktora vrati meno podla referral kodu (SECURITY DEFINER, vracia iba `full_name`)
 
-  const { error } = await signIn(email, password);
-  
-  if (error) {
-    // ... existujúce spracovanie chyby
-    return;
-  }
+## Technicka implementacia
 
-  // Počkať na načítanie role
-  const userRole = await waitForRole();
-  
-  if (userRole !== 'admin') {
-    await signOut();
-    toast({
-      variant: 'destructive',
-      title: 'Prístup zamietnutý',
-      description: 'Tento účet nemá admin oprávnenia.',
-    });
-    setIsLoading(false);
-    return;
-  }
+### Nove subory
+1. `src/pages/PublicLandingPage.tsx` -- nova verejna landing
+2. `src/pages/ReferralLandingPage.tsx` -- referral landing s personalizaciou
+3. Databazova migracia pre funkciu `get_referrer_name`
 
-  toast({
-    title: 'Vitaj späť, Veronika!',
-    description: 'Úspešne si sa prihlásila do admin panelu.',
-  });
+### Upravene subory
+1. `src/App.tsx` -- novy routing
+2. `src/lib/constants.ts` -- nove routy
+3. `src/pages/LandingPage.tsx` -- premenovanie/uprava
+4. `src/pages/client/ReferralPage.tsx` -- zmena referral linku
+5. `src/components/landing/HeroSection.tsx` -- uprava linkov na registraciu (ak je potrebne)
+6. `src/components/landing/CTASection.tsx` -- uprava linkov
 
-  navigate(ROUTES.ADMIN.DASHBOARD);
-};
-```
+## Dizajnove pravidla
+- Rovnaka farebna paleta a typografia na oboch landingoch
+- Klientska landing: osobna, pokojny ton, detailnejsie informacie
+- Verejna landing: profesionalnejsia, marketingovo orientovana, strucnejsia
+- Referral landing: rovnaky styl ako verejna + personalizovany banner
 
-### 3. Nový hook useClients.ts
-
-```typescript
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Profile } from '@/types/database';
-
-export interface ClientWithRole extends Profile {
-  role: string;
-}
-
-export function useClients() {
-  return useQuery({
-    queryKey: ['clients'],
-    queryFn: async () => {
-      // Najprv získať všetky user_id s rolou 'client'
-      const { data: clientRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'client');
-
-      if (rolesError) throw rolesError;
-      
-      const clientUserIds = clientRoles.map(r => r.user_id);
-      
-      if (clientUserIds.length === 0) return [];
-
-      // Potom získať profily týchto používateľov
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('user_id', clientUserIds)
-        .order('created_at', { ascending: false });
-
-      if (profilesError) throw profilesError;
-
-      return profiles as Profile[];
-    },
-    staleTime: 60000, // 1 minúta
-  });
-}
-```
-
-### 4. AdminClientsPage - S reálnymi dátami
-
-```typescript
-export default function AdminClientsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const { data: clients = [], isLoading, error } = useClients();
-
-  const filteredClients = clients.filter(client =>
-    client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // ... render s loading, error a data stavmi
-}
-```
-
----
-
-## Súbory na zmenu
-
-| Súbor | Zmena |
-|-------|-------|
-| `src/contexts/AuthContext.tsx` | Pridať `waitForRole()` funkciu |
-| `src/pages/admin/AdminLoginPage.tsx` | Čakať na rolu pred navigáciou |
-| `src/hooks/useClients.ts` | **NOVÝ** - hook na načítanie klientov |
-| `src/pages/admin/AdminClientsPage.tsx` | Použiť hook a zobraziť reálne dáta |
-
----
-
-## Výsledok
-
-Po implementácii:
-1. Admin sa prihlási → systém počká na overenie role → presmeruje na `/admin`
-2. Ak nie je admin → zobrazí sa chyba a odhlási sa
-3. V admin dashboarde sa zobrazia reálni klienti z databázy
-4. Vyhľadávanie bude fungovať na meno a email

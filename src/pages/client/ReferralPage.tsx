@@ -11,7 +11,7 @@ export default function ReferralPage() {
   const { toast } = useToast();
   
   const referralCode = profile?.referral_code || '';
-  const referralLink = `${window.location.origin}/registracia?ref=${referralCode}`;
+  const referralLink = `${window.location.origin}/referral?code=${referralCode}`;
 
   // Placeholder stats - will be replaced with real data
   const stats = {

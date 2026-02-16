@@ -8,7 +8,9 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ROUTES } from "@/lib/constants";
 
 // Pages
-import LandingPage from "./pages/LandingPage";
+import PublicLandingPage from "./pages/PublicLandingPage";
+import ClientsLandingPage from "./pages/ClientsLandingPage";
+import ReferralLandingPage from "./pages/ReferralLandingPage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import NotFound from "./pages/NotFound";
@@ -43,7 +45,9 @@ const App = () => (
         <AuthProvider>
           <Routes>
             {/* Public routes */}
-            <Route path={ROUTES.HOME} element={<LandingPage />} />
+            <Route path={ROUTES.HOME} element={<PublicLandingPage />} />
+            <Route path={ROUTES.CLIENTS_LANDING} element={<ClientsLandingPage />} />
+            <Route path={ROUTES.REFERRAL_LANDING} element={<ReferralLandingPage />} />
             <Route path={ROUTES.CANCELLATION_POLICY} element={<CancellationPolicyPage />} />
             <Route path={ROUTES.LOGIN} element={<LoginPage />} />
             <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
@@ -51,110 +55,58 @@ const App = () => (
             {/* Client routes */}
             <Route
               path={ROUTES.DASHBOARD}
-              element={
-                <ProtectedRoute>
-                  <ClientDashboardPage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><ClientDashboardPage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.CALENDAR}
-              element={
-                <ProtectedRoute>
-                  <CalendarPage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><CalendarPage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.MY_TRAININGS}
-              element={
-                <ProtectedRoute>
-                  <MyTrainingsPage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><MyTrainingsPage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.PROFILE}
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.FINANCES}
-              element={
-                <ProtectedRoute>
-                  <FinancesPage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><FinancesPage /></ProtectedRoute>}
             />
             <Route
-              path={ROUTES.REFERRAL}
-              element={
-                <ProtectedRoute>
-                  <ReferralPage />
-                </ProtectedRoute>
-              }
+              path={ROUTES.REFERRAL_PAGE}
+              element={<ProtectedRoute><ReferralPage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.NOTIFICATIONS}
-              element={
-                <ProtectedRoute>
-                  <NotificationsPage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>}
             />
 
             {/* Admin routes */}
             <Route path={ROUTES.ADMIN.LOGIN} element={<AdminLoginPage />} />
             <Route
               path={ROUTES.ADMIN.DASHBOARD}
-              element={
-                <ProtectedRoute requireAdmin>
-                  <AdminDashboardPage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute requireAdmin><AdminDashboardPage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.ADMIN.CALENDAR}
-              element={
-                <ProtectedRoute requireAdmin>
-                  <AdminCalendarPage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute requireAdmin><AdminCalendarPage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.ADMIN.CLIENTS}
-              element={
-                <ProtectedRoute requireAdmin>
-                  <AdminClientsPage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute requireAdmin><AdminClientsPage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.ADMIN.FINANCES}
-              element={
-                <ProtectedRoute requireAdmin>
-                  <AdminFinancesPage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute requireAdmin><AdminFinancesPage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.ADMIN.BROADCAST}
-              element={
-                <ProtectedRoute requireAdmin>
-                  <AdminBroadcastPage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute requireAdmin><AdminBroadcastPage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.ADMIN.SETTINGS}
-              element={
-                <ProtectedRoute requireAdmin>
-                  <AdminSettingsPage />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute requireAdmin><AdminSettingsPage /></ProtectedRoute>}
             />
 
             {/* Catch-all */}

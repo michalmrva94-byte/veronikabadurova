@@ -1,124 +1,97 @@
 
 
-# Inteligentne KPI insighty - Plan implementacie
+# Fixne treningy na schvalenie - Implementacny plan
 
 ## Prehlad
 
-Rozsirit existujuce KPI karty a pridat novu sekciu "Statistiky" s inteligentnymi insightmi - kazda metrika bude mat cislo, farebny stav a 1-vetovy akcny insight. Pridat nove metriky: miera storna, priemer treningov/klient, obsadenost slotov, celkovy dlh a CLV.
+Tato funkcia umozni adminovi navrhnut fixne treningy pre klienta (vyber dni + cas + rozsah), s koliznou kontrolou, notifikaciami a deadline systemom. Klient moze navrhy potvrdit/odmietnut zo svojho dashboardu.
 
----
+## Databazove zmeny
 
-## 1. Rozsirenie useAdminDashboardStats
+Nie su potrebne ziadne zmeny schemy. Existujuce tabulky uz podporuju vsetko potrebne:
+- `bookings` - ma `status` (proposed/awaiting_confirmation), `confirmation_deadline`, `proposed_by`
+- `training_slots` - ma `start_time`, `end_time`, `is_available`
+- `notifications` - ma `user_id`, `title`, `message`, `type`
 
-Pridat nove metriky do existujuceho hooku:
+Booking status `proposed` a `awaiting_confirmation` su uz definovane v `BookingStatus` type a `BOOKING_STATUS_LABELS`.
 
-- **Miera storna (%)**: query bookings za dane obdobie so statusom `cancelled` + `no_show` vs vsetky (`cancelled` + `no_show` + `booked` + `completed`)
-- **Priemer treningov/klient/tyzden**: pocet `booked` + `completed` treningov / aktivni klienti / pocet tyzdnov v obdobi
-- **Obsadenost slotov (%)**: pocet slotov s bookingom / celkovy pocet slotov v obdobi * 100
-- **Celkovy dlh (€)**: sucet negativnych zostatkov z profiles (absolutna hodnota)
-- **CLV data**: pre klientov s min. 1 completed treningom - priemerna dlzka spoluprace (mesiace) * priemerny mesacny prijem na klienta
+## Nove subory
 
-Novy interface:
+### 1. `src/components/admin/ProposeFixedTrainingsDialog.tsx`
+Modal dialog s:
+- Multi-select checkboxy pre dni (Pondelok-Nedela)
+- Time picker pre kazdy vybrany den
+- Select pre rozsah: "Najblizsi 1 tyzden" / "NajblizSie 2 tyzdne"
+- Kolizna kontrola pred vytvorenim
+- Zobrazenie konfliktov s moznostou "Preskocit konfliktne terminy"
+- CTA: "Vytvorit navrhy treningov"
 
-```text
-AdminDashboardStats {
-  // existujuce
-  activeClients, pendingClients, weekTrainings,
-  unconfirmedBookings, clientsWithDebt, monthlyRevenue
+### 2. `src/hooks/useProposedTrainings.ts`
+Hook obsahujuci:
+- `proposeFixedTrainings` mutation - vytvori sloty + bookingy so statusom `awaiting_confirmation`, nastavi `confirmation_deadline` na +24h, posle notifikaciu
+- `checkConflicts` funkcia - skontroluje existujuce bookingy (booked, awaiting_confirmation) pre dany datum/cas pre klienta aj v kalendari trenerky
+- `confirmProposedTraining` mutation - zmeni status na `booked` (s opetovnou koliznou kontrolou)
+- `rejectProposedTraining` mutation - zmeni status na `cancelled`, uvolni slot
+- `confirmAllProposed` mutation - hromadne potvrdenie vsetkych navrhov
 
-  // nove
-  stornoRate: number          // percento
-  avgTrainingsPerClient: number
-  slotOccupancy: number       // percento
-  totalDebt: number           // absolutna hodnota v €
-  clv: number                 // € odhadovana hodnota
-  avgCooperationMonths: number
-  avgMonthlyRevenuePerClient: number
-}
-```
+### 3. `src/components/client/ProposedTrainingsSection.tsx`
+Sekcia pre klientsky dashboard zobrazujuca:
+- Zoznam navrhnutych treningov
+- Datum, cas, countdown do deadline
+- Tlacidla Potvrdit / Odmietnut pre kazdy trening
+- Tlacidlo "Potvrdit vsetky" pre hromadne potvrdenie
+- Alert pri konflikte pocas potvrdzovania
 
-Nove queries:
-- `bookings` s filtrom na obdobie pre vsetky statusy (pre vypocet storna)
-- `training_slots` v obdobi (pre obsadenost)
-- `transactions` typu `training` zoskupene po klientoch (pre CLV)
-- `bookings` s `completed` statusom s min/max datumami per klient (pre dlzku spoluprace)
+## Upravene subory
 
----
+### 4. `src/pages/admin/AdminClientDetailPage.tsx`
+- Pridat tlacidlo "Navrhnit fixne treningy" pod sekciu kontaktu/typu klienta
+- Importovat a pouzit `ProposeFixedTrainingsDialog`
+- Nacitat zoznam uz navrhnutych treningov pre daneho klienta
 
-## 2. Novy komponent: AdminStatsSection
+### 5. `src/pages/client/DashboardPage.tsx`
+- Pridat `ProposedTrainingsSection` nad sekciu "Nadchadzajuce treningy"
+- Zobrazit len ak existuju navrhy so statusom `awaiting_confirmation`
 
-Vytvorit `src/components/admin/AdminStatsSection.tsx`:
-
-### Struktura - 3 riadky kariet
-
-**Riadok 1: Operativne KPI (4 karty)**
-- Miera storna: cislo + farba + insight
-- Priemer treningov/klient: cislo + farba + insight
-- Obsadenost slotov: cislo + farba + insight
-- Celkovy dlh: cislo + farba + insight
-
-**Riadok 2: CLV panel (1 sirsie ios-card)**
-- Priemerna dlzka spoluprace (mesiace)
-- Priem. mesacny prijem/klient (€)
-- CLV (€)
-- CLV insight text
-
-### Insight logika (ciasto v komponente)
-
-Miera storna:
-- < 15% -> zelena dot + "Vybornu stabilita treningov."
-- 15-25% -> oranzova dot + "Sleduj potvrdenia treningov."
-- > 25% -> cervena dot + "Zvaz sprisnenie potvrdzovania alebo upravu kapacity."
-
-Priemer treningov/klient:
-- >= 2 -> zelena + "Klienti trenuju optimalne."
-- 1-1.9 -> oranzova + "Podpor pravidelnost treningov."
-- < 1 -> cervena + "Nizka pravidelnost klientov."
-
-Obsadenost slotov:
-- < 70% -> oranzova + "Kapacita nie je efektivne vyuzita."
-- 70-90% -> zelena + "Idealna vytazenost."
-- > 95% -> cervena + "Riziko pretazenia."
-
-Celkovy dlh:
-- 0 -> zelena + "Ziadne otvorene pohladavky."
-- 1-100€ -> oranzova + "Skontroluj otvorene pohladavky."
-- > 100€ -> cervena + vyrazne zvyraznenie + "Urgentne skontroluj pohladavky."
-
-CLV:
-- Zobrazit orientacne cislo s tooltip vysvetlenim
-
-### UI styl
-- Kazda karta: velke cislo hore, maly label, pod nim 1-riadkovy insight text v jemnej farbe
-- Farebny dot (maly kruzok) vedla insight textu indikuje stav
-- Bez alarmo-bannerov - posobí ako "poradca"
-- iOS-style karty (ios-card), mobilne responsive (grid-cols-2)
-
----
-
-## 3. Integrace do AdminDashboardPage
-
-Pridat `AdminStatsSection` do dashboardu:
-- Umiestnit medzi period toggle a sekciu "Caka na potvrdenie"
-- Zabalit do `Collapsible` s nadpisom "Statistiky" (default zbaleny)
-- Pouzit existujuce stats data z `useAdminDashboardStats`
-
----
+### 6. `src/hooks/useClientBookings.ts`
+- Pridat filter pre `proposedBookings` (status === 'awaiting_confirmation')
+- Exportovat `proposedBookings` zo hooku
 
 ## Technicke detaily
 
-### Nove subory
-- `src/components/admin/AdminStatsSection.tsx`
+### Kolizna kontrola (admin strana)
+Pred vytvorenim navrhov sa vykona query:
+```text
+SELECT bookings WHERE:
+  - client_id = vybrany klient AND status IN ('booked', 'awaiting_confirmation')
+  - ALEBO existuje booking pre iny klient v rovnakom case so statusom 'booked'/'awaiting_confirmation'
+  - start_time sa prekryva s navrhovanym casom
+```
 
-### Upravene subory
-- `src/hooks/useAdminDashboardStats.ts` - rozsirenie o nove metriky
-- `src/pages/admin/AdminDashboardPage.tsx` - pridanie AdminStatsSection
+### Kolizna kontrola (klient strana)
+Pri potvrdeni sa znova skontroluje ci slot nie je obsadeny (race condition ochrana).
 
-### Ziadne DB zmeny
-Vsetky data su dostupne z existujucich tabuliek.
+### Vytvorenie navrhov - flow
+1. Pre kazdy vybrany den + rozsah vypocitaj konkretne datumy
+2. Pre kazdy datum vytvor `training_slot` (is_available: false)
+3. Vytvor `booking` so statusom `awaiting_confirmation`, `confirmation_deadline` = now + 24h, `proposed_by` = admin profile id
+4. Vytvor notifikaciu pre klienta
 
-### Pouzite existujuce komponenty
-- `Tooltip`, `TooltipContent`, `TooltipTrigger`, `TooltipProvider`
-- `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`
-- ios-card CSS trieda
+### Automaticke pripomienky a expiracka
+Vytvorit edge function `check-proposed-deadlines` spustanu cez pg_cron kazdu hodinu:
+- Po 12h od vytvorenia: poslat pripomienku
+- 1h pred deadline: poslat urgentnu pripomienku
+- Po deadline: zmenit status na `cancelled`, uvolnit slot
+
+### Countdown v UI
+Pouzit `differenceInHours` / `differenceInMinutes` z `date-fns` pre zobrazenie zostaveajuceho casu do deadline.
+
+## Poradie implementacie
+
+1. Hook `useProposedTrainings` (zakladna logika)
+2. `ProposeFixedTrainingsDialog` (admin modal)
+3. Uprava `AdminClientDetailPage` (tlacidlo + dialog)
+4. `ProposedTrainingsSection` (klientska sekcia)
+5. Uprava `DashboardPage` + `useClientBookings`
+6. Edge function `check-proposed-deadlines` + pg_cron schedule
 

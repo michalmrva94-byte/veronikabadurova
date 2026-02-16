@@ -8,7 +8,8 @@ import {
   AlertTriangle, Euro, Megaphone, UserPlus, CheckCircle, XCircle
 } from 'lucide-react';
 import { useAdminBookings, AdminBookingWithDetails } from '@/hooks/useAdminBookings';
-import { useAdminDashboardStats } from '@/hooks/useAdminDashboardStats';
+import { useAdminDashboardStats, DashboardPeriod } from '@/hooks/useAdminDashboardStats';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCompleteTraining } from '@/hooks/useCompleteTraining';
 import { PendingBookingCard } from '@/components/admin/PendingBookingCard';
 import { ConfirmedBookingCard } from '@/components/admin/ConfirmedBookingCard';
@@ -21,6 +22,7 @@ import { sk } from 'date-fns/locale';
 export default function AdminDashboardPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
+  const [period, setPeriod] = useState<DashboardPeriod>('week');
   
   const { 
     pendingBookings, 
@@ -33,7 +35,13 @@ export default function AdminDashboardPage() {
     cancelBooking 
   } = useAdminBookings();
 
-  const { data: stats, isLoading: statsLoading } = useAdminDashboardStats();
+  const { data: stats, isLoading: statsLoading } = useAdminDashboardStats(period);
+
+  const periodLabels: Record<DashboardPeriod, { trainings: string; revenue: string }> = {
+    week: { trainings: 'Tréningy / týždeň', revenue: 'Príjem / týždeň' },
+    '2weeks': { trainings: 'Tréningy / 2 týždne', revenue: 'Príjem / 2 týždne' },
+    month: { trainings: 'Tréningy / mesiac', revenue: 'Príjem / mesiac' },
+  };
   const { completeTraining, markNoShow } = useCompleteTraining();
 
   // All unconfirmed bookings (pending + proposed + awaiting_confirmation)
@@ -120,6 +128,15 @@ export default function AdminDashboardPage() {
           <p className="text-sm text-muted-foreground">Riadiaci panel</p>
         </div>
 
+        {/* Period Toggle */}
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as DashboardPeriod)} className="w-full">
+          <TabsList className="h-8 p-0.5 bg-muted/60 rounded-xl w-fit">
+            <TabsTrigger value="week" className="text-xs rounded-lg px-3 h-7 data-[state=active]:bg-background data-[state=active]:shadow-sm">Týždeň</TabsTrigger>
+            <TabsTrigger value="2weeks" className="text-xs rounded-lg px-3 h-7 data-[state=active]:bg-background data-[state=active]:shadow-sm">2 týždne</TabsTrigger>
+            <TabsTrigger value="month" className="text-xs rounded-lg px-3 h-7 data-[state=active]:bg-background data-[state=active]:shadow-sm">Mesiac</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {/* KPI Cards - 5 metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <KPICard
@@ -131,7 +148,7 @@ export default function AdminDashboardPage() {
           />
           <KPICard
             icon={<Calendar className="h-5 w-5 text-warning" />}
-            label="Tréningy / týždeň"
+            label={periodLabels[period].trainings}
             value={stats?.weekTrainings ?? 0}
             loading={statsLoading}
             color="warning"
@@ -152,7 +169,7 @@ export default function AdminDashboardPage() {
           />
           <KPICard
             icon={<Euro className="h-5 w-5 text-success" />}
-            label="Príjem / mesiac"
+            label={periodLabels[period].revenue}
             value={`${(stats?.monthlyRevenue ?? 0).toFixed(0)}€`}
             loading={statsLoading}
             color="success"

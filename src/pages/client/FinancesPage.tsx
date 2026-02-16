@@ -2,7 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ClientLayout } from '@/components/layout/ClientLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CreditCard, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Clock, XCircle, Loader2, Landmark, Copy } from 'lucide-react';
+import { CreditCard, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Clock, XCircle, Loader2, Landmark, Copy, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TRANSACTION_LABELS } from '@/lib/constants';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -175,7 +175,7 @@ export default function FinancesPage() {
                     onClick={() => copyToClipboard(ibanValue.replace(/\s/g, ''), 'IBAN')}
                   >
                     <Copy className="h-4 w-4 mr-1" />
-                    Skopírovať
+                    Skopírovať IBAN
                   </Button>
                 </div>
               </div>
@@ -195,8 +195,24 @@ export default function FinancesPage() {
                   </Button>
                 </div>
               </div>
+              <div className="rounded-lg bg-muted/50 p-3 flex items-start gap-2 text-sm text-muted-foreground">
+                <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                <p>Platby sú spracovávané manuálne po ich prijatí na účet. Kredit bude pripísaný po zaevidovaní platby.</p>
+              </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Low credit info banner */}
+        {shouldHighlightIban && (
+          <div className="rounded-lg border border-warning/40 bg-warning/5 p-4 flex items-start gap-3 text-sm">
+            <Info className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+            <p className="text-foreground">
+              {balance < 0
+                ? 'Máte záporný zostatok. Prosím, doplňte kredit prevodom na účet.'
+                : 'Váš kredit nemusí pokryť nadchádzajúce tréningy. Zvážte doplnenie kreditu.'}
+            </p>
+          </div>
         )}
 
         {/* Transaction history */}

@@ -150,57 +150,31 @@ export default function FinancesPage() {
 
         {/* Platba prevodom */}
         {ibanValue && (
-          <Card className={cn(
-            shouldHighlightIban && 'border-warning/50 bg-warning/5'
+          <div className={cn(
+            'rounded-lg border p-4 space-y-3',
+            shouldHighlightIban ? 'border-warning/50 bg-warning/5' : 'border-border bg-muted/30'
           )}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Landmark className="h-5 w-5" />
-                Platba prevodom
-              </CardTitle>
-              <CardDescription>
-                Ak si chceš doplniť kredit, môžeš poslať platbu prevodom.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">IBAN</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm font-mono tracking-wide">
-                    {formatIBAN(ibanValue)}
-                  </code>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(ibanValue.replace(/\s/g, ''), 'IBAN')}
-                  >
-                    <Copy className="h-4 w-4 mr-1" />
-                    Skopírovať IBAN
-                  </Button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Poznámka k platbe</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm">
-                    {profile?.full_name || ''}
-                  </code>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(profile?.full_name || '', 'Poznámka')}
-                  >
-                    <Copy className="h-4 w-4 mr-1" />
-                    Skopírovať
-                  </Button>
-                </div>
-              </div>
-              <div className="rounded-lg bg-muted/50 p-3 flex items-start gap-2 text-sm text-muted-foreground">
-                <Info className="h-4 w-4 mt-0.5 shrink-0" />
-                <p>Platby sú spracovávané manuálne po ich prijatí na účet. Kredit bude pripísaný po zaevidovaní platby.</p>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Landmark className="h-4 w-4" />
+              <span>Platba prevodom</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm font-mono tracking-wide">
+                {formatIBAN(ibanValue)}
+              </code>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(ibanValue.replace(/\s/g, ''), 'IBAN')}
+              >
+                <Copy className="h-4 w-4 mr-1" />
+                Skopírovať
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Platby sú spracovávané manuálne. Kredit bude pripísaný po zaevidovaní platby.
+            </p>
+          </div>
         )}
 
         {/* Low credit info banner */}

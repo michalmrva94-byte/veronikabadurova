@@ -1,19 +1,48 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { ClientLayout } from '@/components/layout/ClientLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CreditCard, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Clock, XCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CreditCard, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Clock, XCircle, Loader2, Landmark, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TRANSACTION_LABELS } from '@/lib/constants';
 import { useTransactions } from '@/hooks/useTransactions';
+import { useClientBookings } from '@/hooks/useClientBookings';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 
+const formatIBAN = (iban: string) => iban.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim();
+
 export default function FinancesPage() {
   const { profile } = useAuth();
+  const { toast } = useToast();
   const { transactions, totalDeposits, totalExpenses, totalCancellationFees, isLoading } = useTransactions();
+  const { upcomingBookings } = useClientBookings();
+
+  const { data: ibanValue } = useQuery({
+    queryKey: ['app-settings', 'iban'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'iban')
+        .single();
+      if (error) return '';
+      return data?.value || '';
+    },
+  });
   
   const balance = profile?.balance ?? 0;
   const isPositive = balance >= 0;
+  const shouldHighlightIban = balance < 0 || (balance === 0 && upcomingBookings.length > 0);
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({ title: `${label} skopírovaný` });
+    });
+  };
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -114,6 +143,57 @@ export default function FinancesPage() {
                 <span className="text-xl font-bold text-destructive">
                   -{totalCancellationFees.toFixed(2)} €
                 </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Platba prevodom */}
+        {ibanValue && (
+          <Card className={cn(
+            shouldHighlightIban && 'border-warning/50 bg-warning/5'
+          )}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Landmark className="h-5 w-5" />
+                Platba prevodom
+              </CardTitle>
+              <CardDescription>
+                Ak si chceš doplniť kredit, môžeš poslať platbu prevodom.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">IBAN</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm font-mono tracking-wide">
+                    {formatIBAN(ibanValue)}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(ibanValue.replace(/\s/g, ''), 'IBAN')}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Skopírovať
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Poznámka k platbe</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm">
+                    {profile?.full_name || ''}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(profile?.full_name || '', 'Poznámka')}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Skopírovať
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

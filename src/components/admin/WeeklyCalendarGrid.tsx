@@ -28,11 +28,21 @@ export function WeeklyCalendarGrid({
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i));
 
   const getSlotColor = (slot: SlotWithBooking) => {
-    if (slot.booking?.status === 'booked') {
+    const status = slot.booking?.status;
+    if (status === 'proposed') {
+      return 'bg-muted border-muted-foreground/30 text-muted-foreground';
+    }
+    if (status === 'pending' || status === 'awaiting_confirmation') {
+      return 'bg-warning/20 border-warning text-warning-foreground';
+    }
+    if (status === 'booked') {
       return 'bg-primary/20 border-primary text-primary';
     }
-    if (slot.booking?.status === 'pending') {
-      return 'bg-warning/20 border-warning text-warning-foreground';
+    if (status === 'cancelled' || status === 'no_show') {
+      return 'bg-destructive/20 border-destructive text-destructive';
+    }
+    if (status === 'completed') {
+      return 'bg-success/20 border-success text-success';
     }
     return 'bg-emerald-100 border-emerald-500 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400';
   };
@@ -110,9 +120,19 @@ export function WeeklyCalendarGrid({
                           </span>
                         </div>
                       )}
-                      {slot.booking?.status === 'pending' && (
+                      {(slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
                         <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">
                           Čaká
+                        </Badge>
+                      )}
+                      {slot.booking?.status === 'proposed' && (
+                        <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">
+                          Návrh
+                        </Badge>
+                      )}
+                      {slot.booking?.status === 'completed' && (
+                        <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-success text-success">
+                          ✓
                         </Badge>
                       )}
                     </button>
@@ -136,18 +156,30 @@ export function WeeklyCalendarGrid({
       </div>
 
       {/* Legend */}
-      <div className="flex gap-4 text-xs text-muted-foreground justify-center">
+      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground justify-center">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-emerald-100 border border-emerald-500" />
           <span>Voľný</span>
         </div>
         <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-muted border border-muted-foreground/30" />
+          <span>Návrh</span>
+        </div>
+        <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-warning/20 border border-warning" />
-          <span>Čaká na potvrdenie</span>
+          <span>Čaká</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-primary/20 border border-primary" />
-          <span>Rezervované</span>
+          <span>Potvrdené</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-success/20 border border-success" />
+          <span>Odpláv.</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-destructive/20 border border-destructive" />
+          <span>Zrušené</span>
         </div>
       </div>
     </div>

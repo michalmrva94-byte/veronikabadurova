@@ -111,7 +111,7 @@ export function ConfirmedBookingCard({
                 <AlertDialogDescription>
                   Naozaj chcete zrušiť tréning s klientom{' '}
                   <strong>{booking.client.full_name}</strong> dňa{' '}
-                  {format(startTime, 'd. MMMM o HH:mm', { locale: sk })}?
+                  {format(startTime, "d. MMMM 'o' HH:mm", { locale: sk })}?
                   <br /><br />
                   Klient bude o zrušení informovaný notifikáciou.
                 </AlertDialogDescription>

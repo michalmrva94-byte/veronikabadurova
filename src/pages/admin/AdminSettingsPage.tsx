@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, CreditCard, Loader2, Save } from 'lucide-react';
+import { Settings, CreditCard, Loader2, Save, Landmark } from 'lucide-react';
 
 export default function AdminSettingsPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [trainingPrice, setTrainingPrice] = useState('25.00');
+  const [iban, setIban] = useState('');
 
   useEffect(() => {
     fetchSettings();
@@ -22,12 +23,14 @@ export default function AdminSettingsPage() {
       const { data, error } = await supabase
         .from('app_settings')
         .select('*')
-        .eq('key', 'training_price')
-        .single();
+        .in('key', ['training_price', 'iban']);
 
       if (error) throw error;
       if (data) {
-        setTrainingPrice(data.value);
+        const priceRow = data.find(r => r.key === 'training_price');
+        const ibanRow = data.find(r => r.key === 'iban');
+        if (priceRow) setTrainingPrice(priceRow.value);
+        if (ibanRow) setIban(ibanRow.value);
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -37,12 +40,16 @@ export default function AdminSettingsPage() {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      const { error: priceError } = await supabase
         .from('app_settings')
         .update({ value: trainingPrice })
         .eq('key', 'training_price');
+      if (priceError) throw priceError;
 
-      if (error) throw error;
+      const { error: ibanError } = await supabase
+        .from('app_settings')
+        .upsert({ key: 'iban', value: iban, description: 'IBAN pre platbu prevodom' }, { onConflict: 'key' });
+      if (ibanError) throw ibanError;
 
       toast({
         title: 'Uložené',
@@ -103,6 +110,29 @@ export default function AdminSettingsPage() {
                 <li>Neúčasť: <span className="text-destructive font-medium">{trainingPrice}€</span> (100%)</li>
               </ul>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* IBAN */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Landmark className="h-5 w-5" />
+              IBAN pre platby
+            </CardTitle>
+            <CardDescription>
+              IBAN účet, na ktorý budú klienti posielať platby prevodom
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Label htmlFor="iban">IBAN</Label>
+            <Input
+              id="iban"
+              value={iban}
+              onChange={(e) => setIban(e.target.value)}
+              placeholder="SK31 1200 0000 1987 4263 7541"
+              disabled={isLoading}
+            />
           </CardContent>
         </Card>
 

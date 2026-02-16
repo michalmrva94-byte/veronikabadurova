@@ -8,7 +8,7 @@ import { Calendar, CreditCard, Clock, TrendingUp, TrendingDown, XCircle, Loader2
 import { cn } from '@/lib/utils';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useClientBookings } from '@/hooks/useClientBookings';
-import { ProposedTrainingsSection } from '@/components/client/ProposedTrainingsSection';
+import { ProposedTrainingsSection, getStatusBadge } from '@/components/client/ProposedTrainingsSection';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 
@@ -66,7 +66,6 @@ export default function ClientDashboardPage() {
   const { profile, approvalStatus } = useAuth();
   const firstName = profile?.full_name?.split(' ')[0] || '';
 
-  // Show pending/rejected screens for non-approved clients
   if (approvalStatus === 'pending') {
     return <PendingApprovalScreen name={firstName} />;
   }
@@ -80,7 +79,7 @@ export default function ClientDashboardPage() {
 function ApprovedDashboard() {
   const { profile } = useAuth();
   const { totalCancellationFees, isLoading: transactionsLoading } = useTransactions();
-  const { upcomingBookings, proposedBookings, isLoading: bookingsLoading } = useClientBookings();
+  const { upcomingBookings, proposedBookings, pastBookings, isLoading: bookingsLoading } = useClientBookings();
   
   const balance = profile?.balance ?? 0;
   const isPositive = balance >= 0;
@@ -179,10 +178,10 @@ function ApprovedDashboard() {
           </Link>
         </div>
 
-        {/* Proposed trainings */}
+        {/* === SEKCIA: Vyžaduje pozornosť === */}
         {!bookingsLoading && <ProposedTrainingsSection proposedBookings={proposedBookings} />}
 
-        {/* Upcoming trainings */}
+        {/* === SEKCIA: Nadchádzajúce tréningy === */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Nadchádzajúce tréningy</CardTitle>
@@ -202,34 +201,32 @@ function ApprovedDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {upcomingBookings.slice(0, 3).map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                        <Calendar className="h-5 w-5 text-primary" />
+                {upcomingBookings.slice(0, 3).map((booking) => {
+                  const badge = getStatusBadge(booking.status || 'booked');
+                  return (
+                    <div
+                      key={booking.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                          <Calendar className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground capitalize">
+                            {format(new Date(booking.slot.start_time), 'EEEE, d. MMM', { locale: sk })}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(booking.slot.start_time), 'HH:mm')} - {format(new Date(booking.slot.end_time), 'HH:mm')}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-foreground capitalize">
-                          {format(new Date(booking.slot.start_time), 'EEEE, d. MMM', { locale: sk })}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(booking.slot.start_time), 'HH:mm')} - {format(new Date(booking.slot.end_time), 'HH:mm')}
-                        </p>
-                      </div>
+                      <span className={cn("text-xs font-medium px-2 py-1 rounded-full", badge.className)}>
+                        {badge.label}
+                      </span>
                     </div>
-                    <div className={cn(
-                      "text-xs font-medium px-2 py-1 rounded-full",
-                      booking.status === 'booked' 
-                        ? "bg-success/10 text-success" 
-                        : "bg-warning/10 text-warning"
-                    )}>
-                      {booking.status === 'booked' ? 'Potvrdené' : 'Čaká'}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {upcomingBookings.length > 3 && (
                   <Button asChild variant="ghost" className="w-full">
                     <Link to={ROUTES.MY_TRAININGS}>
@@ -241,6 +238,52 @@ function ApprovedDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* === SEKCIA: História === */}
+        {!bookingsLoading && pastBookings.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">História</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {pastBookings.slice(0, 5).map((booking) => {
+                  const badge = getStatusBadge(booking.status || 'completed', booking.confirmation_deadline);
+                  return (
+                    <div
+                      key={booking.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                          <Calendar className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground capitalize">
+                            {format(new Date(booking.slot.start_time), 'EEEE, d. MMM', { locale: sk })}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(booking.slot.start_time), 'HH:mm')} - {format(new Date(booking.slot.end_time), 'HH:mm')}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={cn("text-xs font-medium px-2 py-1 rounded-full", badge.className)}>
+                        {badge.label}
+                      </span>
+                    </div>
+                  );
+                })}
+                {pastBookings.length > 5 && (
+                  <Button asChild variant="ghost" className="w-full">
+                    <Link to={ROUTES.MY_TRAININGS}>
+                      Zobraziť celú históriu ({pastBookings.length})
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Cancellation policy reminder */}
         <Card className="border-border/50 bg-muted/30">

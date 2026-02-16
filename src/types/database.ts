@@ -4,7 +4,11 @@
 
 export type AppRole = 'client' | 'admin';
 
-export type BookingStatus = 'pending' | 'booked' | 'cancelled' | 'completed' | 'no_show';
+export type BookingStatus = 'pending' | 'booked' | 'cancelled' | 'completed' | 'no_show' | 'proposed' | 'awaiting_confirmation';
+
+export type ClientType = 'fixed' | 'flexible';
+
+export type ClientApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 export type TransactionType = 'deposit' | 'training' | 'cancellation' | 'referral_bonus' | 'manual_adjustment';
 
@@ -19,6 +23,12 @@ export interface Profile {
   notifications_enabled: boolean;
   email_notifications: boolean;
   balance: number;
+  client_type: ClientType | null;
+  approval_status: ClientApprovalStatus;
+  approved_at: string | null;
+  training_goal: string | null;
+  preferred_days: string | null;
+  flexibility_note: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +64,8 @@ export interface Booking {
   cancellation_reason: string | null;
   cancelled_at: string | null;
   is_last_minute: boolean;
+  confirmation_deadline: string | null;
+  proposed_by: string | null;
   created_at: string;
   updated_at: string;
   // Joined data

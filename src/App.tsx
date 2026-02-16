@@ -73,10 +73,12 @@ const App = () => (
               path={ROUTES.FINANCES}
               element={<ProtectedRoute><FinancesPage /></ProtectedRoute>}
             />
+            {/* Referral page hidden - can be re-enabled later
             <Route
               path={ROUTES.REFERRAL_PAGE}
               element={<ProtectedRoute><ReferralPage /></ProtectedRoute>}
             />
+            */}
             <Route
               path={ROUTES.NOTIFICATIONS}
               element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>}

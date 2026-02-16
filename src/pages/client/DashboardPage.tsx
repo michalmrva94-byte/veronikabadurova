@@ -4,14 +4,79 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/lib/constants';
-import { Calendar, CreditCard, Clock, TrendingUp, TrendingDown, XCircle, Loader2 } from 'lucide-react';
+import { Calendar, CreditCard, Clock, TrendingUp, TrendingDown, XCircle, Loader2, ClockIcon, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useClientBookings } from '@/hooks/useClientBookings';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 
+function PendingApprovalScreen({ name }: { name: string }) {
+  return (
+    <ClientLayout>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 animate-fade-in">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-warning/10">
+          <ClockIcon className="h-10 w-10 text-warning" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold text-foreground">
+            Ahoj, {name}! 👋
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-sm">
+            Vaša žiadosť o spoluprácu bola odoslaná a čaká na schválenie trénerom.
+          </p>
+        </div>
+        <Card className="w-full max-w-sm border-warning/30 bg-warning/5">
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            <p>Budete informovaní hneď, ako tréner vašu žiadosť posúdi. Ďakujeme za trpezlivosť! 🏊‍♀️</p>
+          </CardContent>
+        </Card>
+      </div>
+    </ClientLayout>
+  );
+}
+
+function RejectedScreen({ name }: { name: string }) {
+  return (
+    <ClientLayout>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 animate-fade-in">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
+          <Ban className="h-10 w-10 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold text-foreground">
+            Ahoj, {name}
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-sm">
+            Bohužiaľ, vaša žiadosť o spoluprácu nebola schválená.
+          </p>
+        </div>
+        <Card className="w-full max-w-sm border-border">
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            <p>Ak máte otázky, neváhajte kontaktovať trénera priamo.</p>
+          </CardContent>
+        </Card>
+      </div>
+    </ClientLayout>
+  );
+}
+
 export default function ClientDashboardPage() {
+  const { profile, approvalStatus } = useAuth();
+  const firstName = profile?.full_name?.split(' ')[0] || '';
+
+  // Show pending/rejected screens for non-approved clients
+  if (approvalStatus === 'pending') {
+    return <PendingApprovalScreen name={firstName} />;
+  }
+  if (approvalStatus === 'rejected') {
+    return <RejectedScreen name={firstName} />;
+  }
+
+  return <ApprovedDashboard />;
+}
+
+function ApprovedDashboard() {
   const { profile } = useAuth();
   const { totalCancellationFees, isLoading: transactionsLoading } = useTransactions();
   const { upcomingBookings, isLoading: bookingsLoading } = useClientBookings();
@@ -67,7 +132,7 @@ export default function ClientDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Cancellation fees warning - show only if there are fees */}
+        {/* Cancellation fees warning */}
         {!transactionsLoading && totalCancellationFees > 0 && (
           <Card className="border-destructive/30 bg-destructive/5">
             <CardContent className="p-4">

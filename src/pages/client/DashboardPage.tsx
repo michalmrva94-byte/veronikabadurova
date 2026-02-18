@@ -126,7 +126,7 @@ function ApprovedDashboard() {
             Ahoj, {profile?.full_name?.split(' ')[0]}! 👋
           </h1>
           <p className="text-muted-foreground">
-            Teším sa na ďalší tréning.
+            {(nextBooking || proposedBookings.length > 0) ? 'Teším sa na náš najbližší tréning. 💙' : 'Kedy sa vidíme najbližšie? 😊'}
           </p>
         </div>
 
@@ -147,6 +147,7 @@ function ApprovedDashboard() {
               <CardTitle className="text-base font-medium text-muted-foreground">
                 Najbližší tréning
               </CardTitle>
+              <p className="text-sm text-muted-foreground">Už sa na vás teším.</p>
             </CardHeader>
             <CardContent>
               <p className="text-xl font-bold text-foreground capitalize">
@@ -175,8 +176,11 @@ function ApprovedDashboard() {
           <Card className="border-muted">
             <CardContent className="flex flex-col items-center py-8 text-center">
               <Calendar className="mb-3 h-10 w-10 text-muted-foreground/50" />
-              <p className="text-muted-foreground mb-4">
-                Zatiaľ nemáte naplánovaný tréning.
+              <p className="text-muted-foreground">
+                Momentálne nemáme naplánovaný tréning.
+              </p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Vyberte si termín, ktorý vám vyhovuje.
               </p>
               <Button asChild>
                 <Link to={ROUTES.CALENDAR}>Rezervovať tréning</Link>
@@ -185,17 +189,19 @@ function ApprovedDashboard() {
           </Card>
         )}
 
-        {/* 3. Primárne CTA */}
-        <Button asChild className="w-full" size="lg">
-          <Link to={ROUTES.CALENDAR}>Rezervovať nový tréning</Link>
-        </Button>
+        {/* 3. Primárne CTA -- len ak má tréning (inak je CTA v hero karte) */}
+        {(nextBooking || proposedBookings.length > 0) && (
+          <Button asChild className="w-full" size="lg">
+            <Link to={ROUTES.CALENDAR}>Rezervovať tréning</Link>
+          </Button>
+        )}
 
         {/* 4. Moja aktivita */}
         {!bookingsLoading && (
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-medium">Moja aktivita</CardTitle>
+                <CardTitle className="text-base font-medium">Vaša aktivita</CardTitle>
                 <Link to={ROUTES.MY_TRAININGS} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                   Zobraziť históriu
                 </Link>
@@ -219,6 +225,12 @@ function ApprovedDashboard() {
                   <p className="text-xs text-muted-foreground">Séria týždňov</p>
                 </div>
               </div>
+              {streak > 0 && (
+                <p className="text-xs text-muted-foreground text-center mt-3">Skvelá konzistentnosť.</p>
+              )}
+              {thisWeekCount === 0 && thisMonthCount === 0 && streak === 0 && (
+                <p className="text-xs text-muted-foreground text-center mt-3">Každý začiatok sa počíta. 💪</p>
+              )}
             </CardContent>
           </Card>
         )}
@@ -226,7 +238,7 @@ function ApprovedDashboard() {
         {/* 5. Zostatok */}
         <Card className={cn(
           netBalance > 0 && "border-success/30",
-          netBalance === 0 && "border-border",
+          netBalance === 0 && "border-warning/20",
           netBalance < 0 && "border-destructive/30"
         )}>
           <CardHeader className="pb-2">
@@ -245,9 +257,9 @@ function ApprovedDashboard() {
               {netBalance > 0 ? '+' : ''}{netBalance.toFixed(2)} €
             </span>
             <p className="mt-1 text-sm text-muted-foreground">
-              {netBalance > 0 && "Máte dostupný kredit."}
-              {netBalance === 0 && "Momentálne nemáte kredit ani dlh."}
-              {netBalance < 0 && "Evidujeme nezaplatený zostatok."}
+              {netBalance > 0 && "Máte dostupný kredit na tréningy."}
+              {netBalance === 0 && "Momentálne nemáte kredit ani záväzok."}
+              {netBalance < 0 && "Momentálne evidujem neuhradený tréning. Platbu si vyriešime pri najbližšom stretnutí."}
             </p>
             {netBalance < 0 && (
               <Button asChild variant="outline" size="sm" className="mt-3">
@@ -302,10 +314,11 @@ function ApprovedDashboard() {
         {/* 7. Rezervačné podmienky -- Collapsible */}
         <Collapsible>
           <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Rezervačné podmienky
+            Storno pravidlá (pre istotu 😊)
             <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent className="px-4 pb-4 pt-2">
+            <p className="text-xs text-muted-foreground mb-2">Ak sa niečo zmení, dajte mi vedieť čo najskôr. Spolu to vždy vyriešime.</p>
             <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
               <span>&gt;48h: <span className="text-success font-medium">0%</span></span>
               <span>24-48h: <span className="text-warning font-medium">50%</span></span>

@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Bell, Mail, Phone, Loader2 } from 'lucide-react';
+import { User, Bell, Mail, Phone, Loader2, Zap } from 'lucide-react';
 
 export default function ProfilePage() {
   const { profile, refreshProfile } = useAuth();
@@ -157,6 +157,24 @@ export default function ProfilePage() {
                   setFormData(prev => ({ ...prev, email_notifications: checked }))
                 }
                 disabled={isLoading}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-muted-foreground" />
+                  <Label>Last-minute tréningy</Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Upozornenia na uvoľnené termíny do 24h
+                </p>
+              </div>
+              <Switch
+                checked={formData.notifications_enabled}
+                disabled
               />
             </div>
           </CardContent>

@@ -185,7 +185,7 @@ export function SlotDetailDialog({
               </>
             )}
 
-            {(status === 'pending' || status === 'awaiting_confirmation') && booking && (
+            {status === 'pending' && booking && (
               <>
                 <Button
                   className="w-full gap-2"
@@ -213,7 +213,7 @@ export function SlotDetailDialog({
               </>
             )}
 
-            {status === 'proposed' && (
+            {(status === 'proposed' || status === 'awaiting_confirmation') && (
               <div className="text-center text-sm text-muted-foreground py-2">
                 Čaká sa na odpoveď klienta
               </div>

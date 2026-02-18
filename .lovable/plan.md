@@ -1,51 +1,45 @@
 
-# Admin Kalendar - Mobile-Friendly Redizajn
 
-Aktualny problem: Tyzdenny kalendar pouziva 7-stlpcovy grid (`grid-cols-7`) aj na mobile, co sposobuje, ze stlpce su prilis uzke, text je orezany a tlacidla "Pridat" su nefunkcne.
+# Zjednotenie "Pridať slot" a "Priradiť tréning" do jedného dialógu
 
----
+## Prečo
 
-## Riesenie
-
-Namiesto 7-stlpcoveho gridu na mobile sa prepne na **vertikalny zoznam dni** (stacked layout), kde kazdy den je kompaktny riadok s horizontalne zobrazenymi slotmi.
-
-### Zmeny v `src/components/admin/WeeklyCalendarGrid.tsx`
-
-1. **Responsivny layout**:
-   - Mobile (< 768px): vertikalny zoznam dni, kazdy den ako riadok s horizontalnymi slot chipmi
-   - Desktop (>= 768px): zachovat existujuci 7-stlpcovy grid
-
-2. **Mobilna verzia - struktura kazdeho dna**:
-   - Hlavicka: den + datum na jednom riadku (napr. "Po 16" alebo "Dnes - St 18")
-   - Sloty: horizontalne chipove tlacidla s casom a menom klienta
-   - Tlacidlo "+" na pridanie slotu - male, inline
-   - Dni bez slotov budu kompaktnejsie
-
-3. **Detekcia mobile**: pouzit existujuci hook `useIsMobile()` z `src/hooks/use-mobile.tsx`
-
-4. **Legenda**: na mobile zobrazit v 2 riadkoch namiesto jedneho
-
-### Zmeny v `src/pages/admin/AdminCalendarPage.tsx`
-
-5. **Akcie v headeri**: na mobile zobrazit tlacidla pod nadpisom namiesto vedla neho (uz je `flex-wrap`, len overit spravanie)
+Aktuálne sú dva samostatné dialógy s takmer rovnakým účelom - oba vytvárajú časový termín. Jediný rozdiel je, či sa priradí klient alebo nie. Zjednotenie zníži počet tlačidiel, zjednoduší rozhranie a uľahčí prácu adminovi.
 
 ---
 
-## Technicky prehlad
+## Ako to bude fungovať
 
-### WeeklyCalendarGrid.tsx - mobilna cast
+Jeden dialóg "Nový tréning" s týmito poľami:
 
-```text
-Po 16        [06:00 Jana] [07:00 Peter] [+]
-Ut 17        Ziadne treningy
-St 18 (dnes) [06:00 voln.] [07:00 Eva]  [+]
-St 19        [06:00 voln.]              [+]
-...
-```
+1. **Dátum** (predvyplnený podľa kontextu)
+2. **Čas od - do** (povinné)
+3. **Klient** (voliteľné dropdown) - ak sa vyberie, vytvorí sa rovno booking so statusom `booked`
+4. **Cena** (zobrazí sa iba ak je vybraný klient, predvyplnená DEFAULT_TRAINING_PRICE)
+5. **Poznámka** (voliteľné)
 
-- Kazdy slot chip bude mat farbu podla statusu (rovnaky `getSlotColor`)
-- Kliknutie na chip otvori `SlotDetailDialog` (rovnake spravanie)
-- Prazdne dni zobrazia sedy text "Ziadne treningy" a tlacidlo [+]
+Ak klient nie je vybraný = vytvorí sa voľný slot (ako doterajšie "Pridať slot").
+Ak klient je vybraný = vytvorí sa slot + booking (ako doterajšie "Priradiť tréning").
 
-### Subory na upravu
-- `src/components/admin/WeeklyCalendarGrid.tsx` - hlavna zmena, pridanie mobilneho layoutu
+---
+
+## Technické zmeny
+
+### 1. Nový zjednotený dialóg
+- Vytvoriť `src/components/admin/CreateTrainingDialog.tsx` - nahradí oba existujúce dialógy
+- Formulár: dátum, čas od/do, voliteľný klient dropdown, podmienená cena, poznámka
+- Logika: ak `client_id` je vyplnené, zavolá `assignTraining`, inak `createSlot`
+
+### 2. AdminCalendarPage.tsx
+- Odstrániť import `AddSlotDialog` a `AssignTrainingDialog`
+- Nahradiť dvomi stavmi (`isAddDialogOpen`, `isAssignDialogOpen`) jedným (`isCreateDialogOpen`)
+- V headeri jedno tlačidlo "Nový tréning" namiesto dvoch
+- Odstrániť funkciu `openAssignDialog`, ponechať jednu `openCreateDialog`
+
+### 3. WeeklyCalendarGrid.tsx
+- Tlačidlo `+` v mobile/desktop view už volá `onAddSlot` - to zostáva rovnaké, len otvára nový zjednotený dialóg
+
+### 4. Existujúce dialógy
+- `src/components/admin/AddSlotDialog.tsx` - prestane sa používať (môže sa odstrániť)
+- `src/components/admin/AssignTrainingDialog.tsx` - prestane sa používať (môže sa odstrániť)
+

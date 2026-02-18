@@ -40,6 +40,7 @@ export const ROUTES = {
     CLIENTS: '/admin/klienti',
     CLIENT_DETAIL: '/admin/klienti/:id',
     FINANCES: '/admin/financie',
+    FINANCE_HISTORY: '/admin/financie/historia',
     SETTINGS: '/admin/nastavenia',
     BROADCAST: '/admin/broadcast',
   },

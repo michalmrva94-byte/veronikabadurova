@@ -33,6 +33,7 @@ import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminCalendarPage from "./pages/admin/AdminCalendarPage";
 import AdminClientsPage from "./pages/admin/AdminClientsPage";
 import AdminFinancesPage from "./pages/admin/AdminFinancesPage";
+import AdminFinanceHistoryPage from "./pages/admin/AdminFinanceHistoryPage";
 import AdminBroadcastPage from "./pages/admin/AdminBroadcastPage";
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 import AdminClientDetailPage from "./pages/admin/AdminClientDetailPage";
@@ -110,6 +111,10 @@ const App = () => (
             <Route
               path={ROUTES.ADMIN.FINANCES}
               element={<ProtectedRoute requireAdmin><AdminFinancesPage /></ProtectedRoute>}
+            />
+            <Route
+              path={ROUTES.ADMIN.FINANCE_HISTORY}
+              element={<ProtectedRoute requireAdmin><AdminFinanceHistoryPage /></ProtectedRoute>}
             />
             <Route
               path={ROUTES.ADMIN.BROADCAST}

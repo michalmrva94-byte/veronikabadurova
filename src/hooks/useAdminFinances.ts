@@ -1,50 +1,145 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export function useAdminFinancesStats() {
-  return useQuery({
-    queryKey: ['admin-finances-stats'],
-    queryFn: async () => {
-      // Get all client profiles with their balances
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('balance');
+export type FinancePeriod = 'week' | 'month';
 
-      if (profilesError) throw profilesError;
+interface FinancePeriodDates {
+  currentStart: string;
+  currentEnd: string;
+  prevStart: string;
+  prevEnd: string;
+}
+
+function getPeriodDates(period: FinancePeriod): FinancePeriodDates {
+  const now = new Date();
+  const currentEnd = now.toISOString();
+
+  if (period === 'week') {
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay() + 1); // Monday
+    weekStart.setHours(0, 0, 0, 0);
+
+    const prevWeekStart = new Date(weekStart);
+    prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+
+    const prevWeekEnd = new Date(weekStart);
+    prevWeekEnd.setMilliseconds(-1);
+
+    return {
+      currentStart: weekStart.toISOString(),
+      currentEnd,
+      prevStart: prevWeekStart.toISOString(),
+      prevEnd: prevWeekEnd.toISOString(),
+    };
+  }
+
+  // month
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonthEnd = new Date(monthStart);
+  prevMonthEnd.setMilliseconds(-1);
+
+  return {
+    currentStart: monthStart.toISOString(),
+    currentEnd,
+    prevStart: prevMonthStart.toISOString(),
+    prevEnd: prevMonthEnd.toISOString(),
+  };
+}
+
+export interface AdminFinancesStats {
+  earned: number;
+  prevEarned: number;
+  deposits: number;
+  prevDeposits: number;
+  totalDebts: number;
+  totalCredits: number;
+  creditUsage: number;
+}
+
+export function useAdminFinancesStats(period: FinancePeriod = 'month') {
+  return useQuery({
+    queryKey: ['admin-finances-stats', period],
+    queryFn: async (): Promise<AdminFinancesStats> => {
+      const dates = getPeriodDates(period);
+
+      const [
+        earnedRes,
+        prevEarnedRes,
+        depositsRes,
+        prevDepositsRes,
+        creditUsageRes,
+        profilesRes,
+      ] = await Promise.all([
+        // earned: training + cancellation in current period
+        supabase
+          .from('transactions')
+          .select('amount')
+          .in('type', ['training', 'cancellation'])
+          .gte('created_at', dates.currentStart)
+          .lte('created_at', dates.currentEnd),
+        // prev earned
+        supabase
+          .from('transactions')
+          .select('amount')
+          .in('type', ['training', 'cancellation'])
+          .gte('created_at', dates.prevStart)
+          .lte('created_at', dates.prevEnd),
+        // deposits current
+        supabase
+          .from('transactions')
+          .select('amount')
+          .eq('type', 'deposit')
+          .gte('created_at', dates.currentStart)
+          .lte('created_at', dates.currentEnd),
+        // deposits prev
+        supabase
+          .from('transactions')
+          .select('amount')
+          .eq('type', 'deposit')
+          .gte('created_at', dates.prevStart)
+          .lte('created_at', dates.prevEnd),
+        // credit usage (training transactions in period)
+        supabase
+          .from('transactions')
+          .select('amount')
+          .eq('type', 'training')
+          .gte('created_at', dates.currentStart)
+          .lte('created_at', dates.currentEnd),
+        // profiles for balance totals
+        supabase
+          .from('profiles')
+          .select('balance'),
+      ]);
+
+      if (earnedRes.error) throw earnedRes.error;
+      if (prevEarnedRes.error) throw prevEarnedRes.error;
+      if (depositsRes.error) throw depositsRes.error;
+      if (prevDepositsRes.error) throw prevDepositsRes.error;
+      if (creditUsageRes.error) throw creditUsageRes.error;
+      if (profilesRes.error) throw profilesRes.error;
+
+      const sumAbs = (data: { amount: number }[]) =>
+        data.reduce((s, t) => s + Math.abs(t.amount), 0);
+      const sumPositive = (data: { amount: number }[]) =>
+        data.reduce((s, t) => s + t.amount, 0);
 
       let totalCredits = 0;
       let totalDebts = 0;
-
-      (profiles || []).forEach((profile) => {
-        const balance = profile.balance ?? 0;
-        if (balance > 0) {
-          totalCredits += balance;
-        } else if (balance < 0) {
-          totalDebts += Math.abs(balance);
-        }
+      (profilesRes.data || []).forEach((p) => {
+        const b = p.balance ?? 0;
+        if (b > 0) totalCredits += b;
+        else if (b < 0) totalDebts += Math.abs(b);
       });
 
-      // Get this month's transactions (deposits only for revenue)
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      const { data: monthTransactions, error: transError } = await supabase
-        .from('transactions')
-        .select('amount, type')
-        .gte('created_at', startOfMonth.toISOString())
-        .in('type', ['deposit', 'training']);
-
-      if (transError) throw transError;
-
-      const monthlyRevenue = (monthTransactions || [])
-        .filter(t => t.type === 'deposit')
-        .reduce((sum, t) => sum + t.amount, 0);
-
       return {
-        totalCredits,
+        earned: sumAbs(earnedRes.data || []),
+        prevEarned: sumAbs(prevEarnedRes.data || []),
+        deposits: sumPositive(depositsRes.data || []),
+        prevDeposits: sumPositive(prevDepositsRes.data || []),
         totalDebts,
-        monthlyRevenue,
+        totalCredits,
+        creditUsage: sumAbs(creditUsageRes.data || []),
       };
     },
     staleTime: 30 * 1000,
@@ -55,7 +150,6 @@ export function useClientsWithDebt() {
   return useQuery({
     queryKey: ['clients-with-debt'],
     queryFn: async () => {
-      // Get client user_ids
       const { data: clientRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id')
@@ -66,7 +160,6 @@ export function useClientsWithDebt() {
       const clientUserIds = clientRoles.map(r => r.user_id);
       if (clientUserIds.length === 0) return [];
 
-      // Get profiles with negative balance
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')

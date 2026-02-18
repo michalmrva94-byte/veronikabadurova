@@ -159,7 +159,7 @@ export default function FinancesPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2 flex-wrap mb-4">
+            <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-1 px-1 scrollbar-none">
               {([
                 { value: 'all', label: 'Všetko' },
                 { value: 'deposits', label: 'Vklady' },
@@ -171,7 +171,7 @@ export default function FinancesPage() {
                   key={chip.value}
                   onClick={() => setFilter(chip.value)}
                   className={cn(
-                    'text-xs rounded-full px-3 py-1.5 transition-all border',
+                    'text-xs rounded-full px-3 py-1.5 transition-all border whitespace-nowrap shrink-0',
                     filter === chip.value
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'

@@ -180,7 +180,7 @@ function ApprovedDashboard() {
                 Momentálne nemáme naplánovaný tréning.
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                Vyberte si termín, ktorý vám vyhovuje.
+                Rezervujte si termín alebo počkajte — navrhnem vám tréning priamo sem.
               </p>
               <Button asChild>
                 <Link to={ROUTES.CALENDAR}>Rezervovať tréning</Link>

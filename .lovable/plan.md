@@ -1,215 +1,97 @@
 
-# Plan: Jednotny tone of voice Veroniky
+# Plan: Optimalizacia sekcie DOMOV pre klienta
 
 ## Prehlad
 
-Aktualizacia vsetkych klientskych textov v aplikacii tak, aby komunikacia posobila pokojne, profesionalne, ferovo a osobne. Ziadne stresujuce, moralizujuce alebo utocne formulacie. Nahradenie slov ako "nedoplatok", "nezaplatene", "pokuta" za jemnejsie alternativy.
+Restrukturalizacia klientskeho dashboardu s dorazom na rezervacie a treningy. Financie sa presunu do sekundarnej pozicie. Pridame hero sekciu s najblizsim treningom, jedno velke CTA tlacidlo, kompaktnejsiu kartu zostatku a zbalitelny blok pre storno podmienky.
 
 ---
 
-## 1. DashboardPage.tsx -- Domov
+## Nova struktura (zhora nadol)
 
-### Privitanie (riadky 91-96)
-- Stare: `"Ahoj, {name}! 👋"` + `"Vitajte v rezervačnom systéme"`
-- Nove: `"Ahoj, {name}! 👋"` + `"Teším sa na ďalší tréning."`
-
-### Zostatok -- podtexty (riadky 132-136)
-- `netBalance > 0`: `"Máte kredit pripravený na tréning."`
-- `netBalance === 0`: `"Tréning si môžete rezervovať. Platbu vyriešime neskôr."`
-- `netBalance < 0`: `"Máte otvorenú platbu za predošlý tréning. Stačí ju uhradiť pri najbližšej príležitosti."`
-
-### Tlacidlo pri zaporne zostatku (riadok 139)
-- Stare: `"Zobraziť platobné údaje"`
-- Nove: `"Zobraziť platobné údaje"` (ponechat -- je to neutralne)
-
-### Prazdne rezervacie text (riadok 188)
-- Stare: `"Zatiaľ nemáte žiadne rezervácie"`
-- Nove: `"Zatiaľ nemáte žiadne rezervácie"` (ponechat)
-
-### Storno pravidla karta (riadky 280-292)
-- Stare: `"💡 Pripomienka storno pravidiel:"`
-- Nove: `"Rezervačné podmienky"` (bez emoji, pokojnejsie)
-- Zmenit `"Neúčasť"` na `"neúčasť bez zrušenia"` pre konzistenciu s landing page
+1. **Hero sekcia** -- pozdrav + najblizssi trening alebo CTA
+2. **Primarne CTA** -- velke tlacidlo "Rezervovat novy trening" (plna sirka)
+3. **Navrhy treningov** -- sekcia "Vyzaduje pozornost" (ak existuju)
+4. **Zostatok** -- kompaktna karta (zjednodusena, bez ikoniek TrendingUp/Down)
+5. **Historia** -- posledne 3 treningy + "Zobrazit vsetko"
+6. **Rezervacne podmienky** -- zbalitelny blok (Collapsible), standardne zatvoreny
 
 ---
 
-## 2. FinancesPage.tsx -- Financie
+## Detailne zmeny v DashboardPage.tsx
 
-### Nadpis a podtext (riadky 68-71)
-- Stare: `"Financie"` + `"Prehľad vášho kreditu a transakcií"`
-- Nove: `"Financie"` + `"Prehľad vašich platieb a tréningov."`
+### 1. Hero sekcia (nahradi aktualny pozdrav + quick actions grid)
 
-### Zostatok podtexty (riadky 108-110)
-- Rovnake ako dashboard (vid bod 1)
+- Pozdrav: `"Ahoj, {meno}! 👋"` + `"Tesim sa na dalsi trening."`
+- Ak `upcomingBookings.length > 0`:
+  - Pod pozdravom zobrazit kartu s najblizsim treningom:
+    - Text: `"Najblizsie: streda, 19. feb o 09:00"`
+    - Tlacidlo: `"Detail treningu"` -- naviguje na `/moje-treningy`
+- Ak `upcomingBookings.length === 0`:
+  - Pod pozdravom zobrazit text: `"Zatial nemate rezervovany trening."`
+  - (CTA bude hned pod tym)
 
-### IBAN text (riadok 179)
-- Stare: `"Platby sú spracovávané manuálne. Kredit bude pripísaný po zaevidovaní platby."`
-- Nove: `"Platbu môžete uhradiť prevodom alebo v hotovosti. Kredit pripíšeme po zaevidovaní platby."`
+### 2. Primarne CTA
 
-### Info banner pri zaporne zostatku (riadky 189-191)
-- Stare: `"Máte nezaplatený zostatok. Prosím, doplňte kredit prevodom na účet."` / `"Váš kredit nemusí pokryť nadchádzajúce tréningy. Zvážte doplnenie kreditu."`
-- Nove: `"Máte otvorenú platbu. Môžete ju uhradiť prevodom alebo v hotovosti pri najbližšom tréningu."` / `"Kredit môžete kedykoľvek doplniť prevodom na účet."`
+- Jedno velke tlacidlo plnej sirky namiesto 2-stlpcoveho gridu
+- Text: `"Rezervovat novy trening"`
+- Naviguje na `/kalendar`
+- Styl: `btn-dark h-14 text-base` (plna sirka, vyrazne)
 
----
+### 3. Odstranit
 
-## 3. LowCreditWarningDialog.tsx -- Upozornenie pred rezervaciou
+- 2-stlpcovy grid s kartami "Rezervovat" a "Moje treningy" (nahradeny hero + CTA)
+- Sekciu "Nadchadzajuce treningy" (Card s CardHeader) -- informaciu o najblizssom treningu prebera hero sekcia
+- Ikony TrendingUp, TrendingDown, Minus z karty zostatku
 
-### Nadpis (riadok 29)
-- Ponechat: `"Nedostatok kreditu"`
+### 4. Zostatok -- kompaktna karta
 
-### Popis (riadok 31)
-- Stare: `"Informácia o vašom zostatkoch"`
-- Nove: `"Informácia o vašom zostatku"`
+- Zjednoduseny dizajn bez velkych ikon
+- Nadpis: `"Vas zostatok"` s ikonou Wallet
+- Suma: velke cislo s farbou:
+  - `> 0`: `text-success`, border `border-success/30` 
+  - `=== 0`: `text-muted-foreground`, border `border-border` (siva, nie oranzova!)
+  - `< 0`: `text-destructive`, border `border-destructive/30`
+- Microcopy:
+  - `> 0`: `"Mate dostupny kredit."`
+  - `=== 0`: `"Momentalne nemate kredit ani dlh."`
+  - `< 0`: `"Evidujeme nezaplateny zostatok."`
+- Pri < 0: male tlacidlo "Zobrazit platobne udaje"
+- Ziadne pozadie overlay (odstranit absolutny div s opacity)
 
-### Text (riadky 37-39)
-- Stare: `"Nemáte dostatočný kredit. Po absolvovaní tréningu vznikne záväzok vo výške X €."`
-- Nove: `"Aktuálny kredit nepokrýva cenu tréningu. Platbu vo výške {missing} € môžete uhradiť neskôr."`
+### 5. Historia
 
----
+- Zobrazit iba posledne 3 (nie 5)
+- Tlacidlo: `"Zobrazit vsetko"` (namiesto "Zobrazit celu historiu (X)")
 
-## 4. BookingConfirmDialog.tsx -- Potvrdenie rezervacie
+### 6. Rezervacne podmienky -- Collapsible
 
-### Info box text (riadky 88-91)
-- Stare: `"Čaká na potvrdenie"` + `"Po odoslaní rezervácie vás trénerka potvrdí a dostanete notifikáciu."`
-- Nove: `"Čaká na potvrdenie"` + `"Po odoslaní rezervácie vás Veronika potvrdí a dostanete notifikáciu."`
-
-### Storno podmienky text (riadky 99-102)
-- Stare: `"Storno podmienky"` + `"Pri zrušení menej ako 24h pred tréningom sa účtuje 80% z ceny."`
-- Nove: `"Podmienky zrušenia"` + `"Podľa podmienok sa pri zrušení menej ako 24 hodín vopred účtuje 80 % ceny tréningu."`
-
----
-
-## 5. CancelBookingDialog.tsx -- Storno dialog
-
-### Nadpis (riadky 55-58)
-- Ikona: zmenit z `text-destructive` na `text-warning` (menej stresujuce)
-- Text ponechat: `"Zrušiť rezerváciu"`
-
-### Popis (riadok 60)
-- Stare: `"Naozaj chcete zrušiť túto rezerváciu?"`
-- Nove: `"Chcete zrušiť túto rezerváciu?"`
-
-### S poplatkom (riadky 84-89)
-- Stare: `"Storno poplatok: X€ (Y%)"` + `"Tento poplatok bude odpočítaný z vášho kreditu podľa storno podmienok."`
-- Nove: `"Podľa podmienok sa účtuje {percentage} % ceny tréningu ({fee} €)."` + `"Suma bude zohľadnená vo vašom zostatku."`
-
-### Bez poplatku (riadky 93-99)
-- Stare: `"Zrušenie bez poplatku"` + `"Tréning je viac ako 48 hodín, takže storno poplatok sa neúčtuje."`
-- Nove: `"Zrušenie bez poplatku"` + `"Zrušenie prebehne bez poplatku."`
+- Pouzit `Collapsible` komponent z `@radix-ui/react-collapsible`
+- Trigger: `"Rezervacne podmienky"` s ChevronDown ikonou
+- Standardne zatvoreny
+- Obsah rovnaky (grid so storno percentami)
 
 ---
 
-## 6. Notifikacie -- useCompleteTraining.ts
+## Importy
 
-### Training completed (riadky 55-60)
-- Stare: `title: 'Tréning dokončený ✓'`, `message: 'Váš tréning bol označený ako odplávaný. Z kreditu bolo odpočítaných X€.'`
-- Nove: `title: 'Tréning dokončený'`, `message: 'Váš tréning bol zaznamenaný. Ďakujeme a teším sa nabudúce 😊'`
+### Pridat
+- `ChevronDown` z `lucide-react`
+- `Collapsible, CollapsibleTrigger, CollapsibleContent` z `@/components/ui/collapsible`
+- `ArrowRight` z `lucide-react`
 
-### No show (riadky 87-92)
-- Stare: `title: 'Neúčasť na tréningu'`, `message: 'Neprišli ste na tréning. Bol vám účtovaný poplatok X€.'`
-- Nove: `title: 'Neúčasť na tréningu'`, `message: 'Tréning nebol absolvovaný. Podľa podmienok sa účtuje ${price} €.'`
-
----
-
-## 7. Notifikacie -- useAdminBookings.ts
-
-### Booking confirmed (riadok 73-74)
-- Stare: `title: 'Rezervácia potvrdená ✓'`, `message: 'Váš tréning bol potvrdený. Tešíme sa na vás!'`
-- Nove: `title: 'Rezervácia potvrdená'`, `message: 'Váš tréning je potvrdený. Vidíme sa v bazéne 🏊‍♂️'`
-
-### Booking rejected (riadky 117-118)
-- Stare: `title: 'Rezervácia zamietnutá'`, `message: 'Bohužiaľ, váš požadovaný termín nie je možné potvrdiť. Prosím, vyberte si iný termín.'`
-- Nove: `title: 'Zmena termínu'`, `message: reason || 'Tento termín, žiaľ, nie je možné potvrdiť. Skúste prosím iný.'`
-
-### Booking cancelled by admin (riadky 170-171)
-- Stare: `title: 'Tréning zrušený'`, `message: 'Váš tréning bol zrušený trénerom.'`
-- Nove: `title: 'Tréning zrušený'`, `message: reason || 'Rezervácia bola zrušená. Ak máte otázky, ozvite sa.'`
-
----
-
-## 8. Notifikacie -- useAssignTraining.ts (riadky 53-56)
-
-- Stare: `title: 'Nový tréning priradený'`, `message: 'Bol vám priradený nový tréning. Skontrolujte si detaily v sekcii "Moje tréningy".'`
-- Nove: `title: 'Nový tréning'`, `message: 'Máte priradený nový tréning. Detaily nájdete v sekcii Moje tréningy.'`
-
----
-
-## 9. Notifikacie -- useProposedTrainings.ts (riadky 189-190)
-
-- Stare: `title: 'Nové návrhy tréningov'`, `message: 'Trénerka vám navrhla X tréningov. Potvrďte ich do 24 hodín.'`
-- Nove: `title: 'Nové návrhy tréningov'`, `message: 'Veronika vám navrhla ${created} ${...}. Potvrďte ich, prosím, do 24 hodín.'`
-
----
-
-## 10. Edge function -- check-proposed-deadlines/index.ts
-
-### Expired notification (riadky 56-60)
-- Stare: `title: 'Návrh tréningu vypršal'`, `message: 'Navrhnutý tréning nebol potvrdený v stanovenom termíne a bol zrušený.'`
-- Nove: `title: 'Návrh tréningu vypršal'`, `message: 'Navrhnutý tréning nebol potvrdený včas. Termín bol uvoľnený.'`
-
-### 12h reminder (riadky 67-69)
-- Stare: `title: 'Pripomienka: Nepotvrdené tréningy'`, `message: 'Máte nepotvrdené návrhy tréningov. Potvrďte ich do X hodín.'`
-- Nove: `title: 'Pripomienka'`, `message: 'Máte nepotvrdené návrhy tréningov. Potvrďte ich do ${Math.round(hoursUntilDeadline)} hodín.'`
-
-### 1h urgent (riadky 75-77)
-- Stare: `title: '⚠️ Posledná hodina na potvrdenie'`, `message: 'Návrhy tréningov vyprší o menej ako hodinu! Potvrďte ich teraz.'`
-- Nove: `title: 'Posledná hodina na potvrdenie'`, `message: 'Návrhy tréningov je možné potvrdiť ešte necelú hodinu.'`
-
----
-
-## 11. ProfilePage.tsx -- Profil
-
-### Notifikacie sekcia (riadky 121-123)
-- Stare: `"Notifikácie"` + `"Nastavte si, aké upozornenia chcete dostávať"`
-- Nove: `"Notifikácie"` + `"Vyberte si, aké upozornenia chcete dostávať"`
-
-### In-app (riadok 129)
-- Stare: `"Upozornenia v aplikácii"`
-- Nove: `"Upozornenia priamo v aplikácii"`
-
-### Email (riadok 151)
-- Stare: `"Potvrdenia rezervácií, pripomienky, last-minute ponuky"`
-- Nove: `"Potvrdenia, pripomienky a uvoľnené miesta"`
-
----
-
-## 12. ProposedTrainingsSection.tsx
-
-### Alert text (riadky 133-134)
-- Stare: `"Máš tréningy na potvrdenie"`
-- Nove: `"Máte návrhy tréningov"` (vykanie, konzistencia)
-
----
-
-## 13. PendingApprovalScreen + RejectedScreen (DashboardPage)
-
-### Pending (riadky 25-26, 31)
-- Ponechat -- uz je pokojne
-
-### Rejected (riadky 50-51, 56)
-- Stare: `"Bohužiaľ, vaša žiadosť o spoluprácu nebola schválená."` + `"Ak máte otázky, neváhajte kontaktovať trénera priamo."`
-- Nove: `"Vaša žiadosť, žiaľ, nebola schválená."` + `"Ak máte otázky, neváhajte sa ozvať priamo Veronike."`
+### Odstranit (nepouzivane po zmenach)
+- `TrendingUp`, `TrendingDown`, `Minus`, `Clock`
 
 ---
 
 ## Subory na upravu
 
-- `src/pages/client/DashboardPage.tsx`
-- `src/pages/client/FinancesPage.tsx`
-- `src/pages/client/ProfilePage.tsx`
-- `src/components/client/LowCreditWarningDialog.tsx`
-- `src/components/client/BookingConfirmDialog.tsx`
-- `src/components/client/CancelBookingDialog.tsx`
-- `src/components/client/ProposedTrainingsSection.tsx`
-- `src/hooks/useCompleteTraining.ts`
-- `src/hooks/useAdminBookings.ts`
-- `src/hooks/useAssignTraining.ts`
-- `src/hooks/useProposedTrainings.ts`
-- `supabase/functions/check-proposed-deadlines/index.ts`
+- `src/pages/client/DashboardPage.tsx` -- jediny subor
 
 ## Co sa NEMENI
 
-- Ziadna logika, ziadne databazove zmeny
-- Admin-facing texty (iba klientske texty)
-- Dizajn a layout komponentov
-- Landing page texty (uz su v spravnom tone)
+- PendingApprovalScreen, RejectedScreen
+- ProposedTrainingsSection logika
+- Backend / hooks / databaza
+- Ostatne stranky

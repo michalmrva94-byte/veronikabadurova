@@ -2,8 +2,8 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState } from 'react';
-import { History, Loader2, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { History, Loader2, ChevronLeft, ChevronRight, ArrowLeft, Download } from 'lucide-react';
 import { useClients } from '@/hooks/useClients';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,6 +67,54 @@ export default function AdminFinanceHistoryPage() {
     setDateTo('');
     setPage(0);
   };
+
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportCSV = useCallback(async () => {
+    setExporting(true);
+    try {
+      // Fetch ALL matching transactions (no pagination)
+      let query = supabase
+        .from('transactions')
+        .select('*, client:profiles!transactions_client_id_fkey(full_name)')
+        .order('created_at', { ascending: false });
+
+      if (clientFilter !== 'all') query = query.eq('client_id', clientFilter);
+      if (typeFilter !== 'all') query = query.eq('type', typeFilter as any);
+      if (dateFrom) query = query.gte('created_at', new Date(dateFrom).toISOString());
+      if (dateTo) {
+        const to = new Date(dateTo);
+        to.setHours(23, 59, 59, 999);
+        query = query.lte('created_at', to.toISOString());
+      }
+
+      const { data: rows, error } = await query;
+      if (error) throw error;
+
+      const header = 'Dátum;Klient;Typ;Suma;Zostatok;Popis';
+      const csvRows = (rows || []).map((t: any) => {
+        const date = format(new Date(t.created_at), 'd.M.yyyy HH:mm');
+        const client = t.client?.full_name || '';
+        const type = TRANSACTION_LABELS[t.type as keyof typeof TRANSACTION_LABELS] || t.type;
+        const amount = t.amount.toFixed(2).replace('.', ',');
+        const balance = t.balance_after.toFixed(2).replace('.', ',');
+        const desc = (t.description || '').replace(/;/g, ',');
+        return `${date};${client};${type};${amount};${balance};${desc}`;
+      });
+
+      const bom = '\uFEFF';
+      const csv = bom + [header, ...csvRows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transakcie_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  }, [clientFilter, typeFilter, dateFrom, dateTo]);
 
   return (
     <AdminLayout>
@@ -135,10 +183,16 @@ export default function AdminFinanceHistoryPage() {
         {/* Transactions list */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <History className="h-5 w-5" />
-              Transakcie ({data?.count ?? 0})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <History className="h-5 w-5" />
+                Transakcie ({data?.count ?? 0})
+              </CardTitle>
+              <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={exporting || (data?.count ?? 0) === 0}>
+                {exporting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
+                CSV
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (

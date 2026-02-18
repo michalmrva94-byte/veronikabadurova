@@ -70,8 +70,8 @@ export function useAdminBookings() {
         .from('notifications')
         .insert({
           user_id: booking.client_id,
-          title: 'Rezervácia potvrdená ✓',
-          message: `Váš tréning bol potvrdený. Tešíme sa na vás!`,
+          title: 'Rezervácia potvrdená',
+          message: 'Váš tréning je potvrdený. Vidíme sa v bazéne 🏊‍♂️',
           type: 'booking_confirmed',
           related_slot_id: booking.slot_id,
         });
@@ -114,8 +114,8 @@ export function useAdminBookings() {
         .from('notifications')
         .insert({
           user_id: booking.client_id,
-          title: 'Rezervácia zamietnutá',
-          message: reason || 'Bohužiaľ, váš požadovaný termín nie je možné potvrdiť. Prosím, vyberte si iný termín.',
+          title: 'Zmena termínu',
+          message: reason || 'Tento termín, žiaľ, nie je možné potvrdiť. Skúste prosím iný.',
           type: 'booking_rejected',
           related_slot_id: booking.slot_id,
         });
@@ -168,7 +168,7 @@ export function useAdminBookings() {
         .insert({
           user_id: booking.client_id,
           title: 'Tréning zrušený',
-          message: reason || 'Váš tréning bol zrušený trénerom.',
+          message: reason || 'Rezervácia bola zrušená. Ak máte otázky, ozvite sa.',
           type: 'booking_cancelled',
           related_slot_id: booking.slot_id,
         });

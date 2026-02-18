@@ -47,13 +47,13 @@ function RejectedScreen({ name }: { name: string }) {
           <h1 className="text-2xl font-bold text-foreground">
             Ahoj, {name}
           </h1>
-          <p className="text-lg text-muted-foreground max-w-sm">
-            Bohužiaľ, vaša žiadosť o spoluprácu nebola schválená.
+           <p className="text-lg text-muted-foreground max-w-sm">
+            Vaša žiadosť, žiaľ, nebola schválená.
           </p>
         </div>
         <Card className="w-full max-w-sm border-border">
           <CardContent className="p-4 text-sm text-muted-foreground">
-            <p>Ak máte otázky, neváhajte kontaktovať trénera priamo.</p>
+            <p>Ak máte otázky, neváhajte sa ozvať priamo Veronike.</p>
           </CardContent>
         </Card>
       </div>
@@ -91,8 +91,8 @@ function ApprovedDashboard() {
           <h1 className="text-2xl font-bold text-foreground">
             Ahoj, {profile?.full_name?.split(' ')[0]}! 👋
           </h1>
-          <p className="text-muted-foreground">
-            Vitajte v rezervačnom systéme
+           <p className="text-muted-foreground">
+            Teším sa na ďalší tréning.
           </p>
         </div>
 
@@ -130,9 +130,9 @@ function ApprovedDashboard() {
               </span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              {netBalance > 0 && "Máte dostupný kredit na tréningy."}
-              {netBalance === 0 && "Rezervácia je možná. Vznikne nedoplatok."}
-              {netBalance < 0 && "Máte nedoplatok. Prosím uhraďte platbu."}
+              {netBalance > 0 && "Máte kredit pripravený na tréning."}
+              {netBalance === 0 && "Tréning si môžete rezervovať. Platbu vyriešime neskôr."}
+              {netBalance < 0 && "Máte otvorenú platbu za predošlý tréning. Stačí ju uhradiť pri najbližšej príležitosti."}
             </p>
             {netBalance < 0 && (
               <Button asChild variant="outline" size="sm" className="mt-3">
@@ -280,13 +280,13 @@ function ApprovedDashboard() {
         <Card className="border-border/50 bg-muted/30">
           <CardContent className="p-4">
             <p className="text-xs font-medium text-muted-foreground mb-2">
-              💡 Pripomienka storno pravidiel:
+              Rezervačné podmienky
             </p>
             <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
               <span>&gt;48h: <span className="text-success font-medium">0%</span></span>
               <span>24-48h: <span className="text-warning font-medium">50%</span></span>
               <span>&lt;24h: <span className="text-destructive font-medium">80%</span></span>
-              <span>Neúčasť: <span className="text-destructive font-medium">100%</span></span>
+              <span>neúčasť bez zrušenia: <span className="text-destructive font-medium">100%</span></span>
             </div>
           </CardContent>
         </Card>

@@ -87,7 +87,7 @@ export function BookingConfirmDialog({
             <div className="text-sm">
               <p className="font-medium text-foreground mb-1">Čaká na potvrdenie</p>
               <p className="text-muted-foreground">
-                Po odoslaní rezervácie vás trénerka potvrdí a dostanete notifikáciu.
+                Po odoslaní rezervácie vás Veronika potvrdí a dostanete notifikáciu.
               </p>
             </div>
           </div>
@@ -96,9 +96,9 @@ export function BookingConfirmDialog({
           <div className="flex gap-3 p-3 rounded-lg border border-warning/30 bg-warning/5">
             <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
             <div className="text-sm">
-              <p className="font-medium text-foreground mb-1">Storno podmienky</p>
+              <p className="font-medium text-foreground mb-1">Podmienky zrušenia</p>
               <p className="text-muted-foreground">
-                Pri zrušení menej ako 24h pred tréningom sa účtuje 80% z ceny.
+                Podľa podmienok sa pri zrušení menej ako 24 hodín vopred účtuje 80 % ceny tréningu.
               </p>
             </div>
           </div>

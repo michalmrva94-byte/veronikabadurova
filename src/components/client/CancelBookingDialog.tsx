@@ -53,11 +53,11 @@ export function CancelBookingDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <AlertTriangle className="h-5 w-5 text-warning" />
             Zrušiť rezerváciu
           </DialogTitle>
           <DialogDescription>
-            Naozaj chcete zrušiť túto rezerváciu?
+            Chcete zrušiť túto rezerváciu?
           </DialogDescription>
         </DialogHeader>
 
@@ -82,10 +82,10 @@ export function CancelBookingDialog({
               <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
               <div className="text-sm">
                 <p className="font-medium text-foreground mb-1">
-                  Storno poplatok: {fee.toFixed(2)}€ ({percentage}%)
+                  Podľa podmienok sa účtuje {percentage} % ceny tréningu ({fee.toFixed(2)} €).
                 </p>
                 <p className="text-muted-foreground">
-                  Tento poplatok bude odpočítaný z vášho kreditu podľa storno podmienok.
+                  Suma bude zohľadnená vo vašom zostatku.
                 </p>
               </div>
             </div>
@@ -94,7 +94,7 @@ export function CancelBookingDialog({
               <div className="text-sm">
                 <p className="font-medium text-foreground mb-1">Zrušenie bez poplatku</p>
                 <p className="text-muted-foreground">
-                  Tréning je viac ako 48 hodín, takže storno poplatok sa neúčtuje.
+                  Zrušenie prebehne bez poplatku.
                 </p>
               </div>
             </div>

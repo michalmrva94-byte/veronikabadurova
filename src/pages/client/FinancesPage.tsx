@@ -67,7 +67,7 @@ export default function FinancesPage() {
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-foreground">Financie</h1>
           <p className="text-muted-foreground">
-            Prehľad vášho kreditu a transakcií
+            Prehľad vašich platieb a tréningov.
           </p>
         </div>
 
@@ -105,9 +105,9 @@ export default function FinancesPage() {
               </span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              {netBalance > 0 && "Máte dostupný kredit na tréningy."}
-              {netBalance === 0 && "Rezervácia je možná. Vznikne nedoplatok."}
-              {netBalance < 0 && "Máte nedoplatok. Prosím uhraďte platbu."}
+              {netBalance > 0 && "Máte kredit pripravený na tréning."}
+              {netBalance === 0 && "Tréning si môžete rezervovať. Platbu vyriešime neskôr."}
+              {netBalance < 0 && "Máte otvorenú platbu za predošlý tréning. Stačí ju uhradiť pri najbližšej príležitosti."}
             </p>
           </CardContent>
         </Card>
@@ -176,7 +176,7 @@ export default function FinancesPage() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Platby sú spracovávané manuálne. Kredit bude pripísaný po zaevidovaní platby.
+              Platbu môžete uhradiť prevodom alebo v hotovosti. Kredit pripíšeme po zaevidovaní platby.
             </p>
           </div>
         )}
@@ -187,8 +187,8 @@ export default function FinancesPage() {
             <Info className="h-5 w-5 text-warning shrink-0 mt-0.5" />
             <p className="text-foreground">
               {netBalance < 0
-                ? 'Máte nezaplatený zostatok. Prosím, doplňte kredit prevodom na účet.'
-                : 'Váš kredit nemusí pokryť nadchádzajúce tréningy. Zvážte doplnenie kreditu.'}
+                ? 'Máte otvorenú platbu. Môžete ju uhradiť prevodom alebo v hotovosti pri najbližšom tréningu.'
+                : 'Kredit môžete kedykoľvek doplniť prevodom na účet.'}
             </p>
           </div>
         )}

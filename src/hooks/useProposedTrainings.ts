@@ -187,7 +187,7 @@ export function useProposedTrainings() {
         await supabase.from('notifications').insert({
           user_id: clientId,
           title: 'Nové návrhy tréningov',
-          message: `Trénerka vám navrhla ${created} ${created === 1 ? 'tréning' : created < 5 ? 'tréningy' : 'tréningov'}. Potvrďte ich do 24 hodín.`,
+          message: `Veronika vám navrhla ${created} ${created === 1 ? 'tréning' : created < 5 ? 'tréningy' : 'tréningov'}. Potvrďte ich, prosím, do 24 hodín.`,
           type: 'proposal',
         });
       }

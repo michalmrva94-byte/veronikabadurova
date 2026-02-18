@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
         await supabase.from('notifications').insert({
           user_id: booking.client_id,
           title: 'Návrh tréningu vypršal',
-          message: `Navrhnutý tréning nebol potvrdený v stanovenom termíne a bol zrušený.`,
+          message: 'Navrhnutý tréning nebol potvrdený včas. Termín bol uvoľnený.',
           type: 'proposal_expired',
         })
 
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       if (hoursSinceCreation >= 11.5 && hoursSinceCreation < 12.5) {
         await supabase.from('notifications').insert({
           user_id: booking.client_id,
-          title: 'Pripomienka: Nepotvrdené tréningy',
+          title: 'Pripomienka',
           message: `Máte nepotvrdené návrhy tréningov. Potvrďte ich do ${Math.round(hoursUntilDeadline)} hodín.`,
           type: 'proposal_reminder',
         })
@@ -79,8 +79,8 @@ Deno.serve(async (req) => {
       if (hoursUntilDeadline > 0 && hoursUntilDeadline <= 1.5 && hoursSinceCreation >= 22) {
         await supabase.from('notifications').insert({
           user_id: booking.client_id,
-          title: '⚠️ Posledná hodina na potvrdenie',
-          message: `Návrhy tréningov vyprší o menej ako hodinu! Potvrďte ich teraz.`,
+          title: 'Posledná hodina na potvrdenie',
+          message: 'Návrhy tréningov je možné potvrdiť ešte necelú hodinu.',
           type: 'proposal_urgent',
         })
         reminders1h++

@@ -28,15 +28,15 @@ export function LowCreditWarningDialog({
         <DialogHeader>
           <DialogTitle>Nedostatok kreditu</DialogTitle>
           <DialogDescription>
-            Informácia o vašom zostatkoch
+            Informácia o vašom zostatku
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex gap-3 p-4 rounded-lg border border-primary/30 bg-primary/5">
           <Info className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
           <p className="text-sm text-foreground">
-            Nemáte dostatočný kredit. Po absolvovaní tréningu vznikne záväzok vo výške{' '}
-            <span className="font-semibold">{missingAmount.toFixed(2)} €</span>.
+            Aktuálny kredit nepokrýva cenu tréningu. Platbu vo výške{' '}
+            <span className="font-semibold">{missingAmount.toFixed(2)} €</span> môžete uhradiť neskôr.
           </p>
         </div>
 

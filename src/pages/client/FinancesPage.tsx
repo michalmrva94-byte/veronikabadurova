@@ -3,7 +3,7 @@ import { ClientLayout } from '@/components/layout/ClientLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Clock, XCircle, Loader2, Landmark, Copy, ArrowUpRight, ArrowDownRight, ChevronDown, Info } from 'lucide-react';
+import { Clock, XCircle, Loader2, Landmark, Copy, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TRANSACTION_LABELS } from '@/lib/constants';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { MONTH_NAMES } from '@/lib/constants';
 import { sk } from 'date-fns/locale';
 import { useState } from 'react';
 
@@ -19,7 +20,7 @@ const formatIBAN = (iban: string) => iban.replace(/\s/g, '').replace(/(.{4})/g, 
 export default function FinancesPage() {
   const { profile } = useAuth();
   const { toast } = useToast();
-  const { transactions, isLoading, filter, setFilter, hasMore, loadMore } = useTransactions();
+  const { transactions, isLoading, filter, setFilter, hasMore, loadMore, selectedMonth, changeMonth, isCurrentMonth } = useTransactions();
   const [paymentOpen, setPaymentOpen] = useState(false);
 
   const { data: ibanValue } = useQuery({
@@ -152,8 +153,32 @@ export default function FinancesPage() {
 
         {/* 4. História */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">História</CardTitle>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">História</CardTitle>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => changeMonth('prev')}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium min-w-[100px] text-center">
+                  {MONTH_NAMES[selectedMonth.getMonth()]} {selectedMonth.getFullYear()}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => changeMonth('next')}
+                  disabled={isCurrentMonth}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
             <CardDescription>
               Prehľad všetkých pohybov na vašom účte.
             </CardDescription>

@@ -45,6 +45,11 @@ export interface AdminDashboardStats {
   weeklyTrainingCount7d: number;
   weeklySlotOccupancy: number;
   weeklyOpenSlots: number;
+  // Previous period for trends
+  prevActiveClients: number;
+  prevTrainings: number;
+  prevSlotOccupancy: number;
+  prevNetRevenue: number;
 }
 
 export function getDefaultRange(period: 'week' | 'month'): DashboardDateRange {
@@ -82,6 +87,11 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
       const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 });
       const thisWeekEnd = endOfWeek(now, { weekStartsOn: 1 });
 
+      // Calculate previous period range
+      const periodMs = end.getTime() - start.getTime();
+      const prevEnd = new Date(start.getTime() - 1); // 1ms before current start
+      const prevStart = new Date(prevEnd.getTime() - periodMs);
+
       const [
         periodBookingsRes,
         unconfirmedRes,
@@ -96,6 +106,10 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         sevenDayBookingsRes,
         todayUnconfirmedRes,
         thisWeekSlotsRes,
+        prevPeriodBookingsRes,
+        prevSlotsRes,
+        prevDepositTransRes,
+        prevTrainingTransRes,
       ] = await Promise.all([
         // Period bookings with client info
         supabase
@@ -174,6 +188,32 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
           .select('id, start_time, is_available, bookings(id)')
           .gte('start_time', thisWeekStart.toISOString())
           .lte('start_time', thisWeekEnd.toISOString()),
+        // Previous period bookings for trends
+        supabase
+          .from('bookings')
+          .select('id, status, client_id, price, slot:training_slots(start_time)')
+          .in('status', ['booked', 'completed', 'cancelled', 'no_show'])
+          .gte('created_at', '2000-01-01'),
+        // Previous period slots for trend
+        supabase
+          .from('training_slots')
+          .select('id, start_time, is_available, bookings(id)')
+          .gte('start_time', prevStart.toISOString())
+          .lte('start_time', prevEnd.toISOString()),
+        // Previous period deposit transactions
+        supabase
+          .from('transactions')
+          .select('amount')
+          .eq('type', 'deposit')
+          .gte('created_at', prevStart.toISOString())
+          .lte('created_at', prevEnd.toISOString()),
+        // Previous period training transactions
+        supabase
+          .from('transactions')
+          .select('amount')
+          .eq('type', 'training')
+          .gte('created_at', prevStart.toISOString())
+          .lte('created_at', prevEnd.toISOString()),
       ]);
 
       // === PERIOD BOOKINGS ===
@@ -397,6 +437,37 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         clv = avgCooperationMonths * avgMonthlyRevenuePerClient;
       }
 
+      // === PREVIOUS PERIOD TRENDS ===
+      const prevAllBookings = (prevPeriodBookingsRes.data || []).filter((b: any) => {
+        const slotTime = b.slot?.start_time;
+        if (!slotTime) return false;
+        const d = new Date(slotTime);
+        return d >= prevStart && d <= prevEnd;
+      });
+      const prevActiveClientIds = new Set(
+        prevAllBookings
+          .filter((b: any) => b.status === 'booked' || b.status === 'completed')
+          .map((b: any) => b.client_id)
+      );
+      const prevActiveClients = prevActiveClientIds.size;
+      const prevTrainings = prevAllBookings.filter((b: any) => b.status === 'booked' || b.status === 'completed').length;
+
+      const prevSlots = prevSlotsRes.data || [];
+      const prevBookedSlots = prevSlots.filter((s: any) => s.bookings && s.bookings.length > 0).length;
+      const prevSlotOccupancy = prevSlots.length > 0 ? (prevBookedSlots / prevSlots.length) * 100 : 0;
+
+      const prevDeposits = (prevDepositTransRes.data || []).reduce((sum: number, t: any) => sum + t.amount, 0);
+      let prevCreditUsage = 0;
+      const prevTrainingTrans = prevTrainingTransRes.data || [];
+      if (prevTrainingTrans.length > 0) {
+        prevCreditUsage = Math.abs(prevTrainingTrans.reduce((sum: number, t: any) => sum + t.amount, 0));
+      } else {
+        prevCreditUsage = prevAllBookings
+          .filter((b: any) => b.status === 'completed')
+          .reduce((sum: number, b: any) => sum + (b.price || 0), 0);
+      }
+      const prevNetRevenue = prevDeposits - prevCreditUsage;
+
       return {
         activeClients,
         regularClients,
@@ -427,6 +498,10 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         weeklyTrainingCount7d,
         weeklySlotOccupancy,
         weeklyOpenSlots,
+        prevActiveClients,
+        prevTrainings,
+        prevSlotOccupancy,
+        prevNetRevenue,
       };
     },
     staleTime: 30 * 1000,

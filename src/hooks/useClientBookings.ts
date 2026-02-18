@@ -68,18 +68,18 @@ export function useClientBookings() {
 
       if (updateError) throw updateError;
 
-      // Spracovať storno poplatok cez databázovú funkciu (SECURITY DEFINER)
+      // Spracovať storno poplatok cez apply_charge RPC
       if (cancellationFee > 0) {
-        const { error: feeError } = await supabase.rpc('process_booking_cancellation', {
-          p_booking_id: bookingId,
+        const { error: feeError } = await supabase.rpc('apply_charge', {
           p_client_id: profile.id,
-          p_cancellation_fee: cancellationFee,
-          p_fee_percentage: cancellationFeePercentage,
+          p_booking_id: bookingId,
+          p_charge_type: 'cancellation',
+          p_charge: cancellationFee,
+          p_note: `Storno poplatok (${cancellationFeePercentage}%)`,
         });
 
         if (feeError) {
           console.error('Failed to process cancellation fee:', feeError);
-          // Continue even if fee processing fails - booking is already cancelled
         }
       }
 

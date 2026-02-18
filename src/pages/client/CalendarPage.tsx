@@ -12,6 +12,7 @@ import { useBookings } from '@/hooks/useBookings';
 import { useAuth } from '@/contexts/AuthContext';
 import { AvailableSlotCard } from '@/components/client/AvailableSlotCard';
 import { BookingConfirmDialog } from '@/components/client/BookingConfirmDialog';
+import { LowCreditWarningDialog } from '@/components/client/LowCreditWarningDialog';
 import { WeeklyAvailableSlots } from '@/components/client/WeeklyAvailableSlots';
 import { toast } from 'sonner';
 import { TrainingSlot } from '@/types/database';
@@ -23,6 +24,7 @@ export default function CalendarPage() {
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedSlot, setSelectedSlot] = useState<TrainingSlot | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isLowCreditDialogOpen, setIsLowCreditDialogOpen] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   
   const { slots, isLoading } = useTrainingSlots(selectedDate);
@@ -38,6 +40,17 @@ export default function CalendarPage() {
       return;
     }
     setSelectedSlot(slot);
+    
+    const creditBalance = profile.balance ?? 0;
+    if (creditBalance < DEFAULT_TRAINING_PRICE) {
+      setIsLowCreditDialogOpen(true);
+    } else {
+      setIsConfirmDialogOpen(true);
+    }
+  };
+
+  const handleLowCreditConfirm = () => {
+    setIsLowCreditDialogOpen(false);
     setIsConfirmDialogOpen(true);
   };
 
@@ -66,9 +79,14 @@ export default function CalendarPage() {
   const handleCloseDialog = () => {
     if (!isBooking) {
       setIsConfirmDialogOpen(false);
+      setIsLowCreditDialogOpen(false);
       setSelectedSlot(null);
     }
   };
+
+  const missingAmount = selectedSlot
+    ? Math.max(0, DEFAULT_TRAINING_PRICE - (profile?.balance ?? 0))
+    : 0;
 
   // Modifiers for calendar highlighting
   const getDayModifiers = () => {
@@ -199,6 +217,14 @@ export default function CalendarPage() {
         </Card>
       </div>
 
+      {/* Low Credit Warning Dialog */}
+      <LowCreditWarningDialog
+        isOpen={isLowCreditDialogOpen}
+        onClose={handleCloseDialog}
+        onConfirm={handleLowCreditConfirm}
+        missingAmount={missingAmount}
+      />
+
       {/* Confirmation Dialog */}
       <BookingConfirmDialog
         slot={selectedSlot}
@@ -206,6 +232,7 @@ export default function CalendarPage() {
         onClose={handleCloseDialog}
         onConfirm={handleConfirmBooking}
         isLoading={isBooking}
+        creditBalance={profile?.balance ?? 0}
       />
     </ClientLayout>
   );

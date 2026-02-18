@@ -18,7 +18,7 @@ const formatIBAN = (iban: string) => iban.replace(/\s/g, '').replace(/(.{4})/g, 
 export default function FinancesPage() {
   const { profile } = useAuth();
   const { toast } = useToast();
-  const { transactions, totalDeposits, totalExpenses, totalCancellationFees, isLoading } = useTransactions();
+  const { transactions, totalDeposits, totalExpenses, totalCancellationFees, isLoading, filter, setFilter, hasMore, loadMore } = useTransactions();
   const { upcomingBookings } = useClientBookings();
 
   const { data: ibanValue } = useQuery({
@@ -35,8 +35,8 @@ export default function FinancesPage() {
   });
   
   const balance = profile?.balance ?? 0;
-  const isPositive = balance >= 0;
-  const shouldHighlightIban = balance < 0 || (balance === 0 && upcomingBookings.length > 0);
+  const debtBalance = (profile as any)?.debt_balance ?? 0;
+  const shouldHighlightIban = debtBalance > 0 || (balance === 0 && upcomingBookings.length > 0);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -70,15 +70,9 @@ export default function FinancesPage() {
           </p>
         </div>
 
-        {/* Balance card */}
-        <Card className={cn(
-          'relative overflow-hidden',
-          isPositive ? 'border-success/30' : 'border-destructive/30'
-        )}>
-          <div className={cn(
-            'absolute inset-0 opacity-5',
-            isPositive ? 'bg-success' : 'bg-destructive'
-          )} />
+        {/* Credit card */}
+        <Card className="relative overflow-hidden border-success/30">
+          <div className="absolute inset-0 opacity-5 bg-success" />
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <CreditCard className="h-4 w-4" />
@@ -87,26 +81,34 @@ export default function FinancesPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              {isPositive ? (
-                <TrendingUp className="h-8 w-8 text-success" />
-              ) : (
-                <TrendingDown className="h-8 w-8 text-destructive" />
-              )}
-              <span className={cn(
-                'text-4xl font-bold',
-                isPositive ? 'text-success' : 'text-destructive'
-              )}>
-                {isPositive ? '+' : ''}{balance.toFixed(2)} €
+              <TrendingUp className="h-8 w-8 text-success" />
+              <span className="text-4xl font-bold text-success">
+                {balance.toFixed(2)} €
               </span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              {isPositive 
-                ? 'Máte dostupný kredit na tréningy' 
-                : 'Máte neuhradený zostatok'
-              }
+              Kredit dostupný na tréningy
             </p>
           </CardContent>
         </Card>
+
+        {/* Debt card */}
+        {debtBalance > 0 && (
+          <Card className="relative overflow-hidden border-destructive/30">
+            <div className="absolute inset-0 opacity-5 bg-destructive" />
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingDown className="h-5 w-5 text-destructive" />
+                  <span className="font-medium text-foreground">Nezaplatené</span>
+                </div>
+                <span className="text-xl font-bold text-destructive">
+                  {debtBalance.toFixed(2)} €
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Info cards */}
         <div className="grid grid-cols-2 gap-4">
@@ -182,8 +184,8 @@ export default function FinancesPage() {
           <div className="rounded-lg border border-warning/40 bg-warning/5 p-4 flex items-start gap-3 text-sm">
             <Info className="h-5 w-5 text-warning shrink-0 mt-0.5" />
             <p className="text-foreground">
-              {balance < 0
-                ? 'Máte záporný zostatok. Prosím, doplňte kredit prevodom na účet.'
+              {debtBalance > 0
+                ? 'Máte nezaplatený zostatok. Prosím, doplňte kredit prevodom na účet.'
                 : 'Váš kredit nemusí pokryť nadchádzajúce tréningy. Zvážte doplnenie kreditu.'}
             </p>
           </div>
@@ -198,6 +200,30 @@ export default function FinancesPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Filter chips */}
+            <div className="flex gap-2 flex-wrap mb-4">
+              {([
+                { value: 'all', label: 'Všetko' },
+                { value: 'deposits', label: 'Vklady' },
+                { value: 'trainings', label: 'Tréningy' },
+                { value: 'fees', label: 'Poplatky' },
+                { value: 'debt', label: 'Dlh' },
+              ] as const).map((chip) => (
+                <button
+                  key={chip.value}
+                  onClick={() => setFilter(chip.value)}
+                  className={cn(
+                    'text-xs rounded-full px-3 py-1.5 transition-all border',
+                    filter === chip.value
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
+                  )}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -210,6 +236,7 @@ export default function FinancesPage() {
             ) : (
               <div className="space-y-3">
                 {transactions.map((transaction) => {
+                  const isDebtIncrease = transaction.direction === 'debt_increase';
                   const isPositiveAmount = transaction.amount > 0;
                   return (
                     <div
@@ -240,9 +267,9 @@ export default function FinancesPage() {
                       <div className="text-right">
                         <p className={cn(
                           "font-bold",
-                          isPositiveAmount ? "text-success" : "text-destructive"
+                          isDebtIncrease ? "text-destructive" : isPositiveAmount ? "text-success" : "text-destructive"
                         )}>
-                          {isPositiveAmount ? '+' : ''}{transaction.amount.toFixed(2)} €
+                          {isDebtIncrease ? `Dlh +${Math.abs(transaction.amount).toFixed(2)}` : (isPositiveAmount ? '+' : '') + transaction.amount.toFixed(2)} €
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Zostatok: {transaction.balance_after.toFixed(2)} €
@@ -251,6 +278,11 @@ export default function FinancesPage() {
                     </div>
                   );
                 })}
+                {hasMore && (
+                  <Button variant="ghost" className="w-full" onClick={loadMore}>
+                    Načítať viac
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>

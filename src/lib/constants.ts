@@ -53,6 +53,7 @@ export const TRANSACTION_LABELS = {
   cancellation: 'Storno poplatok',
   referral_bonus: 'Odmena za odporúčanie',
   manual_adjustment: 'Manuálna úprava',
+  no_show: 'Neúčasť',
 } as const;
 
 // Booking status labels in Slovak

@@ -82,7 +82,7 @@ function ApprovedDashboard() {
   const { upcomingBookings, proposedBookings, pastBookings, isLoading: bookingsLoading } = useClientBookings();
   
   const balance = profile?.balance ?? 0;
-  const isPositive = balance >= 0;
+  const debtBalance = (profile as any)?.debt_balance ?? 0;
 
   return (
     <ClientLayout>
@@ -97,40 +97,51 @@ function ApprovedDashboard() {
           </p>
         </div>
 
-        {/* Balance card */}
-        <Card className={cn(
-          'relative overflow-hidden',
-          isPositive ? 'border-success/30' : 'border-destructive/30'
-        )}>
-          <div className={cn(
-            'absolute inset-0 opacity-5',
-            isPositive ? 'bg-success' : 'bg-destructive'
-          )} />
+        {/* Credit card */}
+        <Card className="relative overflow-hidden border-success/30">
+          <div className="absolute inset-0 opacity-5 bg-success" />
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <CreditCard className="h-4 w-4" />
-              Váš zostatok
+              Kredit
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              {isPositive ? (
-                <TrendingUp className="h-6 w-6 text-success" />
-              ) : (
-                <TrendingDown className="h-6 w-6 text-destructive" />
-              )}
-              <span className={cn(
-                'text-3xl font-bold',
-                isPositive ? 'text-success' : 'text-destructive'
-              )}>
-                {isPositive ? '+' : ''}{balance.toFixed(2)} €
+              <TrendingUp className="h-6 w-6 text-success" />
+              <span className="text-3xl font-bold text-success">
+                {balance.toFixed(2)} €
               </span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              {isPositive ? 'Kredit' : 'Dlh'}
+              Aktuálny zostatok
             </p>
           </CardContent>
         </Card>
+
+        {/* Debt card - only if debt > 0 */}
+        {debtBalance > 0 && (
+          <Card className="relative overflow-hidden border-destructive/30">
+            <div className="absolute inset-0 opacity-5 bg-destructive" />
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <TrendingDown className="h-4 w-4" />
+                Nezaplatené
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <TrendingDown className="h-6 w-6 text-destructive" />
+                <span className="text-3xl font-bold text-destructive">
+                  {debtBalance.toFixed(2)} €
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Máte nezaplatený zostatok {debtBalance.toFixed(2)} €
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Cancellation fees warning */}
         {!transactionsLoading && totalCancellationFees > 0 && (

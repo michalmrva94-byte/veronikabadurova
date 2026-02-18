@@ -27,6 +27,7 @@ export function useCompleteTraining() {
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
     queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
     queryClient.invalidateQueries({ queryKey: ['admin-finances-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['clients-with-debt'] });
   };
 
   const completeTraining = useMutation({
@@ -40,38 +41,17 @@ export function useCompleteTraining() {
         .eq('id', bookingId);
       if (bookingError) throw bookingError;
 
-      // 2. Get current balance & deduct
-      const { data: client, error: clientError } = await supabase
-        .from('profiles')
-        .select('balance')
-        .eq('id', clientId)
-        .single();
-      if (clientError) throw clientError;
+      // 2. Apply charge via RPC (handles credit/debt split)
+      const { error: chargeError } = await supabase.rpc('apply_charge', {
+        p_client_id: clientId,
+        p_booking_id: bookingId,
+        p_charge_type: 'training',
+        p_charge: price,
+        p_note: 'Tréning absolvovaný',
+      });
+      if (chargeError) throw chargeError;
 
-      const currentBalance = client.balance ?? 0;
-      const newBalance = currentBalance - price;
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ balance: newBalance })
-        .eq('id', clientId);
-      if (updateError) throw updateError;
-
-      // 3. Create transaction
-      const { error: transError } = await supabase
-        .from('transactions')
-        .insert({
-          client_id: clientId,
-          type: 'training',
-          amount: -price,
-          balance_after: newBalance,
-          description: 'Tréning - odplávaný',
-          booking_id: bookingId,
-          created_by: adminProfile.id,
-        });
-      if (transError) throw transError;
-
-      // 4. Notify client
+      // 3. Notify client
       await supabase.from('notifications').insert({
         user_id: clientId,
         title: 'Tréning dokončený ✓',
@@ -93,38 +73,17 @@ export function useCompleteTraining() {
         .eq('id', bookingId);
       if (bookingError) throw bookingError;
 
-      // 2. Deduct 100% fee
-      const { data: client, error: clientError } = await supabase
-        .from('profiles')
-        .select('balance')
-        .eq('id', clientId)
-        .single();
-      if (clientError) throw clientError;
+      // 2. Apply charge via RPC (handles credit/debt split)
+      const { error: chargeError } = await supabase.rpc('apply_charge', {
+        p_client_id: clientId,
+        p_booking_id: bookingId,
+        p_charge_type: 'no_show',
+        p_charge: price,
+        p_note: 'Neúčasť na tréningu (100% poplatok)',
+      });
+      if (chargeError) throw chargeError;
 
-      const currentBalance = client.balance ?? 0;
-      const newBalance = currentBalance - price;
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ balance: newBalance })
-        .eq('id', clientId);
-      if (updateError) throw updateError;
-
-      // 3. Create transaction
-      const { error: transError } = await supabase
-        .from('transactions')
-        .insert({
-          client_id: clientId,
-          type: 'cancellation',
-          amount: -price,
-          balance_after: newBalance,
-          description: 'Neúčasť na tréningu (100% poplatok)',
-          booking_id: bookingId,
-          created_by: adminProfile.id,
-        });
-      if (transError) throw transError;
-
-      // 4. Notify
+      // 3. Notify
       await supabase.from('notifications').insert({
         user_id: clientId,
         title: 'Neúčasť na tréningu',

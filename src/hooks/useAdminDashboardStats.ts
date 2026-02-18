@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, differenceInMonths, subDays, differenceInHours } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, differenceInMonths, subDays, differenceInHours, addHours } from 'date-fns';
 
 export type DashboardPeriod = 'week' | 'month' | 'custom';
 
@@ -37,6 +37,14 @@ export interface AdminDashboardStats {
   debtClientsList: Array<{ id: string; full_name: string; balance: number }>;
   criticalBookingsList: Array<{ id: string; client_name: string; deadline: string; slot_start: string }>;
   insufficientCreditClients: Array<{ id: string; full_name: string; balance: number; nextTrainingPrice: number }>;
+  // New alert data
+  creditRiskClients: number;
+  expiredProposals: number;
+  todayUnconfirmed: number;
+  weeklyStornoRate7d: number;
+  weeklyTrainingCount7d: number;
+  weeklySlotOccupancy: number;
+  weeklyOpenSlots: number;
 }
 
 export function getDefaultRange(period: 'week' | 'month'): DashboardDateRange {
@@ -67,6 +75,12 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
       const periodWeeks = estimateWeeks(start, end);
       const now = new Date();
       const thirtyDaysAgo = subDays(now, 30);
+      const sevenDaysAgo = subDays(now, 7);
+      const twentyFourHoursFromNow = addHours(now, 24);
+      const todayStart = startOfDay(now);
+      const todayEnd = endOfDay(now);
+      const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 });
+      const thisWeekEnd = endOfWeek(now, { weekStartsOn: 1 });
 
       const [
         periodBookingsRes,
@@ -79,6 +93,9 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         recentCancellationsRes,
         noShowRes,
         confirmedUpcomingRes,
+        sevenDayBookingsRes,
+        todayUnconfirmedRes,
+        thisWeekSlotsRes,
       ] = await Promise.all([
         // Period bookings with client info
         supabase
@@ -139,6 +156,24 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
           .select('id, client_id, price, client:profiles(id, full_name, balance), slot:training_slots(start_time)')
           .eq('status', 'booked')
           .gte('created_at', '2000-01-01'),
+        // 7-day bookings for storno rate
+        supabase
+          .from('bookings')
+          .select('id, status, slot:training_slots(start_time)')
+          .in('status', ['booked', 'completed', 'cancelled', 'no_show'])
+          .gte('created_at', '2000-01-01'),
+        // Today's bookings for unconfirmed check
+        supabase
+          .from('bookings')
+          .select('id, status, slot:training_slots(start_time)')
+          .in('status', ['pending', 'proposed', 'awaiting_confirmation'])
+          .gte('created_at', '2000-01-01'),
+        // This week's slots for occupancy
+        supabase
+          .from('training_slots')
+          .select('id, start_time, is_available, bookings(id)')
+          .gte('start_time', thisWeekStart.toISOString())
+          .lte('start_time', thisWeekEnd.toISOString()),
       ]);
 
       // === PERIOD BOOKINGS ===
@@ -289,6 +324,47 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
           nextTrainingPrice: c.price,
         }));
 
+      // === NEW ALERT DATA ===
+      // Credit risk: booked in next 24h with insufficient balance
+      const creditRiskClients = upcomingConfirmed.filter((b: any) => {
+        const slotTime = (b.slot as any)?.start_time;
+        if (!slotTime) return false;
+        const st = new Date(slotTime);
+        const client = b.client as any;
+        return st >= now && st <= twentyFourHoursFromNow && (client?.balance ?? 0) < b.price;
+      }).length;
+
+      // Expired proposals
+      const expiredProposals = (unconfirmedRes.data || []).filter((b: any) => {
+        return b.status === 'proposed' && b.confirmation_deadline && new Date(b.confirmation_deadline) < now;
+      }).length;
+
+      // Today unconfirmed: bookings with start_time today and status not in booked/completed/cancelled
+      const todayUnconfirmed = (todayUnconfirmedRes.data || []).filter((b: any) => {
+        const slotTime = (b.slot as any)?.start_time;
+        if (!slotTime) return false;
+        const st = new Date(slotTime);
+        return st >= todayStart && st <= todayEnd;
+      }).length;
+
+      // 7-day storno rate
+      const sevenDayBookings = (sevenDayBookingsRes.data || []).filter((b: any) => {
+        const slotTime = (b.slot as any)?.start_time;
+        if (!slotTime) return false;
+        const st = new Date(slotTime);
+        return st >= sevenDaysAgo && st <= now;
+      });
+      const weeklyTrainingCount7d = sevenDayBookings.length;
+      const weeklyStornoCount = sevenDayBookings.filter((b: any) => b.status === 'cancelled' || b.status === 'no_show').length;
+      const weeklyStornoRate7d = weeklyTrainingCount7d > 0 ? (weeklyStornoCount / weeklyTrainingCount7d) * 100 : 0;
+
+      // This week slot occupancy
+      const thisWeekSlots = thisWeekSlotsRes.data || [];
+      const weeklyOpenSlots = thisWeekSlots.filter((s: any) => !s.bookings || s.bookings.length === 0).length;
+      const weeklySlotOccupancy = thisWeekSlots.length > 0
+        ? ((thisWeekSlots.length - weeklyOpenSlots) / thisWeekSlots.length) * 100
+        : 100;
+
       // === CLV ===
       const completedAll = completedAllRes.data || [];
       let clv = 0;
@@ -344,6 +420,13 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         debtClientsList,
         criticalBookingsList,
         insufficientCreditClients,
+        creditRiskClients,
+        expiredProposals,
+        todayUnconfirmed,
+        weeklyStornoRate7d,
+        weeklyTrainingCount7d,
+        weeklySlotOccupancy,
+        weeklyOpenSlots,
       };
     },
     staleTime: 30 * 1000,

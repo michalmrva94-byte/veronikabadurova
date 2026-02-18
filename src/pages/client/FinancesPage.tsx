@@ -75,7 +75,7 @@ export default function FinancesPage() {
           netBalance < 0 && "border-destructive/30"
         )}>
           <div className={cn(
-            "absolute inset-0 opacity-5",
+            "absolute inset-0 opacity-5 pointer-events-none",
             netBalance > 0 && "bg-success",
             netBalance < 0 && "bg-destructive"
           )} />

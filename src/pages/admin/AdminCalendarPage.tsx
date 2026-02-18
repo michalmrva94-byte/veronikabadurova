@@ -25,7 +25,7 @@ export default function AdminCalendarPage() {
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [dialogDate, setDialogDate] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [selectedSlot, setSelectedSlot] = useState<SlotWithBooking | null>(null);
   const [isSlotDetailOpen, setIsSlotDetailOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -172,15 +172,15 @@ export default function AdminCalendarPage() {
           </Button>
         </div>
 
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'week' | 'day')} className="w-full">
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'week' | 'month')} className="w-full">
           <TabsList className="grid w-full grid-cols-2 max-w-[300px]">
             <TabsTrigger value="week" className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4" />
               Týždeň
             </TabsTrigger>
-            <TabsTrigger value="day" className="flex items-center gap-2">
+            <TabsTrigger value="month" className="flex items-center gap-2">
               <CalendarIcon className="h-4 w-4" />
-              Deň
+              Mesiac
             </TabsTrigger>
           </TabsList>
 
@@ -205,7 +205,7 @@ export default function AdminCalendarPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="day" className="mt-4 space-y-4">
+          <TabsContent value="month" className="mt-4 space-y-4">
             <Card className="ios-card border-0">
               <CardContent className="p-4">
                 <Calendar
@@ -217,7 +217,7 @@ export default function AdminCalendarPage() {
                   modifiers={modifiers}
                   modifiersClassNames={{
                     hasAvailable: 'bg-emerald-100 dark:bg-emerald-950/50 font-bold',
-                    hasBooked: 'ring-2 ring-primary ring-inset',
+                    hasBooked: 'ring-2 ring-sky-500 ring-inset',
                   }}
                 />
                 <div className="flex gap-4 text-xs text-muted-foreground justify-center mt-4 pt-4 border-t">
@@ -226,20 +226,33 @@ export default function AdminCalendarPage() {
                     <span>Voľné termíny</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded ring-2 ring-primary ring-inset" />
+                    <div className="w-3 h-3 rounded ring-2 ring-sky-500 ring-inset" />
                     <span>Rezervované</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Day detail section */}
             <Card className="ios-card border-0">
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  {selectedDate ? (
-                    <>Termíny - {format(selectedDate, 'd. MMMM yyyy', { locale: sk })}</>
-                  ) : 'Vyberte dátum'}
-                </CardTitle>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">
+                    {selectedDate ? (
+                      <>Termíny – {format(selectedDate, 'd. MMMM yyyy', { locale: sk })}</>
+                    ) : 'Vyberte dátum'}
+                  </CardTitle>
+                  {selectedDate && (
+                    <Button
+                      size="sm"
+                      onClick={() => openCreateDialog(selectedDate)}
+                      className="ios-press"
+                    >
+                      <Plus className="mr-1 h-4 w-4" />
+                      Pridať
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -247,13 +260,9 @@ export default function AdminCalendarPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : slots.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <Clock className="mb-4 h-12 w-12 text-muted-foreground/50" />
-                    <p className="text-muted-foreground mb-4">Na tento deň nie sú vytvorené žiadne termíny</p>
-                    <Button onClick={() => openCreateDialog(selectedDate || new Date())} disabled={!selectedDate} className="ios-press">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Nový tréning
-                    </Button>
+                  <div className="flex flex-col items-center justify-center py-6 text-center">
+                    <Clock className="mb-3 h-10 w-10 text-muted-foreground/40" />
+                    <p className="text-sm text-muted-foreground">Žiadne termíny na tento deň</p>
                   </div>
                 ) : (
                   <div className="space-y-3">

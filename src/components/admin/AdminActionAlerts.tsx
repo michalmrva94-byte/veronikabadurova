@@ -1,4 +1,5 @@
-import { AlertTriangle, Clock, CreditCard, TrendingDown, CalendarX, ChevronRight, Info } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { AlertTriangle, Clock, CreditCard, TrendingDown, CalendarX, ChevronRight, Info, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/lib/constants';
 import { AdminDashboardStats } from '@/hooks/useAdminDashboardStats';
@@ -12,6 +13,7 @@ interface AdminActionAlertsProps {
 type AlertPriority = 'high' | 'medium' | 'low';
 
 interface AlertItem {
+  key: string;
   priority: AlertPriority;
   icon: React.ReactNode;
   text: string;
@@ -40,12 +42,48 @@ const PRIORITY_STYLES: Record<AlertPriority, { border: string; icon: string; bad
   },
 };
 
+const STORAGE_KEY = 'dismissed-alerts';
+
+function getDismissedAlerts(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function isDismissedToday(key: string): boolean {
+  const dismissed = getDismissedAlerts();
+  if (!dismissed[key]) return false;
+  const today = new Date().toDateString();
+  return dismissed[key] === today;
+}
+
+function dismissAlert(key: string) {
+  const dismissed = getDismissedAlerts();
+  dismissed[key] = new Date().toDateString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(dismissed));
+}
+
 export function AdminActionAlerts({ stats }: AdminActionAlertsProps) {
+  const [localDismissed, setLocalDismissed] = useState<Set<string>>(() => {
+    const dismissed = getDismissedAlerts();
+    const today = new Date().toDateString();
+    return new Set(Object.entries(dismissed).filter(([, d]) => d === today).map(([k]) => k));
+  });
+
+  const handleDismiss = useCallback((key: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dismissAlert(key);
+    setLocalDismissed(prev => new Set(prev).add(key));
+  }, []);
+
   const alerts: AlertItem[] = [];
 
-  // HIGH: Credit risk — booked in <24h, balance < price
   if (stats.creditRiskClients > 0) {
     alerts.push({
+      key: 'credit_risk',
       priority: 'high',
       icon: <CreditCard className="h-4 w-4" />,
       text: 'Kreditový problém',
@@ -55,9 +93,9 @@ export function AdminActionAlerts({ stats }: AdminActionAlertsProps) {
     });
   }
 
-  // HIGH: Today unconfirmed
   if (stats.todayUnconfirmed > 0) {
     alerts.push({
+      key: 'today_unconfirmed',
       priority: 'high',
       icon: <Clock className="h-4 w-4" />,
       text: 'Dnes bez potvrdenia',
@@ -66,9 +104,9 @@ export function AdminActionAlerts({ stats }: AdminActionAlertsProps) {
     });
   }
 
-  // MEDIUM: Expired proposals
   if (stats.expiredProposals > 0) {
     alerts.push({
+      key: 'expired_proposals',
       priority: 'medium',
       icon: <CalendarX className="h-4 w-4" />,
       text: 'Expirované návrhy',
@@ -77,9 +115,9 @@ export function AdminActionAlerts({ stats }: AdminActionAlertsProps) {
     });
   }
 
-  // LOW: High storno rate (>30%, >=5 trainings in 7d)
   if (stats.weeklyStornoRate7d > 30 && stats.weeklyTrainingCount7d >= 5) {
     alerts.push({
+      key: 'high_storno',
       priority: 'low',
       icon: <TrendingDown className="h-4 w-4" />,
       text: `Storno ${stats.weeklyStornoRate7d.toFixed(0)}% / 7d`,
@@ -88,9 +126,9 @@ export function AdminActionAlerts({ stats }: AdminActionAlertsProps) {
     });
   }
 
-  // LOW: Low occupancy (<50%, >5 open slots this week)
   if (stats.weeklySlotOccupancy < 50 && stats.weeklyOpenSlots > 5) {
     alerts.push({
+      key: 'low_occupancy',
       priority: 'low',
       icon: <AlertTriangle className="h-4 w-4" />,
       text: `Obsadenosť ${stats.weeklySlotOccupancy.toFixed(0)}%`,
@@ -99,8 +137,8 @@ export function AdminActionAlerts({ stats }: AdminActionAlertsProps) {
     });
   }
 
-  // Sort by priority, take max 3
   const sorted = alerts
+    .filter(a => !localDismissed.has(a.key))
     .sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
     .slice(0, 3);
 
@@ -141,31 +179,39 @@ export function AdminActionAlerts({ stats }: AdminActionAlertsProps) {
                 <div><span className="font-medium">Nízka obsadenosť</span> — obsadenosť &lt;50% pri &gt;5 voľných slotoch.</div>
               </div>
             </div>
-            <p className="text-muted-foreground">Zobrazujú sa max. 3 najdôležitejšie.</p>
+            <p className="text-muted-foreground">Zobrazujú sa max. 3 najdôležitejšie. Odstránené upozornenia sa vrátia nasledujúci deň.</p>
           </PopoverContent>
         </Popover>
       </h2>
       <div className="ios-card overflow-hidden divide-y divide-border/50">
-        {sorted.map((alert, i) => {
+        {sorted.map((alert) => {
           const styles = PRIORITY_STYLES[alert.priority];
           return (
-            <Link
-              key={i}
-              to={alert.to}
-              className={`flex items-center gap-3 p-4 ios-press hover:bg-muted/50 transition-colors border-l-[3px] ${styles.border}`}
-            >
-              <span className={styles.icon}>{alert.icon}</span>
-              <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium">{alert.text}</span>
-                {alert.subtitle && (
-                  <p className="text-xs text-muted-foreground truncate">{alert.subtitle}</p>
-                )}
-              </div>
-              <Badge className={`text-[10px] px-1.5 py-0 h-5 border-0 ${styles.badge}`}>
-                {alert.count}
-              </Badge>
-              <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
-            </Link>
+            <div key={alert.key} className={`flex items-center gap-3 p-4 transition-colors border-l-[3px] ${styles.border}`}>
+              <Link
+                to={alert.to}
+                className="flex items-center gap-3 flex-1 min-w-0 ios-press hover:bg-muted/50 -m-4 p-4 pr-0"
+              >
+                <span className={styles.icon}>{alert.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium">{alert.text}</span>
+                  {alert.subtitle && (
+                    <p className="text-xs text-muted-foreground truncate">{alert.subtitle}</p>
+                  )}
+                </div>
+                <Badge className={`text-[10px] px-1.5 py-0 h-5 border-0 ${styles.badge}`}>
+                  {alert.count}
+                </Badge>
+                <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+              </Link>
+              <button
+                onClick={(e) => handleDismiss(alert.key, e)}
+                className="p-1.5 rounded-full text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-colors shrink-0"
+                aria-label="Odstrániť upozornenie"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
           );
         })}
       </div>

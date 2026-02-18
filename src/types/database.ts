@@ -26,6 +26,7 @@ export interface Profile {
   referred_by: string | null;
   notifications_enabled: boolean;
   email_notifications: boolean;
+  last_minute_notifications: boolean;
   balance: number;
   debt_balance: number;
   client_type: ClientType | null;

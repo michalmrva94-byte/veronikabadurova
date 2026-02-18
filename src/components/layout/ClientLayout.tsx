@@ -9,7 +9,8 @@ import {
   User, 
   CreditCard, 
   Bell,
-  LogOut
+  LogOut,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import veronikaPhoto from '@/assets/veronika-photo.png';
@@ -18,7 +19,7 @@ interface ClientLayoutProps {
   children: ReactNode;
 }
 
-const navItems = [
+const baseNavItems = [
   { icon: Home, label: 'Domov', path: ROUTES.DASHBOARD },
   { icon: Calendar, label: 'Rezervácie', path: ROUTES.CALENDAR },
   { icon: CreditCard, label: 'Platby', path: ROUTES.FINANCES },
@@ -27,7 +28,11 @@ const navItems = [
 
 export function ClientLayout({ children }: ClientLayoutProps) {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
+
+  const navItems = profile?.last_minute_notifications
+    ? [...baseNavItems.slice(0, 3), { icon: Zap, label: 'Last-minute', path: ROUTES.LAST_MINUTE }, baseNavItems[3]]
+    : baseNavItems;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

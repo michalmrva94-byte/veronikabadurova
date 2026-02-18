@@ -208,24 +208,19 @@ export default function CalendarPage() {
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Storno pravidlá — bottom reminder */}
-        <Collapsible>
-          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-xl border border-border/50 bg-muted/30 p-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Storno pravidlá (pre istotu 😊)
-            <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="px-4 pb-4 pt-2">
-            <p className="text-xs text-muted-foreground mb-2">
-              Ak sa niečo zmení, dajte mi vedieť čo najskôr. Spolu to vždy vyriešime.
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-              <span>&gt;48h: <span className="text-success font-medium">0 %</span></span>
-              <span>24–48h: <span className="text-warning font-medium">50 %</span></span>
-              <span>&lt;24h: <span className="text-destructive font-medium">80 %</span></span>
-              <span>neúčasť: <span className="text-destructive font-medium">100 %</span></span>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        {/* Storno pravidlá — always visible */}
+        <div className="rounded-xl border border-border/50 bg-muted/30 p-4 space-y-2">
+          <p className="text-sm font-medium text-muted-foreground">Storno pravidlá</p>
+          <p className="text-xs text-muted-foreground">
+            Ak sa niečo zmení, dajte mi vedieť čo najskôr. Spolu to vždy vyriešime.
+          </p>
+          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+            <span>&gt;48h: <span className="text-success font-medium">0 %</span></span>
+            <span>24–48h: <span className="text-warning font-medium">50 %</span></span>
+            <span>&lt;24h: <span className="text-destructive font-medium">80 %</span></span>
+            <span>neúčasť: <span className="text-destructive font-medium">100 %</span></span>
+          </div>
+        </div>
       </div>
 
       {/* Dialogs */}

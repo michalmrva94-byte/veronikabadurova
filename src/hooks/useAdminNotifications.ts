@@ -54,11 +54,30 @@ export function useAdminNotifications() {
     },
   });
 
+  const deleteAllRead = useMutation({
+    mutationFn: async () => {
+      if (!profile?.id) return;
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', profile.id)
+        .eq('is_read', true);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+    },
+  });
+
+  const readCount = (notificationsQuery.data || []).filter(n => n.is_read).length;
+
   return {
     notifications: notificationsQuery.data || [],
     unreadCount,
+    readCount,
     isLoading: notificationsQuery.isLoading,
     markAsRead,
     markAllAsRead,
+    deleteAllRead,
   };
 }

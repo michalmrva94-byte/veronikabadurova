@@ -1,4 +1,4 @@
-import { Bell, Check, X, CalendarX2, Plus } from 'lucide-react';
+import { Bell, Check, X, CalendarX2, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -34,7 +34,7 @@ function getTypeIcon(type: string | null) {
 }
 
 export function AdminNotificationBell() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useAdminNotifications();
+  const { notifications, unreadCount, readCount, markAsRead, markAllAsRead, deleteAllRead } = useAdminNotifications();
 
   return (
     <Popover>
@@ -51,16 +51,30 @@ export function AdminNotificationBell() {
       <PopoverContent align="end" className="w-80 p-0 rounded-2xl">
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <span className="font-semibold text-sm">Notifikácie</span>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-7 text-primary"
-              onClick={() => markAllAsRead.mutate()}
-            >
-              Označiť všetky
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {readCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-7 text-destructive hover:text-destructive"
+                onClick={() => deleteAllRead.mutate()}
+                disabled={deleteAllRead.isPending}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                Vymazať
+              </Button>
+            )}
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-7 text-primary"
+                onClick={() => markAllAsRead.mutate()}
+              >
+                Označiť všetky
+              </Button>
+            )}
+          </div>
         </div>
         <ScrollArea className="max-h-[400px]">
           {notifications.length === 0 ? (

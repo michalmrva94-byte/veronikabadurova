@@ -3,7 +3,8 @@ import { sk } from 'date-fns/locale';
 import { AdminBookingWithDetails } from '@/hooks/useAdminBookings';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, User, Euro, X, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, User, Euro, X, Loader2, CheckCircle, XCircle, CalendarPlus } from 'lucide-react';
+import { toast } from 'sonner';
 import { CLIENT_TYPE_LABELS } from '@/lib/constants';
 import {
   AlertDialog,
@@ -41,6 +42,34 @@ export function ConfirmedBookingCard({
   const startTime = new Date(booking.slot.start_time);
   const endTime = new Date(booking.slot.end_time);
   const isProcessing = isCancelling || isCompleting;
+
+  const handleAddToCalendar = () => {
+    const title = `Tréning – ${booking.client.full_name}`;
+    const start = format(startTime, "yyyyMMdd'T'HHmmss");
+    const end = format(endTime, "yyyyMMdd'T'HHmmss");
+    const description = `Cena: ${booking.price}€`;
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'BEGIN:VEVENT',
+      `DTSTART:${start}`,
+      `DTEND:${end}`,
+      `SUMMARY:${title}`,
+      `DESCRIPTION:${description}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `trening-${format(startTime, 'yyyy-MM-dd-HHmm')}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Súbor kalendára stiahnutý');
+  };
 
   const handleCancel = () => {
     onCancel(booking.id, 'Zrušené trénerom');
@@ -89,8 +118,20 @@ export function ConfirmedBookingCard({
             </div>
           </div>
 
-          {/* Cancel button */}
-          <AlertDialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
+          <div className="flex items-center gap-1">
+            {/* Add to calendar */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10"
+              onClick={handleAddToCalendar}
+              disabled={isProcessing}
+            >
+              <CalendarPlus className="h-4 w-4" />
+            </Button>
+
+            {/* Cancel button */}
+            <AlertDialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
             <AlertDialogTrigger asChild>
               <Button
                 variant="ghost"
@@ -127,6 +168,7 @@ export function ConfirmedBookingCard({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          </div>
         </div>
 
         {/* Action buttons */}

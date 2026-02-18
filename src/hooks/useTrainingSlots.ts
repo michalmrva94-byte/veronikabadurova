@@ -63,6 +63,8 @@ export function useTrainingSlots(selectedDate?: Date) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
     },
   });
 
@@ -80,6 +82,8 @@ export function useTrainingSlots(selectedDate?: Date) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
     },
   });
 
@@ -94,6 +98,8 @@ export function useTrainingSlots(selectedDate?: Date) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
     },
   });
 

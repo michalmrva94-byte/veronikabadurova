@@ -246,6 +246,42 @@ export function useProposedTrainings() {
         .eq('id', bookingId);
 
       if (error) throw error;
+
+      // Notify admins about confirmation
+      const { data: clientProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', profile.id)
+        .single();
+
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (adminRoles && adminRoles.length > 0) {
+        const { data: adminProfiles } = await supabase
+          .from('profiles')
+          .select('id')
+          .in('user_id', adminRoles.map((r) => r.user_id));
+
+        if (adminProfiles && adminProfiles.length > 0) {
+          const clientName = clientProfile?.full_name || 'Klient';
+          const slotDate = booking.slot?.start_time
+            ? new Date(booking.slot.start_time).toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+            : '';
+
+          await supabase.from('notifications').insert(
+            adminProfiles.map((admin) => ({
+              user_id: admin.id,
+              title: 'Potvrdený tréning',
+              message: `${clientName} potvrdil/a navrhnutý tréning${slotDate ? ` dňa ${slotDate}` : ''}.`,
+              type: 'proposal_confirmed',
+              related_slot_id: booking.slot_id,
+            }))
+          );
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });

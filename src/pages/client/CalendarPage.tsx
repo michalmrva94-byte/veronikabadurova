@@ -1,4 +1,6 @@
 import { ClientLayout } from '@/components/layout/ClientLayout';
+import { Link } from 'react-router-dom';
+import { ROUTES } from '@/lib/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -119,9 +121,17 @@ export default function CalendarPage() {
         {/* Header */}
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-foreground">Rezervácie</h1>
-          <p className="text-muted-foreground">
-            Vyberte si termín, ktorý vám vyhovuje.
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-muted-foreground">
+              Vyberte si termín, ktorý vám vyhovuje.
+            </p>
+            <Link
+              to={ROUTES.MY_TRAININGS}
+              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
+            >
+              Moje tréningy →
+            </Link>
+          </div>
         </div>
 
         {/* Weekly Available Slots — PRIMARY */}

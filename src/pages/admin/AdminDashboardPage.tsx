@@ -180,6 +180,7 @@ export default function AdminDashboardPage() {
           <KPICard
             icon={<Users className="h-4 w-4 text-success" />}
             title="Aktívni klienti"
+            tooltip="Klienti s aspoň 1 potvrdeným alebo odplávaným tréningom v zvolenom období. Pravidelní = 2+ tréningy."
             mainValue={stats?.activeClients ?? 0}
             mainColor="success"
             subValues={[
@@ -190,6 +191,7 @@ export default function AdminDashboardPage() {
           <KPICard
             icon={<Calendar className="h-4 w-4 text-primary" />}
             title={`Tréningy`}
+            tooltip="Celkový počet tréningov v období rozdelený na plánované (potvrdené), odplávané (dokončené) a zrušené."
             mainValue={`${(stats?.plannedTrainings ?? 0) + (stats?.completedTrainings ?? 0)}`}
             mainColor="primary"
             subValues={[
@@ -202,6 +204,7 @@ export default function AdminDashboardPage() {
           <KPICard
             icon={<Clock className="h-4 w-4 text-warning" />}
             title="Nepotvrdené"
+            tooltip="Rezervácie čakajúce na potvrdenie (pending, navrhnuté, awaiting). Kritické = deadline vyprší do 6 hodín."
             mainValue={stats?.unconfirmedBookings ?? 0}
             mainColor={(stats?.criticalBookings ?? 0) > 0 ? 'destructive' : 'warning'}
             badge={(stats?.criticalBookings ?? 0) > 0 
@@ -216,6 +219,7 @@ export default function AdminDashboardPage() {
           <KPICard
             icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
             title="Rizikové"
+            tooltip="Dlžníci = klienti so záporným zostatkom. Riziko rušení = 2+ neskoré storna (<24h) alebo 1+ neúčasť za posledných 30 dní."
             mainValue={stats?.debtClients ?? 0}
             mainColor={((stats?.debtClients ?? 0) > 0) ? 'destructive' : 'success'}
             subValues={[
@@ -227,6 +231,7 @@ export default function AdminDashboardPage() {
           <KPICard
             icon={<Euro className="h-4 w-4 text-success" />}
             title={`Príjem`}
+            tooltip="Vklady = kreditné vklady v období. Vyčerpané = kredit spotrebovaný na tréningy. Net = rozdiel medzi vkladmi a spotrebou."
             mainValue={`${(stats?.deposits ?? 0).toFixed(0)}€`}
             mainColor="success"
             subValues={[

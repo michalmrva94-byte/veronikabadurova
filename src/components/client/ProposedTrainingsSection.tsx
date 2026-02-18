@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Check, X, Loader2, Clock, CheckCheck, ChevronDown } from 'lucide-react';
+import { Check, X, Loader2, Clock, CheckCheck, ChevronDown } from 'lucide-react';
 import { useProposedTrainings } from '@/hooks/useProposedTrainings';
 import { BookingWithSlot } from '@/hooks/useClientBookings';
 import { format, differenceInHours, differenceInMinutes } from 'date-fns';
@@ -50,7 +50,7 @@ export function getStatusBadge(status: string, deadline?: string | null) {
     case 'booked':
       return { label: 'Potvrdené', className: 'bg-success/10 text-success' };
     case 'completed':
-      return { label: 'Dokončené', className: 'bg-success/10 text-success' };
+      return { label: 'Prebehlo', className: 'bg-success/10 text-success' };
     case 'cancelled':
       return { label: 'Zrušené', className: 'bg-muted text-muted-foreground' };
     case 'no_show':
@@ -126,15 +126,15 @@ export function ProposedTrainingsSection({ proposedBookings }: Props) {
       <CardContent className="p-4 space-y-3">
         {/* Hero alert box */}
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning/15">
-            <AlertTriangle className="h-5 w-5 text-warning" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+            <Clock className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-foreground">
-              Máte návrhy tréningov
+              {proposedBookings.length === 1 ? 'Navrhla som vám tréning ✨' : 'Navrhla som vám tréningy ✨'}
             </p>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {proposedBookings.length} {proposedBookings.length === 1 ? 'tréning čaká' : proposedBookings.length < 5 ? 'tréningy čakajú' : 'tréningov čaká'} na vašu odpoveď
+              {proposedBookings.length === 1 ? 'Dajte mi vedieť, či vám termín vyhovuje.' : 'Dajte mi vedieť, či vám termíny vyhovujú.'}
             </p>
             {nearestDeadline && (
               <div className="mt-1.5">
@@ -158,7 +158,7 @@ export function ProposedTrainingsSection({ proposedBookings }: Props) {
               ) : (
                 <CheckCheck className="h-4 w-4" />
               )}
-              Potvrdiť všetky
+              Potvrdiť všetky termíny
             </Button>
           )}
           <Collapsible open={isOpen} onOpenChange={setIsOpen} className={proposedBookings.length < 2 ? 'flex-1' : ''}>
@@ -169,7 +169,7 @@ export function ProposedTrainingsSection({ proposedBookings }: Props) {
                 className={`gap-1.5 ${proposedBookings.length < 2 ? 'w-full' : ''}`}
               >
                 <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                Zobraziť detaily
+                Zobraziť termíny
               </Button>
             </CollapsibleTrigger>
           </Collapsible>
@@ -210,8 +210,9 @@ export function ProposedTrainingsSection({ proposedBookings }: Props) {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          className="h-8 w-8 text-muted-foreground hover:bg-muted"
                           onClick={() => handleReject(booking.id)}
+                          title="Navrhnúť iný čas"
                         >
                           <X className="h-4 w-4" />
                         </Button>

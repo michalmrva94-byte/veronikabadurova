@@ -39,6 +39,7 @@ export interface AdminDashboardStats {
   insufficientCreditClients: Array<{ id: string; full_name: string; balance: number; nextTrainingPrice: number }>;
   // New alert data
   creditRiskClients: number;
+  creditRiskClientNames: string[];
   expiredProposals: number;
   todayUnconfirmed: number;
   weeklyStornoRate7d: number;
@@ -385,13 +386,15 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
 
       // === NEW ALERT DATA ===
       // Credit risk: booked in next 24h with insufficient balance
-      const creditRiskClients = upcomingConfirmed.filter((b: any) => {
+      const creditRiskBookings = upcomingConfirmed.filter((b: any) => {
         const slotTime = (b.slot as any)?.start_time;
         if (!slotTime) return false;
         const st = new Date(slotTime);
         const client = b.client as any;
         return st >= now && st <= twentyFourHoursFromNow && (client?.balance ?? 0) < b.price;
-      }).length;
+      });
+      const creditRiskClients = creditRiskBookings.length;
+      const creditRiskClientNames = [...new Set(creditRiskBookings.map((b: any) => (b.client as any)?.full_name || 'Neznámy'))];
 
       // Expired proposals
       const expiredProposals = (unconfirmedRes.data || []).filter((b: any) => {
@@ -515,6 +518,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         criticalBookingsList,
         insufficientCreditClients,
         creditRiskClients,
+        creditRiskClientNames,
         expiredProposals,
         todayUnconfirmed,
         weeklyStornoRate7d,

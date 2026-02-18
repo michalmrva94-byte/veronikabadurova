@@ -1,29 +1,34 @@
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ROUTES, BOOKING_STATUS_LABELS, CLIENT_TYPE_LABELS } from '@/lib/constants';
+import { ROUTES, BOOKING_STATUS_LABELS } from '@/lib/constants';
 import { 
   Users, Calendar, CreditCard, TrendingUp, Clock,
   ChevronRight, Bell, Loader2, CalendarCheck,
-  AlertTriangle, Euro, Megaphone, UserPlus, CheckCircle, XCircle
+  AlertTriangle, Euro, Megaphone, CheckCircle, XCircle
 } from 'lucide-react';
 import { useAdminBookings, AdminBookingWithDetails } from '@/hooks/useAdminBookings';
-import { useAdminDashboardStats, DashboardPeriod } from '@/hooks/useAdminDashboardStats';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAdminDashboardStats, DashboardDateRange, getDefaultRange } from '@/hooks/useAdminDashboardStats';
 import { useCompleteTraining } from '@/hooks/useCompleteTraining';
 import { PendingBookingCard } from '@/components/admin/PendingBookingCard';
 import { ConfirmedBookingCard } from '@/components/admin/ConfirmedBookingCard';
 import { AdminStatsSection } from '@/components/admin/AdminStatsSection';
+import { DashboardHistoryPicker } from '@/components/admin/DashboardHistoryPicker';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { format, differenceInHours } from 'date-fns';
 import { sk } from 'date-fns/locale';
 
+type QuickPeriod = 'week' | 'month';
+
 export default function AdminDashboardPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
-  const [period, setPeriod] = useState<DashboardPeriod>('week');
+  const [quickPeriod, setQuickPeriod] = useState<QuickPeriod>('week');
+  const [customRange, setCustomRange] = useState<DashboardDateRange | null>(null);
+
+  const activeRange = customRange || getDefaultRange(quickPeriod);
   
   const { 
     pendingBookings, 
@@ -36,16 +41,14 @@ export default function AdminDashboardPage() {
     cancelBooking 
   } = useAdminBookings();
 
-  const { data: stats, isLoading: statsLoading } = useAdminDashboardStats(period);
+  const { data: stats, isLoading: statsLoading } = useAdminDashboardStats(activeRange);
 
-  const periodLabels: Record<DashboardPeriod, { trainings: string; revenue: string }> = {
-    week: { trainings: 'Tréningy / týždeň', revenue: 'Príjem / týždeň' },
-    '2weeks': { trainings: 'Tréningy / 2 týždne', revenue: 'Príjem / 2 týždne' },
-    month: { trainings: 'Tréningy / mesiac', revenue: 'Príjem / mesiac' },
-  };
+  const periodLabel = customRange?.label 
+    ? customRange.label 
+    : quickPeriod === 'week' ? 'tento týždeň' : 'tento mesiac';
+
   const { completeTraining, markNoShow } = useCompleteTraining();
 
-  // All unconfirmed bookings (pending + proposed + awaiting_confirmation)
   const unconfirmedBookings = (bookings || []).filter(
     (b) => b.status === 'pending' || b.status === 'proposed' || b.status === 'awaiting_confirmation'
   );
@@ -130,13 +133,45 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Period Toggle */}
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as DashboardPeriod)} className="w-full">
-          <TabsList className="h-8 p-0.5 bg-muted/60 rounded-xl w-fit">
-            <TabsTrigger value="week" className="text-xs rounded-lg px-3 h-7 data-[state=active]:bg-background data-[state=active]:shadow-sm">Týždeň</TabsTrigger>
-            <TabsTrigger value="2weeks" className="text-xs rounded-lg px-3 h-7 data-[state=active]:bg-background data-[state=active]:shadow-sm">2 týždne</TabsTrigger>
-            <TabsTrigger value="month" className="text-xs rounded-lg px-3 h-7 data-[state=active]:bg-background data-[state=active]:shadow-sm">Mesiac</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex gap-1 bg-muted/60 rounded-xl p-0.5 h-8">
+            <button
+              onClick={() => { setQuickPeriod('week'); setCustomRange(null); }}
+              className={`text-xs rounded-lg px-3 h-7 transition-all ${
+                !customRange && quickPeriod === 'week' 
+                  ? 'bg-background shadow-sm font-medium text-foreground' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Týždeň
+            </button>
+            <button
+              onClick={() => { setQuickPeriod('month'); setCustomRange(null); }}
+              className={`text-xs rounded-lg px-3 h-7 transition-all ${
+                !customRange && quickPeriod === 'month' 
+                  ? 'bg-background shadow-sm font-medium text-foreground' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Mesiac
+            </button>
+          </div>
+          <DashboardHistoryPicker
+            onSelectRange={(range) => setCustomRange(range)}
+            currentRange={customRange}
+            onClear={() => setCustomRange(null)}
+          />
+        </div>
+
+        {/* Period indicator when custom */}
+        {customRange && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+            <span>Zobrazené obdobie:</span>
+            <Badge variant="secondary" className="text-xs capitalize">
+              {customRange.label}
+            </Badge>
+          </div>
+        )}
 
         {/* KPI Cards - 5 metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -149,7 +184,7 @@ export default function AdminDashboardPage() {
           />
           <KPICard
             icon={<Calendar className="h-5 w-5 text-warning" />}
-            label={periodLabels[period].trainings}
+            label={`Tréningy / ${periodLabel}`}
             value={stats?.weekTrainings ?? 0}
             loading={statsLoading}
             color="warning"
@@ -170,7 +205,7 @@ export default function AdminDashboardPage() {
           />
           <KPICard
             icon={<Euro className="h-5 w-5 text-success" />}
-            label={periodLabels[period].revenue}
+            label={`Príjem / ${periodLabel}`}
             value={`${(stats?.monthlyRevenue ?? 0).toFixed(0)}€`}
             loading={statsLoading}
             color="success"

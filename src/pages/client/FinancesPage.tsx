@@ -10,9 +10,9 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 const formatIBAN = (iban: string) => iban.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim();
 
@@ -39,29 +39,6 @@ export default function FinancesPage() {
   const debtBalance = (profile as any)?.debt_balance ?? 0;
   const netBalance = balance - debtBalance;
 
-  // Current month stats
-  const monthStats = useMemo(() => {
-    const now = new Date();
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
-
-    const thisMonth = transactions.filter(t => {
-      const d = new Date(t.created_at);
-      return d >= monthStart && d <= monthEnd;
-    });
-
-    const paid = thisMonth
-      .filter(t => t.type === 'deposit' || t.type === 'referral_bonus')
-      .reduce((s, t) => s + Math.abs(t.amount), 0);
-
-    const trainings = thisMonth.filter(t => t.type === 'training').length;
-
-    const cancellationFees = thisMonth
-      .filter(t => t.type === 'cancellation' || t.type === 'no_show')
-      .reduce((s, t) => s + Math.abs(t.amount), 0);
-
-    return { paid, trainings, cancellationFees };
-  }, [transactions]);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -159,32 +136,6 @@ export default function FinancesPage() {
           </CardContent>
         </Card>
 
-        {/* 2. Tento mesiac */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Tento mesiac</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Zaplatené</span>
-                <span className="font-medium">{monthStats.paid.toFixed(2)} €</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Absolvované tréningy</span>
-                <span className="font-medium">{monthStats.trainings}</span>
-              </div>
-              {monthStats.cancellationFees > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Storno poplatky</span>
-                  <span className="font-medium">{monthStats.cancellationFees.toFixed(2)} €</span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 3. Ako funguje kredit */}
         <Card className="border-dashed">
           <CardContent className="py-4 px-5">
             <div className="flex gap-3">

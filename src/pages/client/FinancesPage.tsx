@@ -2,15 +2,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ClientLayout } from '@/components/layout/ClientLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, XCircle, Loader2, Landmark, Copy, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Clock, XCircle, Loader2, Landmark, Copy, ArrowUpRight, ArrowDownRight, ChevronDown, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TRANSACTION_LABELS } from '@/lib/constants';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { sk } from 'date-fns/locale';
+import { useMemo, useState } from 'react';
 
 const formatIBAN = (iban: string) => iban.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim();
 
@@ -18,6 +20,7 @@ export default function FinancesPage() {
   const { profile } = useAuth();
   const { toast } = useToast();
   const { transactions, isLoading, filter, setFilter, hasMore, loadMore } = useTransactions();
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   const { data: ibanValue } = useQuery({
     queryKey: ['app-settings', 'iban'],
@@ -35,6 +38,30 @@ export default function FinancesPage() {
   const balance = profile?.balance ?? 0;
   const debtBalance = (profile as any)?.debt_balance ?? 0;
   const netBalance = balance - debtBalance;
+
+  // Current month stats
+  const monthStats = useMemo(() => {
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+
+    const thisMonth = transactions.filter(t => {
+      const d = new Date(t.created_at);
+      return d >= monthStart && d <= monthEnd;
+    });
+
+    const paid = thisMonth
+      .filter(t => t.type === 'deposit' || t.type === 'referral_bonus')
+      .reduce((s, t) => s + Math.abs(t.amount), 0);
+
+    const trainings = thisMonth.filter(t => t.type === 'training').length;
+
+    const cancellationFees = thisMonth
+      .filter(t => t.type === 'cancellation' || t.type === 'no_show')
+      .reduce((s, t) => s + Math.abs(t.amount), 0);
+
+    return { paid, trainings, cancellationFees };
+  }, [transactions]);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -60,9 +87,9 @@ export default function FinancesPage() {
 
   return (
     <ClientLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-5 animate-fade-in">
 
-        {/* 1. Môj zostatok */}
+        {/* 1. Môj zostatok + platobné údaje */}
         <Card className={cn(
           "relative overflow-hidden",
           netBalance > 0 && "border-success/30",
@@ -79,65 +106,108 @@ export default function FinancesPage() {
               Môj zostatok
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className={cn(
-              "text-4xl font-bold",
-              netBalance > 0 && "text-success",
-              netBalance === 0 && "text-muted-foreground",
-              netBalance < 0 && "text-destructive"
-            )}>
-              {netBalance > 0 ? '+' : ''}{netBalance.toFixed(2)} €
-            </p>
-            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-              {netBalance > 0 && "Máte k dispozícii kredit na ďalšie tréningy. Teším sa na ďalšiu spoločnú hodinu."}
-              {netBalance === 0 && "Momentálne nemáte kredit ani dlh. Tréning si môžete pokojne rezervovať, platbu vyriešime neskôr."}
-              {netBalance < 0 && "Momentálne evidujeme neuhradený zostatok. Keď vám to bude vyhovovať, môžete ho uhradiť prevodom alebo v hotovosti."}
-            </p>
+          <CardContent className="space-y-4">
+            <div>
+              <p className={cn(
+                "text-4xl font-bold",
+                netBalance > 0 && "text-success",
+                netBalance === 0 && "text-muted-foreground",
+                netBalance < 0 && "text-destructive"
+              )}>
+                {netBalance > 0 ? '+' : ''}{netBalance.toFixed(2)} €
+              </p>
+              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+                {netBalance > 0 && "Máte kredit na ďalšie tréningy. Teším sa na ďalšiu spoločnú hodinu."}
+                {netBalance === 0 && "Momentálne nemáte kredit ani dlh. Tréning si môžete pokojne rezervovať, platbu vyriešime neskôr."}
+                {netBalance < 0 && "Momentálne evidujeme neuhradený zostatok. Keď vám to bude vyhovovať, môžete ho uhradiť prevodom alebo v hotovosti."}
+              </p>
+            </div>
+
+            {/* Zbaliteľné platobné údaje */}
+            {ibanValue && (
+              <Collapsible open={paymentOpen} onOpenChange={setPaymentOpen}>
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full pt-2 border-t border-border/50">
+                  <Landmark className="h-3.5 w-3.5" />
+                  <span className="font-medium">Údaje k platbe</span>
+                  <ChevronDown className={cn(
+                    "h-3.5 w-3.5 ml-auto transition-transform duration-200",
+                    paymentOpen && "rotate-180"
+                  )} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm font-mono tracking-wide">
+                      {formatIBAN(ibanValue)}
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(ibanValue.replace(/\s/g, ''), 'IBAN')}
+                    >
+                      <Copy className="h-4 w-4 mr-1" />
+                      Skopírovať
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Platbu môžete uhradiť prevodom alebo osobne v hotovosti.
+                    <br />
+                    Kredit pripíšem hneď, ako platbu zaevidujem.
+                  </p>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </CardContent>
         </Card>
 
-        {/* 2. Ako uhradiť platbu */}
-        {ibanValue && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Landmark className="h-4 w-4 text-muted-foreground" />
-                Ako uhradiť platbu
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
-                <code className="flex-1 rounded-md bg-muted px-3 py-2 text-sm font-mono tracking-wide">
-                  {formatIBAN(ibanValue)}
-                </code>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyToClipboard(ibanValue.replace(/\s/g, ''), 'IBAN')}
-                >
-                  <Copy className="h-4 w-4 mr-1" />
-                  Skopírovať
-                </Button>
+        {/* 2. Tento mesiac */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">Tento mesiac</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Zaplatené</span>
+                <span className="font-medium">{monthStats.paid.toFixed(2)} €</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Platbu môžete uhradiť prevodom alebo osobne v hotovosti.
-                <br />
-                Kredit pripíšem hneď, ako platbu zaevidujem.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Absolvované tréningy</span>
+                <span className="font-medium">{monthStats.trainings}</span>
+              </div>
+              {monthStats.cancellationFees > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Storno poplatky</span>
+                  <span className="font-medium">{monthStats.cancellationFees.toFixed(2)} €</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* 3. História platieb a tréningov */}
+        {/* 3. Ako funguje kredit */}
+        <Card className="border-dashed">
+          <CardContent className="py-4 px-5">
+            <div className="flex gap-3">
+              <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium mb-1">Ako funguje kredit</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Ak si dobijete kredit dopredu, tréningy sa vám budú automaticky a prehľadne odpočítavať z vášho zostatku. Všetky pohyby vždy uvidíte nižšie v histórii.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 4. História */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">História platieb a tréningov</CardTitle>
+            <CardTitle className="text-lg">História</CardTitle>
             <CardDescription>
               Prehľad všetkých pohybov na vašom účte.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Filter chips */}
             <div className="flex gap-2 flex-wrap mb-4">
               {([
                 { value: 'all', label: 'Všetko' },

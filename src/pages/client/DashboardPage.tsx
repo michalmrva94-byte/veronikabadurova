@@ -159,7 +159,7 @@ function ApprovedDashboard() {
               <div className="mt-4 flex items-center gap-3">
                 <Button asChild size="sm" variant="outline">
                   <Link to={ROUTES.MY_TRAININGS}>
-                    Detail tréningu
+                    Moje tréningy
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>
                 </Button>

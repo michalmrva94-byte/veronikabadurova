@@ -2,6 +2,17 @@ import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { TrainingSlot } from '@/types/database';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Clock, Trash2, User, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -50,15 +61,35 @@ export function SlotCard({ slot, onDelete, isDeleting }: SlotCardProps) {
           </div>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10 ios-press"
-          onClick={() => onDelete(slot.id)}
-          disabled={isDeleting}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10 ios-press"
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Zmazať termín?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Naozaj chcete odstrániť tento termín ({format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')})? Táto akcia sa nedá vrátiť späť.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Späť</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => onDelete(slot.id)}
+              >
+                Zmazať
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

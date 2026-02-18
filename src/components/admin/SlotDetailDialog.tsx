@@ -220,18 +220,38 @@ export function SlotDetailDialog({
             )}
 
             {!hasBooking && (
-              <Button
-                variant="destructive"
-                className="w-full gap-2"
-                disabled={isProcessing}
-                onClick={() => {
-                  onDelete?.(slot.id);
-                  onOpenChange(false);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-                Zmazať slot
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="w-full gap-2"
+                    disabled={isProcessing}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Zmazať slot
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Zmazať termín?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Naozaj chcete odstrániť tento termín ({format(startTime, 'HH:mm')} – {format(endTime, 'HH:mm')})? Táto akcia sa nedá vrátiť späť.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Späť</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={() => {
+                        onDelete?.(slot.id);
+                        onOpenChange(false);
+                      }}
+                    >
+                      Zmazať
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
 

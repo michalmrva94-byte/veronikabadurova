@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
+import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
 
 export type TransactionFilter = 'all' | 'deposits' | 'trainings' | 'fees' | 'debt';
 
@@ -12,9 +13,13 @@ export function useTransactions() {
   const { profile } = useAuth();
   const [filter, setFilter] = useState<TransactionFilter>('all');
   const [page, setPage] = useState(1);
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+
+  const monthStart = startOfMonth(selectedMonth).toISOString();
+  const monthEnd = endOfMonth(selectedMonth).toISOString();
 
   const transactionsQuery = useQuery({
-    queryKey: ['transactions', profile?.id, filter, page],
+    queryKey: ['transactions', profile?.id, filter, page, monthStart],
     queryFn: async () => {
       if (!profile?.id) return { data: [], hasMore: false };
 
@@ -22,6 +27,8 @@ export function useTransactions() {
         .from('transactions')
         .select('*')
         .eq('client_id', profile.id)
+        .gte('created_at', monthStart)
+        .lte('created_at', monthEnd)
         .order('created_at', { ascending: false });
 
       // Apply filters
@@ -52,28 +59,26 @@ export function useTransactions() {
   const result = transactionsQuery.data || { data: [], hasMore: false };
   const transactions = result.data;
 
-  const totalDeposits = transactions
-    .filter(t => t.type === 'deposit' || t.type === 'referral_bonus')
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  const changeMonth = (direction: 'prev' | 'next') => {
+    setPage(1);
+    setSelectedMonth(prev =>
+      direction === 'prev' ? subMonths(prev, 1) : subMonths(prev, -1)
+    );
+  };
 
-  const totalExpenses = transactions
-    .filter(t => t.type === 'training' || t.type === 'cancellation' || t.type === 'no_show')
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-  const totalCancellationFees = transactions
-    .filter(t => t.type === 'cancellation' || t.type === 'no_show')
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  const isCurrentMonth =
+    format(selectedMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM');
 
   return {
     transactions,
-    totalDeposits,
-    totalExpenses,
-    totalCancellationFees,
     isLoading: transactionsQuery.isLoading,
     error: transactionsQuery.error,
     filter,
-    setFilter,
+    setFilter: (f: TransactionFilter) => { setFilter(f); setPage(1); },
     hasMore: result.hasMore,
     loadMore: () => setPage(p => p + 1),
+    selectedMonth,
+    changeMonth,
+    isCurrentMonth,
   };
 }

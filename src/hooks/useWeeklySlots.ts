@@ -45,16 +45,17 @@ export function useWeeklySlots(weekStart: Date) {
 
       // Transform data to include booking info
       return (data || []).map((slot: any) => {
-        const activeBooking = slot.bookings?.find(
-          (b: any) => b.status === 'booked' || b.status === 'pending' || b.status === 'proposed' || b.status === 'awaiting_confirmation' || b.status === 'completed' || b.status === 'no_show'
-        );
+        // bookings is a single object (1:1 relation), not an array
+        const b = slot.bookings;
+        const activeStatuses = ['booked', 'pending', 'proposed', 'awaiting_confirmation', 'completed', 'no_show'];
+        const hasActive = b && activeStatuses.includes(b.status);
         return {
           ...slot,
-          booking: activeBooking ? {
-            id: activeBooking.id,
-            status: activeBooking.status,
-            client: activeBooking.client,
-            price: activeBooking.price,
+          booking: hasActive ? {
+            id: b.id,
+            status: b.status,
+            client: b.client,
+            price: b.price,
           } : undefined,
         };
       }) as SlotWithBooking[];

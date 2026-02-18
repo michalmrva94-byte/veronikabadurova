@@ -1,8 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { startOfWeek, endOfWeek, startOfMonth, subWeeks, differenceInMonths } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, differenceInMonths } from 'date-fns';
 
-export type DashboardPeriod = 'week' | '2weeks' | 'month';
+export type DashboardPeriod = 'week' | 'month' | 'custom';
+
+export interface DashboardDateRange {
+  start: Date;
+  end: Date;
+  label?: string;
+}
 
 export interface AdminDashboardStats {
   activeClients: number;
@@ -11,7 +17,6 @@ export interface AdminDashboardStats {
   unconfirmedBookings: number;
   clientsWithDebt: number;
   monthlyRevenue: number;
-  // New intelligent metrics
   stornoRate: number;
   avgTrainingsPerClient: number;
   slotOccupancy: number;
@@ -21,34 +26,32 @@ export interface AdminDashboardStats {
   avgMonthlyRevenuePerClient: number;
 }
 
-function getPeriodRange(period: DashboardPeriod) {
+export function getDefaultRange(period: 'week' | 'month'): DashboardDateRange {
   const now = new Date();
-  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-
-  switch (period) {
-    case 'week':
-      return { start: startOfWeek(now, { weekStartsOn: 1 }), end: weekEnd };
-    case '2weeks':
-      return { start: subWeeks(startOfWeek(now, { weekStartsOn: 1 }), 1), end: weekEnd };
-    case 'month':
-      return { start: startOfMonth(now), end: now };
+  if (period === 'week') {
+    return {
+      start: startOfWeek(now, { weekStartsOn: 1 }),
+      end: endOfWeek(now, { weekStartsOn: 1 }),
+    };
   }
+  return {
+    start: startOfMonth(now),
+    end: endOfMonth(now),
+  };
 }
 
-function getPeriodWeeks(period: DashboardPeriod): number {
-  switch (period) {
-    case 'week': return 1;
-    case '2weeks': return 2;
-    case 'month': return 4;
-  }
+function estimateWeeks(start: Date, end: Date): number {
+  const ms = end.getTime() - start.getTime();
+  const days = ms / (1000 * 60 * 60 * 24);
+  return Math.max(1, Math.round(days / 7));
 }
 
-export function useAdminDashboardStats(period: DashboardPeriod = 'week') {
+export function useAdminDashboardStats(range: DashboardDateRange) {
   return useQuery({
-    queryKey: ['admin-dashboard-stats', period],
+    queryKey: ['admin-dashboard-stats', range.start.toISOString(), range.end.toISOString()],
     queryFn: async (): Promise<AdminDashboardStats> => {
-      const { start, end } = getPeriodRange(period);
-      const periodWeeks = getPeriodWeeks(period);
+      const { start, end } = range;
+      const periodWeeks = estimateWeeks(start, end);
 
       const [
         profilesRes,
@@ -75,23 +78,19 @@ export function useAdminDashboardStats(period: DashboardPeriod = 'week') {
           .select('amount')
           .eq('type', 'deposit')
           .gte('created_at', start.toISOString()),
-        // All bookings in period for storno calc
         supabase
           .from('bookings')
           .select('id, status, slot:training_slots(start_time)')
           .gte('created_at', '2000-01-01'),
-        // Slots in period for occupancy
         supabase
           .from('training_slots')
           .select('id, start_time, is_available, bookings(id)')
           .gte('start_time', start.toISOString())
           .lte('start_time', end.toISOString()),
-        // Completed bookings for CLV
         supabase
           .from('bookings')
           .select('id, client_id, price, created_at')
           .eq('status', 'completed'),
-        // Training transactions for CLV
         supabase
           .from('transactions')
           .select('amount, client_id, created_at')
@@ -108,7 +107,6 @@ export function useAdminDashboardStats(period: DashboardPeriod = 'week') {
         .filter(p => (p.balance ?? 0) < 0)
         .reduce((sum, p) => sum + Math.abs(p.balance ?? 0), 0);
 
-      // Week trainings (period-filtered)
       const weekTrainings = (periodBookingsRes.data || []).filter((b: any) => {
         const slotTime = b.slot?.start_time;
         if (!slotTime) return false;
@@ -121,7 +119,6 @@ export function useAdminDashboardStats(period: DashboardPeriod = 'week') {
       const monthlyRevenue = (periodTransRes.data || [])
         .reduce((sum, t) => sum + t.amount, 0);
 
-      // Storno rate
       const periodAllBookings = (allPeriodBookingsRes.data || []).filter((b: any) => {
         const slotTime = b.slot?.start_time;
         if (!slotTime) return false;
@@ -136,7 +133,6 @@ export function useAdminDashboardStats(period: DashboardPeriod = 'week') {
       ).length;
       const stornoRate = totalRelevant > 0 ? (stornoCount / totalRelevant) * 100 : 0;
 
-      // Avg trainings per client per week
       const activeBookings = periodAllBookings.filter(
         (b: any) => b.status === 'booked' || b.status === 'completed'
       ).length;
@@ -144,13 +140,11 @@ export function useAdminDashboardStats(period: DashboardPeriod = 'week') {
         ? activeBookings / activeClients / periodWeeks
         : 0;
 
-      // Slot occupancy
       const slots = slotsRes.data || [];
       const totalSlots = slots.length;
       const bookedSlots = slots.filter((s: any) => s.bookings && s.bookings.length > 0).length;
       const slotOccupancy = totalSlots > 0 ? (bookedSlots / totalSlots) * 100 : 0;
 
-      // CLV calculation
       const completed = completedBookingsRes.data || [];
       const trainingTrans = trainingTransRes.data || [];
       
@@ -159,7 +153,6 @@ export function useAdminDashboardStats(period: DashboardPeriod = 'week') {
       let avgMonthlyRevenuePerClient = 0;
 
       if (completed.length > 0) {
-        // Group by client
         const clientMap = new Map<string, { dates: Date[]; totalRevenue: number }>();
         
         for (const b of completed) {
@@ -169,13 +162,6 @@ export function useAdminDashboardStats(period: DashboardPeriod = 'week') {
           const entry = clientMap.get(b.client_id)!;
           entry.dates.push(new Date(b.created_at));
           entry.totalRevenue += b.price;
-        }
-
-        // Add training transaction amounts
-        for (const t of trainingTrans) {
-          if (clientMap.has(t.client_id)) {
-            // Already counted via booking price
-          }
         }
 
         const clientStats = Array.from(clientMap.entries()).map(([, data]) => {

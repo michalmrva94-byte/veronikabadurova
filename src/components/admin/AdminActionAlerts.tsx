@@ -1,8 +1,9 @@
-import { AlertTriangle, Clock, CreditCard, TrendingDown, CalendarX, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Clock, CreditCard, TrendingDown, CalendarX, ChevronRight, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/lib/constants';
 import { AdminDashboardStats } from '@/hooks/useAdminDashboardStats';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface AdminActionAlertsProps {
   stats: AdminDashboardStats;
@@ -110,6 +111,39 @@ export function AdminActionAlerts({ stats }: AdminActionAlertsProps) {
       <h2 className="text-sm font-semibold text-destructive uppercase tracking-wide px-4 flex items-center gap-2">
         <AlertTriangle className="h-4 w-4" />
         Potrebujem riešiť dnes
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
+              <Info className="h-4 w-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 text-xs space-y-3" side="bottom" align="end">
+            <p className="font-semibold text-sm text-foreground">Typy upozornení</p>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <CreditCard className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+                <div><span className="font-medium text-destructive">Kreditový problém</span> — klient má tréning do 24h, ale nedostatočný zostatok.</div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Clock className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+                <div><span className="font-medium text-destructive">Dnes bez potvrdenia</span> — tréning začína dnes a ešte nie je potvrdený.</div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CalendarX className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
+                <div><span className="font-medium text-warning">Expirované návrhy</span> — navrhnuté tréningy s vypršaným deadlinom.</div>
+              </div>
+              <div className="flex items-start gap-2">
+                <TrendingDown className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                <div><span className="font-medium">Vysoké storno</span> — miera storna &gt;30% za posledných 7 dní.</div>
+              </div>
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                <div><span className="font-medium">Nízka obsadenosť</span> — obsadenosť &lt;50% pri &gt;5 voľných slotoch.</div>
+              </div>
+            </div>
+            <p className="text-muted-foreground">Zobrazujú sa max. 3 najdôležitejšie.</p>
+          </PopoverContent>
+        </Popover>
       </h2>
       <div className="ios-card overflow-hidden divide-y divide-border/50">
         {sorted.map((alert, i) => {

@@ -5,39 +5,44 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
-import { CreditCard, TrendingUp, TrendingDown, Plus, Users, Loader2, User, History } from 'lucide-react';
+import { Euro, TrendingUp, TrendingDown, Plus, Users, Loader2, User, History, CreditCard, ArrowRight, Wallet } from 'lucide-react';
 import { useClients } from '@/hooks/useClients';
 import { useAddCredit } from '@/hooks/useAddCredit';
-import { useAdminFinancesStats, useClientsWithDebt } from '@/hooks/useAdminFinances';
+import { useAdminFinancesStats, useClientsWithDebt, FinancePeriod } from '@/hooks/useAdminFinances';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
-import { TRANSACTION_LABELS } from '@/lib/constants';
+import { TRANSACTION_LABELS, ROUTES } from '@/lib/constants';
 import { Badge } from '@/components/ui/badge';
+import { KPICard } from '@/components/admin/KPICard';
+import { Link } from 'react-router-dom';
 
 export default function AdminFinancesPage() {
   const [selectedClient, setSelectedClient] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [paymentType, setPaymentType] = useState('prevod');
+  const [period, setPeriod] = useState<FinancePeriod>('month');
 
   const { data: clients = [], isLoading: clientsLoading } = useClients();
-  const { data: stats, isLoading: statsLoading } = useAdminFinancesStats();
+  const { data: stats, isLoading: statsLoading } = useAdminFinancesStats(period);
   const { data: clientsWithDebt = [], isLoading: debtLoading } = useClientsWithDebt();
   const addCredit = useAddCredit();
 
-  // Transaction history
+  const periodLabel = period === 'week' ? 'tento týždeň' : 'tento mesiac';
+
+  // Transaction history - FIXED: explicit foreign key hint
   const { data: recentTransactions = [], isLoading: transLoading } = useQuery({
     queryKey: ['admin-all-transactions'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('transactions')
-        .select('*, client:profiles(full_name)')
+        .select('*, client:profiles!transactions_client_id_fkey(full_name)')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(20);
       if (error) throw error;
       return data;
     },
@@ -46,24 +51,16 @@ export default function AdminFinancesPage() {
 
   const handleAddCredit = async () => {
     if (!selectedClient || !amount) return;
-
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
       toast.error('Zadajte platnú sumu');
       return;
     }
-
     try {
       const desc = description || `Vklad - ${paymentType}`;
-      await addCredit.mutateAsync({
-        clientId: selectedClient,
-        amount: numAmount,
-        description: desc,
-      });
-      
+      await addCredit.mutateAsync({ clientId: selectedClient, amount: numAmount, description: desc });
       const clientName = clients.find(c => c.id === selectedClient)?.full_name;
       toast.success(`Kredit ${numAmount.toFixed(2)}€ bol pridaný pre ${clientName}`);
-      
       setSelectedClient('');
       setAmount('');
       setDescription('');
@@ -73,6 +70,8 @@ export default function AdminFinancesPage() {
     }
   };
 
+  const netChange = (stats?.deposits ?? 0) - (stats?.creditUsage ?? 0);
+
   return (
     <AdminLayout>
       <div className="space-y-6 animate-fade-in">
@@ -81,42 +80,96 @@ export default function AdminFinancesPage() {
           <p className="text-muted-foreground">Prehľad financií a správa kreditov</p>
         </div>
 
-        {/* Cashflow Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="h-4 w-4 text-success" />
-                <span className="text-xs text-muted-foreground">Vklady (mesiac)</span>
-              </div>
-              {statsLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                <p className="text-xl font-bold text-success">{(stats?.monthlyRevenue ?? 0).toFixed(0)}€</p>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingDown className="h-4 w-4 text-destructive" />
-                <span className="text-xs text-muted-foreground">Dlhy klientov</span>
-              </div>
-              {statsLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                <p className="text-xl font-bold text-destructive">{(stats?.totalDebts ?? 0).toFixed(0)}€</p>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <CreditCard className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Kredity celkom</span>
-              </div>
-              {statsLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                <p className="text-xl font-bold">{(stats?.totalCredits ?? 0).toFixed(0)}€</p>
-              )}
-            </CardContent>
-          </Card>
+        {/* Period Toggle */}
+        <div className="flex gap-1 bg-muted/60 rounded-xl p-0.5 h-8 w-fit">
+          <button
+            onClick={() => setPeriod('week')}
+            className={`text-xs rounded-lg px-3 h-7 transition-all ${
+              period === 'week'
+                ? 'bg-background shadow-sm font-medium text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Týždeň
+          </button>
+          <button
+            onClick={() => setPeriod('month')}
+            className={`text-xs rounded-lg px-3 h-7 transition-all ${
+              period === 'month'
+                ? 'bg-background shadow-sm font-medium text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Mesiac
+          </button>
         </div>
+
+        {/* 4 KPI Cards - 2x2 grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <KPICard
+            icon={<Euro className="h-4 w-4 text-success" />}
+            title={`Čistý zárobok`}
+            tooltip="Reálny výnos z tréningov a storno poplatkov v období. Nezahŕňa kreditné vklady."
+            mainValue={`${(stats?.earned ?? 0).toFixed(0)}€`}
+            mainColor="success"
+            loading={statsLoading}
+            trend={stats ? { current: stats.earned, previous: stats.prevEarned } : undefined}
+          />
+          <KPICard
+            icon={<Wallet className="h-4 w-4 text-primary" />}
+            title={`Vklady`}
+            tooltip="Suma všetkých kreditných vkladov od klientov v období."
+            mainValue={`${(stats?.deposits ?? 0).toFixed(0)}€`}
+            mainColor="primary"
+            loading={statsLoading}
+            trend={stats ? { current: stats.deposits, previous: stats.prevDeposits } : undefined}
+          />
+          <KPICard
+            icon={<TrendingDown className="h-4 w-4 text-destructive" />}
+            title="Dlhy klientov"
+            tooltip="Celkový dlh — súčet negatívnych zostatkov všetkých klientov."
+            mainValue={`${(stats?.totalDebts ?? 0).toFixed(0)}€`}
+            mainColor="destructive"
+            loading={statsLoading}
+          />
+          <KPICard
+            icon={<CreditCard className="h-4 w-4 text-primary" />}
+            title="Zostatok kreditov"
+            tooltip="Koľko € je ešte v systéme — súčet pozitívnych zostatkov klientov."
+            mainValue={`${(stats?.totalCredits ?? 0).toFixed(0)}€`}
+            mainColor="primary"
+            loading={statsLoading}
+          />
+        </div>
+
+        {/* Credit Flow Block */}
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-3">
+              Kreditný tok / {periodLabel}
+            </p>
+            {statsLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <p className="text-xs text-muted-foreground">Vklady</p>
+                  <p className="text-lg font-bold text-success">{(stats?.deposits ?? 0).toFixed(0)}€</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Vyčerpané</p>
+                  <p className="text-lg font-bold text-foreground">{(stats?.creditUsage ?? 0).toFixed(0)}€</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Čistá zmena</p>
+                  <p className={cn('text-lg font-bold', netChange >= 0 ? 'text-success' : 'text-destructive')}>
+                    {netChange >= 0 ? '+' : ''}{netChange.toFixed(0)}€
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Add credit form */}
         <Card>
@@ -157,7 +210,6 @@ export default function AdminFinancesPage() {
                 </SelectContent>
               </Select>
             </div>
-            
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Suma (€)</Label>
@@ -166,9 +218,7 @@ export default function AdminFinancesPage() {
               <div className="space-y-2">
                 <Label>Typ platby</Label>
                 <Select value={paymentType} onValueChange={setPaymentType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="prevod">Prevod</SelectItem>
                     <SelectItem value="hotovost">Hotovosť</SelectItem>
@@ -177,12 +227,10 @@ export default function AdminFinancesPage() {
                 </Select>
               </div>
             </div>
-
             <div className="space-y-2">
               <Label>Poznámka (voliteľné)</Label>
               <Input placeholder="Napr. poznámka k platbe..." value={description} onChange={(e) => setDescription(e.target.value)} />
             </div>
-
             <Button className="w-full" disabled={!selectedClient || !amount || addCredit.isPending} onClick={handleAddCredit}>
               {addCredit.isPending ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Pridávam...</>
@@ -230,10 +278,18 @@ export default function AdminFinancesPage() {
         {/* Transaction history */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <History className="h-5 w-5" />
-              História platieb
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <History className="h-5 w-5" />
+                História platieb
+              </CardTitle>
+              <Link
+                to={ROUTES.ADMIN.FINANCE_HISTORY}
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                Kompletná história <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
           </CardHeader>
           <CardContent>
             {transLoading ? (

@@ -1,11 +1,12 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, X } from 'lucide-react';
+import { Calendar, Clock, X, CalendarPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { BookingWithSlot } from '@/hooks/useClientBookings';
 import { BOOKING_STATUS_LABELS } from '@/lib/constants';
+import { toast } from 'sonner';
 
 interface BookingCardProps {
   booking: BookingWithSlot;
@@ -14,9 +15,36 @@ interface BookingCardProps {
 }
 
 export function BookingCard({ booking, onCancel, showCancelButton = false }: BookingCardProps) {
-  const startTime = format(new Date(booking.slot.start_time), 'HH:mm');
-  const endTime = format(new Date(booking.slot.end_time), 'HH:mm');
-  const dateFormatted = format(new Date(booking.slot.start_time), 'EEEE, d. MMMM', { locale: sk });
+  const startTime = new Date(booking.slot.start_time);
+  const endTime = new Date(booking.slot.end_time);
+  const startFormatted = format(startTime, 'HH:mm');
+  const endFormatted = format(endTime, 'HH:mm');
+  const dateFormatted = format(startTime, 'EEEE, d. MMMM', { locale: sk });
+
+  const handleAddToCalendar = () => {
+    const title = 'Tréning – Veronika';
+    const start = format(startTime, "yyyyMMdd'T'HHmmss");
+    const end = format(endTime, "yyyyMMdd'T'HHmmss");
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'BEGIN:VEVENT',
+      `DTSTART:${start}`,
+      `DTEND:${end}`,
+      `SUMMARY:${title}`,
+      `DESCRIPTION:Cena: ${booking.price}€`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `trening-${format(startTime, 'yyyy-MM-dd-HHmm')}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Súbor kalendára stiahnutý');
+  };
 
   const statusVariant = {
     pending: 'secondary',
@@ -38,7 +66,7 @@ export function BookingCard({ booking, onCancel, showCancelButton = false }: Boo
               <p className="font-semibold text-foreground capitalize">{dateFormatted}</p>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                {startTime} - {endTime}
+                {startFormatted} - {endFormatted}
               </p>
               <div className="mt-1.5 flex items-center gap-2">
                 <Badge variant={statusVariant} className="text-xs">
@@ -49,16 +77,29 @@ export function BookingCard({ booking, onCancel, showCancelButton = false }: Boo
             </div>
           </div>
           
-          {showCancelButton && booking.status === 'booked' && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-destructive"
-              onClick={() => onCancel?.(booking)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {showCancelButton && booking.status === 'booked' && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-primary hover:text-primary hover:bg-primary/10"
+                  onClick={handleAddToCalendar}
+                  title="Pridať do kalendára"
+                >
+                  <CalendarPlus className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={() => onCancel?.(booking)}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

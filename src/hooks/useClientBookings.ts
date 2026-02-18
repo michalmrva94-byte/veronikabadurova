@@ -99,29 +99,22 @@ export function useClientBookings() {
           .eq('id', bookingId)
           .single();
 
-        const { data: adminRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'admin');
+        const { data: adminIds } = await supabase.rpc('get_admin_profile_ids');
 
-        if (adminRoles && adminRoles.length > 0) {
-          const { data: adminProfiles } = await supabase
-            .from('profiles')
-            .select('id')
-            .in('user_id', adminRoles.map(r => r.user_id));
+        if (adminIds && adminIds.length > 0) {
+          const slot = booking?.slot as any;
+          const client = booking?.client as any;
+          const timeStr = slot ? new Date(slot.start_time).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+          const name = client?.full_name || 'Klient';
 
-          if (adminProfiles && adminProfiles.length > 0) {
-            const slot = booking?.slot as any;
-            const client = booking?.client as any;
-            const timeStr = slot ? new Date(slot.start_time).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-            const name = client?.full_name || 'Klient';
-
-            await supabase.from('notifications').insert(
-              adminProfiles.map(a => ({
-                user_id: a.id,
-                title: 'Storno tréningu',
-                message: `${name} stornoval/a tréning dňa ${timeStr}.`,
-                type: 'booking_cancelled',
-              }))
-            );
-          }
+          await supabase.from('notifications').insert(
+            adminIds.map((adminId: string) => ({
+              user_id: adminId,
+              title: 'Storno tréningu',
+              message: `${name} stornoval/a tréning dňa ${timeStr}.`,
+              type: 'booking_cancelled',
+            }))
+          );
         }
       } catch (e) {
         console.error('Failed to send admin cancellation notification:', e);

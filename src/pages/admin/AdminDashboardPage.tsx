@@ -285,10 +285,7 @@ export default function AdminDashboardPage() {
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 mb-4">
                   <Calendar className="h-8 w-8 text-muted-foreground/50" />
                 </div>
-                <p className="text-muted-foreground mb-4">Dnes nemáš naplánované žiadne tréningy</p>
-                <Button asChild className="rounded-xl ios-press">
-                  <Link to={ROUTES.ADMIN.CALENDAR}>Pridať tréning</Link>
-                </Button>
+                <p className="text-muted-foreground">Dnes nemáš naplánované žiadne tréningy</p>
               </div>
             </div>
           ) : (

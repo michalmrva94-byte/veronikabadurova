@@ -124,26 +124,30 @@ export default function AdminClientsPage() {
           </Card>
         )}
 
-        {/* Filter chips */}
-        <div className="flex gap-2 flex-wrap">
+        {/* Filter chips - horizontal scroll slider */}
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
           {filters.map(f => (
-            <Button
+            <button
               key={f.key}
-              variant={filter === f.key ? 'default' : 'outline'}
-              size="sm"
-              className="rounded-full"
               onClick={() => setFilter(f.key)}
+              className={`shrink-0 inline-flex items-center gap-1 text-xs font-medium px-3 h-7 rounded-full transition-all whitespace-nowrap ${
+                filter === f.key
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+              }`}
             >
               {f.label}
               {f.key === 'pending' && pendingClients.length > 0 && (
-                <Badge variant="secondary" className="ml-1 text-[10px] px-1.5">{pendingClients.length}</Badge>
+                <span className={`inline-flex items-center justify-center min-w-[16px] h-4 rounded-full text-[10px] font-bold px-1 ${
+                  filter === f.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-warning text-warning-foreground'
+                }`}>{pendingClients.length}</span>
               )}
-              {f.key === 'debt' && (
-                <Badge variant="destructive" className="ml-1 text-[10px] px-1.5">
-                  {approvedClients.filter(c => (c.balance ?? 0) < 0).length}
-                </Badge>
+              {f.key === 'debt' && approvedClients.filter(c => (c.balance ?? 0) < 0).length > 0 && (
+                <span className={`inline-flex items-center justify-center min-w-[16px] h-4 rounded-full text-[10px] font-bold px-1 ${
+                  filter === f.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-destructive text-destructive-foreground'
+                }`}>{approvedClients.filter(c => (c.balance ?? 0) < 0).length}</span>
               )}
-            </Button>
+            </button>
           ))}
         </div>
 

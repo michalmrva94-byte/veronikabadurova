@@ -119,20 +119,18 @@ export default function CalendarPage() {
     <ClientLayout>
       <div className="space-y-5 animate-fade-in">
         {/* Header */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground">Rezervácie</h1>
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground">
-              Vyberte si termín, ktorý vám vyhovuje.
-            </p>
-            <Link
-              to={ROUTES.MY_TRAININGS}
-              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
-            >
-              Moje tréningy →
-            </Link>
-          </div>
-        </div>
+         <div className="space-y-3">
+           <h1 className="text-2xl font-bold text-foreground">Rezervácie</h1>
+           <p className="text-muted-foreground text-sm">
+             Vyberte si termín, ktorý vám vyhovuje.
+           </p>
+           <Link to={ROUTES.MY_TRAININGS}>
+             <Button variant="outline" className="w-full justify-between h-12 text-sm font-semibold">
+               📋 Moje tréningy
+               <ChevronRight className="h-4 w-4" />
+             </Button>
+           </Link>
+         </div>
 
         {/* Weekly Available Slots — PRIMARY */}
         <Card>

@@ -46,6 +46,13 @@ const textColors: Record<InsightLevel, string> = {
   destructive: 'text-destructive',
 };
 
+function getClvBenchmark(clv: number): { text: string; dotColor: string; textColor: string } {
+  if (clv > 1000) return { text: 'Dlhodobí klienti – vysoká hodnota.', dotColor: 'bg-success', textColor: 'text-success' };
+  if (clv >= 300) return { text: 'Stabilní klienti – dobrá hodnota.', dotColor: 'bg-success', textColor: 'text-success' };
+  if (clv > 0) return { text: 'Krátkodobí klienti – sleduj retenciu.', dotColor: 'bg-warning', textColor: 'text-warning' };
+  return { text: 'Sleduj pravidelnosť nových klientov.', dotColor: 'bg-warning', textColor: 'text-warning' };
+}
+
 function InsightText({ insight }: { insight: Insight }) {
   return (
     <div className="flex items-start gap-1.5 mt-1.5">
@@ -88,7 +95,6 @@ export function AdminStatsSection({ stats, isLoading }: AdminStatsSectionProps) 
 
   const stornoInsight = getStornoInsight(stats?.stornoRate ?? 0);
   const avgInsight = getAvgTrainingsInsight(stats?.avgTrainingsPerClient ?? 0);
-  const occupancyInsight = getOccupancyInsight(stats?.slotOccupancy ?? 0);
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -115,13 +121,6 @@ export function AdminStatsSection({ stats, isLoading }: AdminStatsSectionProps) 
             label="Ø tréningy / klient / týždeň"
             value={(stats?.avgTrainingsPerClient ?? 0).toFixed(1)}
             insight={avgInsight}
-            loading={isLoading}
-          />
-          <StatCard
-            icon={<BarChart3 className="h-5 w-5 text-warning" />}
-            label="Obsadenosť slotov"
-            value={`${(stats?.slotOccupancy ?? 0).toFixed(0)}%`}
-            insight={occupancyInsight}
             loading={isLoading}
           />
         </div>
@@ -170,11 +169,9 @@ export function AdminStatsSection({ stats, isLoading }: AdminStatsSectionProps) 
             )}
             {!isLoading && (
               <div className="flex items-start gap-1.5 mt-3">
-                <span className={`mt-1 h-1.5 w-1.5 rounded-full shrink-0 ${(stats?.clv ?? 0) > 0 ? 'bg-success' : 'bg-warning'}`} />
-                <p className={`text-[10px] leading-tight ${(stats?.clv ?? 0) > 0 ? 'text-success' : 'text-warning'}`}>
-                  {(stats?.clv ?? 0) > 0
-                    ? 'Dlhodobá hodnota klientov rastie.'
-                    : 'Sleduj pravidelnosť nových klientov.'}
+                <span className={`mt-1 h-1.5 w-1.5 rounded-full shrink-0 ${getClvBenchmark(stats?.clv ?? 0).dotColor}`} />
+                <p className={`text-[10px] leading-tight ${getClvBenchmark(stats?.clv ?? 0).textColor}`}>
+                  {getClvBenchmark(stats?.clv ?? 0).text}
                 </p>
               </div>
             )}

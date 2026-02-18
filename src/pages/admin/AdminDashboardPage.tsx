@@ -6,7 +6,7 @@ import {
   Users, Calendar, CreditCard, Clock,
   ChevronRight, Bell, Loader2, CalendarCheck,
   AlertTriangle, Euro, Megaphone, CheckCircle, XCircle,
-  Activity, TrendingDown
+  Activity, TrendingDown, BarChart3
 } from 'lucide-react';
 import { useAdminBookings, AdminBookingWithDetails } from '@/hooks/useAdminBookings';
 import { useAdminDashboardStats, DashboardDateRange, getDefaultRange } from '@/hooks/useAdminDashboardStats';
@@ -23,6 +23,20 @@ import { format, differenceInHours } from 'date-fns';
 import { sk } from 'date-fns/locale';
 
 type QuickPeriod = 'week' | 'month';
+
+function getOccupancyColor(val: number): 'success' | 'warning' | 'destructive' | 'muted' {
+  if (val >= 75) return 'success';
+  if (val >= 50) return 'warning';
+  if (val >= 30) return 'warning';
+  return 'destructive';
+}
+
+function getOccupancyInsight(val: number): string {
+  if (val >= 75) return 'Výborné využitie kapacity';
+  if (val >= 50) return 'Stabilné, priestor na rast';
+  if (val >= 30) return 'Slabšie využitie';
+  return 'Kapacita sa nevyužíva efektívne';
+}
 
 export default function AdminDashboardPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -184,6 +198,7 @@ export default function AdminDashboardPage() {
             mainValue={stats?.activeClients ?? 0}
             mainColor="success"
             loading={statsLoading}
+            trend={stats ? { current: stats.activeClients, previous: stats.prevActiveClients } : undefined}
           />
           <KPICard
             icon={<Calendar className="h-4 w-4 text-primary" />}
@@ -192,6 +207,7 @@ export default function AdminDashboardPage() {
             mainValue={`${(stats?.plannedTrainings ?? 0) + (stats?.completedTrainings ?? 0)}`}
             mainColor="primary"
             loading={statsLoading}
+            trend={stats ? { current: (stats.plannedTrainings + stats.completedTrainings), previous: stats.prevTrainings } : undefined}
           />
           <KPICard
             icon={<Clock className="h-4 w-4 text-warning" />}
@@ -206,12 +222,15 @@ export default function AdminDashboardPage() {
             loading={statsLoading}
           />
           <KPICard
-            icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
-            title="Rizikové"
-            tooltip="Dlžníci + klienti s vysokou mierou storn/neúčastí za posledných 30 dní."
-            mainValue={(stats?.debtClients ?? 0) + (stats?.riskyCancellers ?? 0)}
-            mainColor={((stats?.debtClients ?? 0) + (stats?.riskyCancellers ?? 0)) > 0 ? 'destructive' : 'success'}
+            icon={<BarChart3 className="h-4 w-4 text-primary" />}
+            title="Obsadenosť"
+            tooltip="Pomer obsadených slotov k celkovému počtu dostupných slotov v zvolenom období."
+            mainValue={`${(stats?.slotOccupancy ?? 0).toFixed(0)}%`}
+            mainColor={getOccupancyColor(stats?.slotOccupancy ?? 0)}
+            insightText={getOccupancyInsight(stats?.slotOccupancy ?? 0)}
+            insightColor={getOccupancyColor(stats?.slotOccupancy ?? 0)}
             loading={statsLoading}
+            trend={stats ? { current: stats.slotOccupancy, previous: stats.prevSlotOccupancy } : undefined}
           />
         </div>
 
@@ -227,6 +246,7 @@ export default function AdminDashboardPage() {
             { label: 'Vyčerpané', value: `${(stats?.creditUsage ?? 0).toFixed(0)}€`, color: 'warning' },
           ]}
           loading={statsLoading}
+          trend={stats ? { current: stats.netRevenue, previous: stats.prevNetRevenue } : undefined}
         />
 
         {/* Action Alerts - "Potrebujem riešiť dnes" */}

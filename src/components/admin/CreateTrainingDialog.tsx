@@ -23,12 +23,13 @@ import { Clock, User, Loader2 } from 'lucide-react';
 import { Profile } from '@/types/database';
 import { DEFAULT_TRAINING_PRICE } from '@/lib/constants';
 
-interface AssignTrainingDialogProps {
+interface CreateTrainingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedDate: Date;
   clients: Profile[];
-  onSubmit: (data: {
+  onCreateSlot: (data: { start_time: string; end_time: string; notes?: string }) => Promise<void>;
+  onAssignTraining: (data: {
     start_time: string;
     end_time: string;
     client_id: string;
@@ -38,24 +39,35 @@ interface AssignTrainingDialogProps {
   isLoading?: boolean;
 }
 
-export function AssignTrainingDialog({
+const NO_CLIENT_VALUE = '__none__';
+
+export function CreateTrainingDialog({
   open,
   onOpenChange,
   selectedDate,
   clients,
-  onSubmit,
+  onCreateSlot,
+  onAssignTraining,
   isLoading,
-}: AssignTrainingDialogProps) {
+}: CreateTrainingDialogProps) {
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
-  const [selectedClient, setSelectedClient] = useState<string>('');
+  const [selectedClient, setSelectedClient] = useState<string>(NO_CLIENT_VALUE);
   const [price, setPrice] = useState(DEFAULT_TRAINING_PRICE.toString());
   const [notes, setNotes] = useState('');
 
+  const hasClient = selectedClient !== NO_CLIENT_VALUE;
+
+  const resetForm = () => {
+    setStartTime('09:00');
+    setEndTime('10:00');
+    setSelectedClient(NO_CLIENT_VALUE);
+    setPrice(DEFAULT_TRAINING_PRICE.toString());
+    setNotes('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!selectedClient) return;
 
     const [startHour, startMin] = startTime.split(':').map(Number);
     const [endHour, endMin] = endTime.split(':').map(Number);
@@ -63,28 +75,31 @@ export function AssignTrainingDialog({
     const startDateTime = setMinutes(setHours(selectedDate, startHour), startMin);
     const endDateTime = setMinutes(setHours(selectedDate, endHour), endMin);
 
-    await onSubmit({
-      start_time: startDateTime.toISOString(),
-      end_time: endDateTime.toISOString(),
-      client_id: selectedClient,
-      price: parseFloat(price),
-      notes: notes || undefined,
-    });
+    if (hasClient) {
+      await onAssignTraining({
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        client_id: selectedClient,
+        price: parseFloat(price),
+        notes: notes || undefined,
+      });
+    } else {
+      await onCreateSlot({
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        notes: notes || undefined,
+      });
+    }
 
-    // Reset form
-    setStartTime('09:00');
-    setEndTime('10:00');
-    setSelectedClient('');
-    setPrice(DEFAULT_TRAINING_PRICE.toString());
-    setNotes('');
+    resetForm();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); onOpenChange(v); }}>
       <DialogContent className="ios-card border-0 mx-4 max-w-[calc(100%-2rem)]">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-center">
-            Priradiť tréning klientovi
+            Nový tréning
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground text-center">
             {format(selectedDate, 'd. MMMM yyyy', { locale: sk })}
@@ -92,17 +107,52 @@ export function AssignTrainingDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          {/* Client selection */}
+          {/* Time inputs */}
+          <div className="ios-card p-4 space-y-4">
+            <div className="flex gap-4">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="create-start-time" className="text-sm font-medium flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  Začiatok
+                </Label>
+                <Input
+                  id="create-start-time"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="h-12 text-center text-lg font-medium"
+                  required
+                />
+              </div>
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="create-end-time" className="text-sm font-medium flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  Koniec
+                </Label>
+                <Input
+                  id="create-end-time"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="h-12 text-center text-lg font-medium"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Client selection (optional) */}
           <div className="space-y-2">
             <Label className="text-sm font-medium flex items-center gap-2">
               <User className="h-4 w-4 text-primary" />
-              Vyber klienta
+              Klient (voliteľné)
             </Label>
             <Select value={selectedClient} onValueChange={setSelectedClient}>
               <SelectTrigger className="h-12">
-                <SelectValue placeholder="Vyber klienta..." />
+                <SelectValue placeholder="Bez klienta – voľný slot" />
               </SelectTrigger>
               <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectItem value={NO_CLIENT_VALUE}>Bez klienta – voľný slot</SelectItem>
                 {clients.map((client) => (
                   <SelectItem key={client.id} value={client.id}>
                     <div className="flex flex-col">
@@ -115,46 +165,14 @@ export function AssignTrainingDialog({
             </Select>
           </div>
 
-          {/* Time inputs */}
-          <div className="ios-card p-4 space-y-4">
-            <div className="flex gap-4">
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="assign-start-time" className="text-sm font-medium flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  Začiatok
-                </Label>
-                <Input
-                  id="assign-start-time"
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="h-12 text-center text-lg font-medium"
-                  required
-                />
-              </div>
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="assign-end-time" className="text-sm font-medium flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  Koniec
-                </Label>
-                <Input
-                  id="assign-end-time"
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="h-12 text-center text-lg font-medium"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Price */}
+          {/* Price - only when client selected */}
+          {hasClient && (
             <div className="space-y-2">
-              <Label htmlFor="assign-price" className="text-sm font-medium">
+              <Label htmlFor="create-price" className="text-sm font-medium">
                 Cena (€)
               </Label>
               <Input
-                id="assign-price"
+                id="create-price"
                 type="number"
                 step="0.01"
                 min="0"
@@ -164,20 +182,20 @@ export function AssignTrainingDialog({
                 required
               />
             </div>
+          )}
 
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="assign-notes" className="text-sm font-medium">
-                Poznámky (voliteľné)
-              </Label>
-              <Textarea
-                id="assign-notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Napr. špeciálny tréning..."
-                className="min-h-[60px] resize-none"
-              />
-            </div>
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="create-notes" className="text-sm font-medium">
+              Poznámky (voliteľné)
+            </Label>
+            <Textarea
+              id="create-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Napr. skupinový tréning, začiatočníci..."
+              className="min-h-[60px] resize-none"
+            />
           </div>
 
           <div className="flex gap-3">
@@ -193,15 +211,17 @@ export function AssignTrainingDialog({
             <Button
               type="submit"
               className="flex-1 h-12 ios-press"
-              disabled={isLoading || !selectedClient}
+              disabled={isLoading}
             >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Ukladám...
                 </>
-              ) : (
+              ) : hasClient ? (
                 'Priradiť tréning'
+              ) : (
+                'Pridať slot'
               )}
             </Button>
           </div>

@@ -81,16 +81,16 @@ export default function AdminFinancesPage() {
           <p className="text-muted-foreground">Prehľad financií a správa kreditov</p>
         </div>
 
-        {/* Stats */}
+        {/* Cashflow Stats */}
         <div className="grid grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="h-4 w-4 text-success" />
-                <span className="text-xs text-muted-foreground">Kredity</span>
+                <span className="text-xs text-muted-foreground">Vklady (mesiac)</span>
               </div>
               {statsLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                <p className="text-xl font-bold text-success">{(stats?.totalCredits ?? 0).toFixed(0)}€</p>
+                <p className="text-xl font-bold text-success">{(stats?.monthlyRevenue ?? 0).toFixed(0)}€</p>
               )}
             </CardContent>
           </Card>
@@ -98,7 +98,7 @@ export default function AdminFinancesPage() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingDown className="h-4 w-4 text-destructive" />
-                <span className="text-xs text-muted-foreground">Dlhy</span>
+                <span className="text-xs text-muted-foreground">Dlhy klientov</span>
               </div>
               {statsLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                 <p className="text-xl font-bold text-destructive">{(stats?.totalDebts ?? 0).toFixed(0)}€</p>
@@ -109,10 +109,10 @@ export default function AdminFinancesPage() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 <CreditCard className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Mesiac</span>
+                <span className="text-xs text-muted-foreground">Kredity celkom</span>
               </div>
               {statsLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                <p className="text-xl font-bold">{(stats?.monthlyRevenue ?? 0).toFixed(0)}€</p>
+                <p className="text-xl font-bold">{(stats?.totalCredits ?? 0).toFixed(0)}€</p>
               )}
             </CardContent>
           </Card>

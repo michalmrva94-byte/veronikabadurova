@@ -234,19 +234,15 @@ export default function AdminDashboardPage() {
           />
         </div>
 
-        {/* Income row - full width */}
+        {/* Earned row - full width */}
         <KPICard
           icon={<Euro className="h-4 w-4 text-success" />}
-          title={`Príjem / ${periodLabel}`}
-          tooltip="Vklady = kreditné vklady. Vyčerpané = kredit spotrebovaný na tréningy. Net = rozdiel."
-          mainValue={`${(stats?.netRevenue ?? 0) >= 0 ? '+' : ''}${(stats?.netRevenue ?? 0).toFixed(0)}€`}
-          mainColor={(stats?.netRevenue ?? 0) >= 0 ? 'success' : 'destructive'}
-          subValues={[
-            { label: 'Vklady', value: `${(stats?.deposits ?? 0).toFixed(0)}€`, color: 'success' },
-            { label: 'Vyčerpané', value: `${(stats?.creditUsage ?? 0).toFixed(0)}€`, color: 'warning' },
-          ]}
+          title={`Zarobené / ${periodLabel}`}
+          tooltip="Zarobené = reálny výnos z tréningov, storno poplatkov a last-minute obsadení. Nezahŕňa kreditné vklady."
+          mainValue={`${(stats?.earned ?? 0).toFixed(0)}€`}
+          mainColor="success"
           loading={statsLoading}
-          trend={stats ? { current: stats.netRevenue, previous: stats.prevNetRevenue } : undefined}
+          trend={stats ? { current: stats.earned, previous: stats.prevEarned } : undefined}
         />
 
         {/* Action Alerts - "Potrebujem riešiť dnes" */}

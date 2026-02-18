@@ -50,6 +50,9 @@ export interface AdminDashboardStats {
   prevTrainings: number;
   prevSlotOccupancy: number;
   prevNetRevenue: number;
+  // Earned (performance metric)
+  earned: number;
+  prevEarned: number;
 }
 
 export function getDefaultRange(period: 'week' | 'month'): DashboardDateRange {
@@ -110,6 +113,8 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         prevSlotsRes,
         prevDepositTransRes,
         prevTrainingTransRes,
+        earnedTransRes,
+        prevEarnedTransRes,
       ] = await Promise.all([
         // Period bookings with client info
         supabase
@@ -212,6 +217,20 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
           .from('transactions')
           .select('amount')
           .eq('type', 'training')
+          .gte('created_at', prevStart.toISOString())
+          .lte('created_at', prevEnd.toISOString()),
+        // Earned: training + cancellation transactions in current period
+        supabase
+          .from('transactions')
+          .select('amount')
+          .in('type', ['training', 'cancellation'])
+          .gte('created_at', start.toISOString())
+          .lte('created_at', end.toISOString()),
+        // Earned: training + cancellation transactions in previous period
+        supabase
+          .from('transactions')
+          .select('amount')
+          .in('type', ['training', 'cancellation'])
           .gte('created_at', prevStart.toISOString())
           .lte('created_at', prevEnd.toISOString()),
       ]);
@@ -468,6 +487,10 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
       }
       const prevNetRevenue = prevDeposits - prevCreditUsage;
 
+      // === EARNED (performance metric) ===
+      const earned = (earnedTransRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+      const prevEarned = (prevEarnedTransRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+
       return {
         activeClients,
         regularClients,
@@ -502,6 +525,8 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         prevTrainings,
         prevSlotOccupancy,
         prevNetRevenue,
+        earned,
+        prevEarned,
       };
     },
     staleTime: 30 * 1000,

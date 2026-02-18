@@ -1,80 +1,69 @@
 
-# Admin Dashboard Refaktor -- Obsadenost, Trendy, Benchmarky
+
+# Dashboard: Vykon vs Cashflow oddelenie
 
 ## Prehlad
 
-Nahradenie metriky "Rizikove" metrikou **Obsadenost** v 2x2 gride, pridanie **trend arrows** ku 4 KPI + Prijmu, a aktualizacia **Statistiky** sekcie s CLV benchmarkmi. Logika alertov ("Potrebujem riesit dnes") zostava bez zmien.
+Nahradit "Prijem / obdobie" kartu na dashboarde novou metrikou **"Zarobene"** (realny vynos z treningov a storno poplatkov). Cashflow metriky (vklady, vycerpane, net) presunieme do sekcie Financie.
 
 ---
 
 ## Zmeny
 
-### 1. `useAdminDashboardStats.ts` -- Previous period data + obsadenost
+### 1. `useAdminDashboardStats.ts` -- nova metrika `earned`
 
-Pridat do interface:
-
-```text
-// Previous period for trend calculation
-prevActiveClients: number
-prevTrainings: number
-prevSlotOccupancy: number
-prevNetRevenue: number
-```
-
-Logika:
-- Vypocitat `previousRange` automaticky: ak current = tyzden, previous = predchadzajuci tyzden; ak mesiac, predchadzajuci mesiac; ak custom, posun o rovnaky pocet dni
-- Pridat duplicitne queries pre previous period (period bookings, slots, transactions) do existujuceho `Promise.all`
-- Obsadenost v gride = `slotOccupancy` (uz existuje) -- confirmed+completed / total slots v obdobi
-
-### 2. `KPICard.tsx` -- Trend arrow support + insight text
-
-Pridat nove props:
+Pridat do interface `AdminDashboardStats`:
 
 ```text
-trend?: { current: number; previous: number }  -- auto-vypocet %
-insightText?: string                            -- kratky text pod hodnotou
-insightColor?: 'success' | 'warning' | 'destructive' | 'muted'
+earned: number           -- SUM(training + cancellation transakcie v obdobi, absolutne hodnoty)
+prevEarned: number       -- to iste pre predchadzajuce obdobie
 ```
 
-Trend logika v komponente:
-- Ak previous = 0, nezobrazovat
-- zmena > +5% = zelena sipka hore + "% text"
-- zmena < -5% = cervena sipka dole + "% text"
-- -5% az +5% = siva sipka vpravo + "% text"
-- Tooltip: "Porovnanie s predchadzajucim obdobim"
+V `queryFn`:
+- Pridat 2 nove queries do existujuceho `Promise.all`:
+  - Transakcie typu `training` + `cancellation` v aktualnom obdobi
+  - To iste pre predchadzajuce obdobie
+- `earned` = SUM absolutnych hodnot (training transakcie su zaporne, cancellation tiez -- pouzijeme `Math.abs`)
+- `prevEarned` = to iste pre prev period
 
-Vizual: maly text pod hlavnou hodnotou, napr. `↑ +12%`
+Poznamka: Typ `training` = odcitanie za odplávany trening. Typ `cancellation` = storno poplatok. Obe su zaporne v DB (odcitaju sa z kreditu klienta), preto pouzijeme absolutnu hodnotu.
 
-### 3. `AdminDashboardPage.tsx` -- Grid refaktor
+### 2. `AdminDashboardPage.tsx` -- nahrada "Prijem" za "Zarobene"
 
-2x2 grid zmeny:
-- Karta 1: **Aktivni klienti** -- bez zmien, pridat `trend`
-- Karta 2: **Treningy / obdobie** -- bez zmien, pridat `trend`
-- Karta 3: **Nepotvrdene** -- bez zmien, **bez trendu**
-- Karta 4: **Obsadenost** (NAHRADI "Rizikove") -- percento, benchmark insight text, trend arrow
+Zmenit full-width KPICard:
+- **Title**: `Zarobene / ${periodLabel}`
+- **mainValue**: `${stats.earned.toFixed(0)}EUR`
+- **mainColor**: success (ak >= 0)
+- **tooltip**: "Zarobene = realny vynos z treningov, storno poplatkov a last-minute obsadeni. Nezahrna kreditne vklady."
+- **trend**: `{ current: stats.earned, previous: stats.prevEarned }`
+- **Odstranit subValues** (Vklady/Vycerpane) -- tie idu do Financii
+- **Ikona**: Euro (zachovat)
 
-Obsadenost benchmarky (insightText):
-- >= 75% = zelena, "Vyborne vyuzitie kapacity"
-- 50-74% = zlta, "Stabilne, priestor na rast"
-- 30-49% = oranzova, "Slabsie vyuzitie"
-- < 30% = cervena, "Kapacita sa nevyuziva efektivne"
+### 3. `AdminFinancesPage.tsx` -- pridanie cashflow prehladu
 
-Prijem karta: pridat `trend` (prevNetRevenue)
+Do existujucej stranky Financie pridat na vrch (nad "Pridaj kredit" formular) novu cashflow sekciu:
 
-### 4. `AdminStatsSection.tsx` -- CLV benchmarky
+Nahradit sucasny 3-column stats grid (Kredity/Dlhy/Mesiac) za:
+- **Vklady (obdobie)**: suma deposit transakcii za aktualny mesiac
+- **Vycerpane (obdobie)**: suma training transakcii za aktualny mesiac
+- **Netto**: rozdiel (vklady - vycerpane)
 
-Pridat pod CLV hodnotu benchmark text:
-- < 300 EUR = "Kratkodobi klienti"
-- 300-1000 EUR = "Stabilni klienti"
-- > 1000 EUR = "Dlhodobi klienti"
-
-Presun "Obsadenost slotov" StatCard z tejto sekcie prec (je uz v hlavnom gride).
+Pouzit existujuci `useAdminFinancesStats` hook -- uz ma `totalCredits`, `totalDebts`, `monthlyRevenue`. Zachovat existujuce hodnoty, len upravit labely pre jasnost.
 
 ---
 
 ## Subory na zmenu
 
-1. **`src/hooks/useAdminDashboardStats.ts`** -- previous period queries + prev* fieldy
-2. **`src/components/admin/KPICard.tsx`** -- trend arrow + insightText props
-3. **`src/pages/admin/AdminDashboardPage.tsx`** -- nahradit "Rizikove" za "Obsadenost", pridat trendy
-4. **`src/components/admin/AdminStatsSection.tsx`** -- CLV benchmarky, odstranit duplicitnu obsadenost
+1. **`src/hooks/useAdminDashboardStats.ts`** -- pridat `earned` + `prevEarned` fieldy a queries
+2. **`src/pages/admin/AdminDashboardPage.tsx`** -- nahradit Prijem kartu za Zarobene (bez subValues)
+3. **`src/pages/admin/AdminFinancesPage.tsx`** -- volitelne: upravit labely stats kariet pre konzistenciu
+
+---
+
+## Co sa NEMENI
+
+- 2x2 KPI grid (Aktivni klienti, Treningy, Nepotvrdene, Obsadenost)
+- Sekcia "Potrebujem riesit dnes" (alerty)
+- Statistiky (collapsible sekcia s CLV)
+- KPICard komponent (uz ma vsetky potrebne props)
+

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AdminNotificationBell } from '@/components/admin/AdminNotificationBell';
 import veronikaPhoto from '@/assets/veronika-photo.png';
 
 interface AdminLayoutProps {
@@ -50,6 +51,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </div>
           
           <div className="flex items-center gap-1">
+            <AdminNotificationBell />
             <Link to={ROUTES.ADMIN.SETTINGS}>
               <Button variant="ghost" size="icon" className="ios-press rounded-xl h-9 w-9">
                 <Settings className="h-5 w-5 text-muted-foreground" />

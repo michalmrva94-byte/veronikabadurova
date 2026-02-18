@@ -85,11 +85,47 @@ export function useClientBookings() {
 
       return { cancellationFee };
     },
-    onSuccess: () => {
+    onSuccess: async (_data, bookingId) => {
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+
+      // Send notification to all admins about cancellation
+      try {
+        const { data: booking } = await supabase
+          .from('bookings')
+          .select('slot:training_slots(start_time), client:profiles!bookings_client_id_fkey(full_name)')
+          .eq('id', bookingId)
+          .single();
+
+        const { data: adminRoles } = await supabase.from('user_roles').select('user_id').eq('role', 'admin');
+
+        if (adminRoles && adminRoles.length > 0) {
+          const { data: adminProfiles } = await supabase
+            .from('profiles')
+            .select('id')
+            .in('user_id', adminRoles.map(r => r.user_id));
+
+          if (adminProfiles && adminProfiles.length > 0) {
+            const slot = booking?.slot as any;
+            const client = booking?.client as any;
+            const timeStr = slot ? new Date(slot.start_time).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+            const name = client?.full_name || 'Klient';
+
+            await supabase.from('notifications').insert(
+              adminProfiles.map(a => ({
+                user_id: a.id,
+                title: 'Storno tréningu',
+                message: `${name} stornoval/a tréning dňa ${timeStr}.`,
+                type: 'booking_cancelled',
+              }))
+            );
+          }
+        }
+      } catch (e) {
+        console.error('Failed to send admin cancellation notification:', e);
+      }
     },
   });
 

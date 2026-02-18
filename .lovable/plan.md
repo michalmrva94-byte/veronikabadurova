@@ -1,86 +1,80 @@
 
+# Admin Dashboard Refaktor -- Obsadenost, Trendy, Benchmarky
 
-# Dynamická sekcia "POTREBUJEM RIESIT DNES"
+## Prehlad
 
-## Prehľad
-
-Prepísanie `AdminActionAlerts.tsx` s novými pravidlami alertov, prioritným zoradením (max 3) a rozšírenie `useAdminDashboardStats.ts` o nové dátové body.
-
----
-
-## Nové pravidlá alertov (5 typov)
-
-| Priorita | Alert | Podmienka | Odkaz |
-|----------|-------|-----------|-------|
-| Vysoka | Kreditovy problem | booked booking v nasledujucich 24h AND client.balance < booking.price | Financie |
-| Vysoka | Trening dnes bez potvrdenia | slot.start_time = dnes AND status NOT IN (booked, completed, cancelled) | Kalendar |
-| Stredna | Neodpovedane navrhy po deadline | status = proposed AND confirmation_deadline < NOW() | Dashboard |
-| Nizka | Vysoka miera storna | storno rate za 7 dni > 30% AND pocet treningov >= 5 | Klienti |
-| Nizka | Nizka obsadenost | obsadenost slotov < 50% za aktualny tyzden AND otvorenych slotov > 5 | Kalendar |
-
-Zobrazenie: max 3 alerty zoradene podla priority. Ak 0 alertov, sekcia sa nerenderuje.
+Nahradenie metriky "Rizikove" metrikou **Obsadenost** v 2x2 gride, pridanie **trend arrows** ku 4 KPI + Prijmu, a aktualizacia **Statistiky** sekcie s CLV benchmarkmi. Logika alertov ("Potrebujem riesit dnes") zostava bez zmien.
 
 ---
 
-## Technicke zmeny
+## Zmeny
 
-### 1. `useAdminDashboardStats.ts` -- nove fieldy v interface
+### 1. `useAdminDashboardStats.ts` -- Previous period data + obsadenost
 
-Pridat do `AdminDashboardStats`:
-
-```text
-// Nove alert data
-creditRiskClients: number          -- klienti s booking <24h a nedostatocnym kreditom
-expiredProposals: number           -- proposed bookings kde deadline < now
-todayUnconfirmed: number           -- dnesne bookings ktore nie su booked/completed/cancelled
-weeklyStornoRate7d: number         -- storno % za poslednich 7 dni
-weeklyTrainingCount7d: number      -- pocet treningov za 7 dni
-weeklySlotOccupancy: number        -- obsadenost aktualneho tyzdna (%)
-weeklyOpenSlots: number            -- pocet otvorenych slotov tento tyzden
-```
-
-Pridat do `queryFn` nove queries (paralelne cez existujuci `Promise.all`):
-
-- **creditRiskClients**: existujuci `confirmedUpcomingRes` -- filter na `start_time < now + 24h` a `balance < price`
-- **expiredProposals**: z `unconfirmedRes` -- filter `status = proposed` a `confirmation_deadline < now`
-- **todayUnconfirmed**: z `periodBookingsRes` alebo novy query -- `start_time` je dnes a `status NOT IN (booked, completed, cancelled)`
-- **weeklyStorno**: novy query -- bookings za poslednich 7 dni, vypocet cancelled/(cancelled+completed+booked)
-- **weeklySlots**: existujuci `slotsRes` prepocitat pre aktualny tyzden
-
-### 2. `AdminActionAlerts.tsx` -- kompletne prepisanie
-
-Novy interface:
+Pridat do interface:
 
 ```text
-interface AlertItem {
-  priority: 'high' | 'medium' | 'low'
-  icon: ReactNode
-  text: string
-  count: number
-  to: string
-}
+// Previous period for trend calculation
+prevActiveClients: number
+prevTrainings: number
+prevSlotOccupancy: number
+prevNetRevenue: number
 ```
 
 Logika:
-1. Vybudovat pole alertov podla 5 pravidiel
-2. Zoradit: high -> medium -> low
-3. Orezat na max 3
-4. Ak pole prazdne, return null
+- Vypocitat `previousRange` automaticky: ak current = tyzden, previous = predchadzajuci tyzden; ak mesiac, predchadzajuci mesiac; ak custom, posun o rovnaky pocet dni
+- Pridat duplicitne queries pre previous period (period bookings, slots, transactions) do existujuceho `Promise.all`
+- Obsadenost v gride = `slotOccupancy` (uz existuje) -- confirmed+completed / total slots v obdobi
 
-Vizual:
-- high = cerveny pruh vlavo + cervena ikona
-- medium = oranzovy pruh vlavo + oranzova ikona
-- low = sedy pruh vlavo + seda ikona
-- Minimalisticky: ikona + kratky text + pocet (badge) + sipka
+### 2. `KPICard.tsx` -- Trend arrow support + insight text
 
-### 3. `AdminDashboardPage.tsx` -- ziadne zmeny
+Pridat nove props:
 
-Uz pouziva `{stats && <AdminActionAlerts stats={stats} />}`, takze staci upravit props cez interface.
+```text
+trend?: { current: number; previous: number }  -- auto-vypocet %
+insightText?: string                            -- kratky text pod hodnotou
+insightColor?: 'success' | 'warning' | 'destructive' | 'muted'
+```
+
+Trend logika v komponente:
+- Ak previous = 0, nezobrazovat
+- zmena > +5% = zelena sipka hore + "% text"
+- zmena < -5% = cervena sipka dole + "% text"
+- -5% az +5% = siva sipka vpravo + "% text"
+- Tooltip: "Porovnanie s predchadzajucim obdobim"
+
+Vizual: maly text pod hlavnou hodnotou, napr. `↑ +12%`
+
+### 3. `AdminDashboardPage.tsx` -- Grid refaktor
+
+2x2 grid zmeny:
+- Karta 1: **Aktivni klienti** -- bez zmien, pridat `trend`
+- Karta 2: **Treningy / obdobie** -- bez zmien, pridat `trend`
+- Karta 3: **Nepotvrdene** -- bez zmien, **bez trendu**
+- Karta 4: **Obsadenost** (NAHRADI "Rizikove") -- percento, benchmark insight text, trend arrow
+
+Obsadenost benchmarky (insightText):
+- >= 75% = zelena, "Vyborne vyuzitie kapacity"
+- 50-74% = zlta, "Stabilne, priestor na rast"
+- 30-49% = oranzova, "Slabsie vyuzitie"
+- < 30% = cervena, "Kapacita sa nevyuziva efektivne"
+
+Prijem karta: pridat `trend` (prevNetRevenue)
+
+### 4. `AdminStatsSection.tsx` -- CLV benchmarky
+
+Pridat pod CLV hodnotu benchmark text:
+- < 300 EUR = "Kratkodobi klienti"
+- 300-1000 EUR = "Stabilni klienti"
+- > 1000 EUR = "Dlhodobi klienti"
+
+Presun "Obsadenost slotov" StatCard z tejto sekcie prec (je uz v hlavnom gride).
 
 ---
 
 ## Subory na zmenu
 
-1. **`src/hooks/useAdminDashboardStats.ts`** -- pridanie novych fieldov + queries
-2. **`src/components/admin/AdminActionAlerts.tsx`** -- kompletne prepisanie s novymi pravidlami
-
+1. **`src/hooks/useAdminDashboardStats.ts`** -- previous period queries + prev* fieldy
+2. **`src/components/admin/KPICard.tsx`** -- trend arrow + insightText props
+3. **`src/pages/admin/AdminDashboardPage.tsx`** -- nahradit "Rizikove" za "Obsadenost", pridat trendy
+4. **`src/components/admin/AdminStatsSection.tsx`** -- CLV benchmarky, odstranit duplicitnu obsadenost

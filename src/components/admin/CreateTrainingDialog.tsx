@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { format, setHours, setMinutes } from 'date-fns';
 import { sk } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Dialog,
   DialogContent,
@@ -19,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, User, Loader2 } from 'lucide-react';
+import { Clock, User, Loader2, CalendarIcon } from 'lucide-react';
 import { Profile } from '@/types/database';
 import { DEFAULT_TRAINING_PRICE } from '@/lib/constants';
 
@@ -50,6 +53,7 @@ export function CreateTrainingDialog({
   onAssignTraining,
   isLoading,
 }: CreateTrainingDialogProps) {
+  const [trainingDate, setTrainingDate] = useState<Date>(selectedDate);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [selectedClient, setSelectedClient] = useState<string>(NO_CLIENT_VALUE);
@@ -59,6 +63,7 @@ export function CreateTrainingDialog({
   const hasClient = selectedClient !== NO_CLIENT_VALUE;
 
   const resetForm = () => {
+    setTrainingDate(selectedDate);
     setStartTime('09:00');
     setEndTime('10:00');
     setSelectedClient(NO_CLIENT_VALUE);
@@ -72,8 +77,8 @@ export function CreateTrainingDialog({
     const [startHour, startMin] = startTime.split(':').map(Number);
     const [endHour, endMin] = endTime.split(':').map(Number);
 
-    const startDateTime = setMinutes(setHours(selectedDate, startHour), startMin);
-    const endDateTime = setMinutes(setHours(selectedDate, endHour), endMin);
+    const startDateTime = setMinutes(setHours(trainingDate, startHour), startMin);
+    const endDateTime = setMinutes(setHours(trainingDate, endHour), endMin);
 
     if (hasClient) {
       await onAssignTraining({
@@ -102,7 +107,23 @@ export function CreateTrainingDialog({
             Nový tréning
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground text-center">
-            {format(selectedDate, 'd. MMMM yyyy', { locale: sk })}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground">
+                  <CalendarIcon className="h-4 w-4" />
+                  {format(trainingDate, 'd. MMMM yyyy', { locale: sk })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  selected={trainingDate}
+                  onSelect={(d) => d && setTrainingDate(d)}
+                  locale={sk}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </DialogDescription>
         </DialogHeader>
 

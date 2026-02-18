@@ -92,6 +92,7 @@ export default function AdminBroadcastPage() {
   const { bookings, isLoading: bookingsLoading } = useAdminBookings();
 
   const approvedClients = clients.filter(c => c.approval_status === 'approved');
+  const lastMinuteClients = approvedClients.filter(c => c.last_minute_notifications !== false);
 
   // Filter cancelled bookings with future slots (within 48h) and available
   const now = new Date();
@@ -168,7 +169,7 @@ export default function AdminBroadcastPage() {
 
     setIsSending(true);
     try {
-      const notifications = approvedClients.map(client => ({
+      const notifications = lastMinuteClients.map(client => ({
         user_id: client.id,
         title,
         message,
@@ -179,7 +180,7 @@ export default function AdminBroadcastPage() {
       const { error } = await supabase.from('notifications').insert(notifications);
       if (error) throw error;
 
-      toast.success(`Broadcast odoslaný ${approvedClients.length} klientom!`);
+      toast.success(`Broadcast odoslaný ${lastMinuteClients.length} klientom!`);
       setTitle('');
       setMessage('');
     } catch (err: any) {
@@ -322,11 +323,11 @@ export default function AdminBroadcastPage() {
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Users className="h-4 w-4" />
-              <span>Odošle sa {approvedClients.length} klientom</span>
+              <span>Odošle sa {lastMinuteClients.length} klientom (s aktívnym last-minute odberom)</span>
             </div>
             <Button
               className="w-full h-12 ios-press"
-              disabled={!title || !message || isSending || approvedClients.length === 0}
+              disabled={!title || !message || isSending || lastMinuteClients.length === 0}
               onClick={handleSendBroadcast}
             >
               {isSending ? (

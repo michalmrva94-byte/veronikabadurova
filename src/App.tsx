@@ -26,6 +26,7 @@ import ProfilePage from "./pages/client/ProfilePage";
 import FinancesPage from "./pages/client/FinancesPage";
 import ReferralPage from "./pages/client/ReferralPage";
 import NotificationsPage from "./pages/client/NotificationsPage";
+import LastMinutePage from "./pages/client/LastMinutePage";
 
 // Admin pages
 import { Navigate } from "react-router-dom";
@@ -88,6 +89,10 @@ const App = () => (
             <Route
               path={ROUTES.NOTIFICATIONS}
               element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>}
+            />
+            <Route
+              path={ROUTES.LAST_MINUTE}
+              element={<ProtectedRoute><LastMinutePage /></ProtectedRoute>}
             />
 
             {/* Admin routes */}

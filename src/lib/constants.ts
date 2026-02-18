@@ -33,6 +33,7 @@ export const ROUTES = {
   FINANCES: '/financie',
   REFERRAL_PAGE: '/odporucanie',
   NOTIFICATIONS: '/notifikacie',
+  LAST_MINUTE: '/last-minute',
   ADMIN: {
     LOGIN: '/admin/prihlasenie',
     DASHBOARD: '/admin',

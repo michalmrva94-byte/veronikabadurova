@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type FinancePeriod = 'week' | 'month';
 
+export interface FinanceDateRange {
+  start: Date;
+  end: Date;
+  label?: string;
+}
+
 interface FinancePeriodDates {
   currentStart: string;
   currentEnd: string;
@@ -10,7 +16,20 @@ interface FinancePeriodDates {
   prevEnd: string;
 }
 
-function getPeriodDates(period: FinancePeriod): FinancePeriodDates {
+function getPeriodDates(period: FinancePeriod, customRange?: FinanceDateRange | null): FinancePeriodDates {
+  // Custom range: use exact dates, prev = same duration before
+  if (customRange) {
+    const duration = customRange.end.getTime() - customRange.start.getTime();
+    const prevEnd = new Date(customRange.start.getTime() - 1);
+    const prevStart = new Date(prevEnd.getTime() - duration);
+    return {
+      currentStart: customRange.start.toISOString(),
+      currentEnd: customRange.end.toISOString(),
+      prevStart: prevStart.toISOString(),
+      prevEnd: prevEnd.toISOString(),
+    };
+  }
+
   const now = new Date();
   const currentEnd = now.toISOString();
 
@@ -57,11 +76,11 @@ export interface AdminFinancesStats {
   creditUsage: number;
 }
 
-export function useAdminFinancesStats(period: FinancePeriod = 'month') {
+export function useAdminFinancesStats(period: FinancePeriod = 'month', customRange?: FinanceDateRange | null) {
   return useQuery({
-    queryKey: ['admin-finances-stats', period],
+    queryKey: ['admin-finances-stats', period, customRange?.start?.toISOString(), customRange?.end?.toISOString()],
     queryFn: async (): Promise<AdminFinancesStats> => {
-      const dates = getPeriodDates(period);
+      const dates = getPeriodDates(period, customRange);
 
       const [
         earnedRes,

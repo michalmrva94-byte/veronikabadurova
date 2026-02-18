@@ -29,14 +29,15 @@ export function useAssignTraining() {
 
       if (slotError) throw slotError;
 
-      // 2. Create the booking with status 'booked' (already confirmed by admin)
+      // 2. Create the booking — client must confirm before it becomes active
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
           slot_id: slot.id,
           client_id,
           price,
-          status: 'booked', // Directly booked since admin is creating it
+          status: 'awaiting_confirmation',
+          confirmation_deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         })
         .select()
         .single();
@@ -52,9 +53,10 @@ export function useAssignTraining() {
         .from('notifications')
         .insert({
           user_id: client_id,
-          title: 'Nový tréning',
-          message: 'Máte priradený nový tréning. Detaily nájdete v sekcii Moje tréningy.',
-          type: 'booking_confirmed',
+          title: 'Navrhnutý tréning',
+          message: 'Veronika vám navrhla nový tréning. Potvrďte ho v sekcii Moje tréningy do 24 hodín.',
+          type: 'booking_proposed',
+          related_slot_id: slot.id,
         });
 
       if (notifError) {

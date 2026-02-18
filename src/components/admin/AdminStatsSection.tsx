@@ -34,12 +34,6 @@ function getOccupancyInsight(pct: number): Insight {
   return { level: 'warning', text: 'Kapacita nie je efektívne využitá.' };
 }
 
-function getDebtInsight(debt: number): Insight {
-  if (debt === 0) return { level: 'success', text: 'Žiadne otvorené pohľadávky.' };
-  if (debt <= 100) return { level: 'warning', text: 'Skontroluj otvorené pohľadávky.' };
-  return { level: 'destructive', text: 'Urgentne skontroluj pohľadávky.' };
-}
-
 const dotColors: Record<InsightLevel, string> = {
   success: 'bg-success',
   warning: 'bg-warning',
@@ -95,7 +89,6 @@ export function AdminStatsSection({ stats, isLoading }: AdminStatsSectionProps) 
   const stornoInsight = getStornoInsight(stats?.stornoRate ?? 0);
   const avgInsight = getAvgTrainingsInsight(stats?.avgTrainingsPerClient ?? 0);
   const occupancyInsight = getOccupancyInsight(stats?.slotOccupancy ?? 0);
-  const debtInsight = getDebtInsight(stats?.totalDebt ?? 0);
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -129,13 +122,6 @@ export function AdminStatsSection({ stats, isLoading }: AdminStatsSectionProps) 
             label="Obsadenosť slotov"
             value={`${(stats?.slotOccupancy ?? 0).toFixed(0)}%`}
             insight={occupancyInsight}
-            loading={isLoading}
-          />
-          <StatCard
-            icon={<Wallet className="h-5 w-5 text-destructive" />}
-            label="Celkový dlh"
-            value={`${(stats?.totalDebt ?? 0).toFixed(0)}€`}
-            insight={debtInsight}
             loading={isLoading}
           />
         </div>

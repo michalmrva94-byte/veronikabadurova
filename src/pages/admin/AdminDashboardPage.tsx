@@ -3,17 +3,19 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ROUTES, BOOKING_STATUS_LABELS } from '@/lib/constants';
 import { 
-  Users, Calendar, CreditCard, TrendingUp, Clock,
+  Users, Calendar, CreditCard, Clock,
   ChevronRight, Bell, Loader2, CalendarCheck,
-  AlertTriangle, Euro, Megaphone, CheckCircle, XCircle
+  AlertTriangle, Euro, Megaphone, CheckCircle, XCircle,
+  Activity, TrendingDown
 } from 'lucide-react';
 import { useAdminBookings, AdminBookingWithDetails } from '@/hooks/useAdminBookings';
 import { useAdminDashboardStats, DashboardDateRange, getDefaultRange } from '@/hooks/useAdminDashboardStats';
 import { useCompleteTraining } from '@/hooks/useCompleteTraining';
-import { PendingBookingCard } from '@/components/admin/PendingBookingCard';
 import { ConfirmedBookingCard } from '@/components/admin/ConfirmedBookingCard';
 import { AdminStatsSection } from '@/components/admin/AdminStatsSection';
+import { AdminActionAlerts } from '@/components/admin/AdminActionAlerts';
 import { DashboardHistoryPicker } from '@/components/admin/DashboardHistoryPicker';
+import { KPICard } from '@/components/admin/KPICard';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -173,45 +175,71 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* KPI Cards - 5 metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {/* KPI Cards - 5 blocks, mobile: 1 per row, desktop: 5 cols */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <KPICard
-            icon={<Users className="h-5 w-5 text-success" />}
-            label="Aktívni klienti"
-            value={stats?.activeClients ?? 0}
+            icon={<Users className="h-4 w-4 text-success" />}
+            title="Aktívni klienti"
+            mainValue={stats?.activeClients ?? 0}
+            mainColor="success"
+            subValues={[
+              { label: 'Pravidelní (≥2)', value: stats?.regularClients ?? 0, color: 'success' },
+            ]}
             loading={statsLoading}
-            color="success"
           />
           <KPICard
-            icon={<Calendar className="h-5 w-5 text-warning" />}
-            label={`Tréningy / ${periodLabel}`}
-            value={stats?.weekTrainings ?? 0}
+            icon={<Calendar className="h-4 w-4 text-primary" />}
+            title={`Tréningy`}
+            mainValue={`${(stats?.plannedTrainings ?? 0) + (stats?.completedTrainings ?? 0)}`}
+            mainColor="primary"
+            subValues={[
+              { label: 'Plánované', value: stats?.plannedTrainings ?? 0 },
+              { label: 'Odplávané', value: stats?.completedTrainings ?? 0, color: 'success' },
+              { label: 'Zrušené', value: stats?.cancelledTrainings ?? 0, color: 'destructive' },
+            ]}
             loading={statsLoading}
-            color="warning"
           />
           <KPICard
-            icon={<Clock className="h-5 w-5 text-primary" />}
-            label="Nepotvrdené"
-            value={stats?.unconfirmedBookings ?? 0}
+            icon={<Clock className="h-4 w-4 text-warning" />}
+            title="Nepotvrdené"
+            mainValue={stats?.unconfirmedBookings ?? 0}
+            mainColor={(stats?.criticalBookings ?? 0) > 0 ? 'destructive' : 'warning'}
+            badge={(stats?.criticalBookings ?? 0) > 0 
+              ? { label: `${stats!.criticalBookings} <6h`, variant: 'destructive' as const }
+              : undefined
+            }
+            subValues={[
+              { label: 'Kritické (<6h)', value: stats?.criticalBookings ?? 0, color: (stats?.criticalBookings ?? 0) > 0 ? 'destructive' : 'muted' },
+            ]}
             loading={statsLoading}
-            color="primary"
           />
           <KPICard
-            icon={<AlertTriangle className="h-5 w-5 text-destructive" />}
-            label="Rizikové"
-            value={stats?.clientsWithDebt ?? 0}
+            icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
+            title="Rizikové"
+            mainValue={stats?.debtClients ?? 0}
+            mainColor={((stats?.debtClients ?? 0) > 0) ? 'destructive' : 'success'}
+            subValues={[
+              { label: 'Celkový dlh', value: `${(stats?.totalDebt ?? 0).toFixed(0)}€`, color: (stats?.totalDebt ?? 0) > 0 ? 'destructive' : 'muted' },
+              { label: 'Riziko rušení', value: stats?.riskyCancellers ?? 0, color: (stats?.riskyCancellers ?? 0) > 0 ? 'warning' : 'muted' },
+            ]}
             loading={statsLoading}
-            color="destructive"
           />
           <KPICard
-            icon={<Euro className="h-5 w-5 text-success" />}
-            label={`Príjem / ${periodLabel}`}
-            value={`${(stats?.monthlyRevenue ?? 0).toFixed(0)}€`}
+            icon={<Euro className="h-4 w-4 text-success" />}
+            title={`Príjem`}
+            mainValue={`${(stats?.deposits ?? 0).toFixed(0)}€`}
+            mainColor="success"
+            subValues={[
+              { label: 'Vklady', value: `${(stats?.deposits ?? 0).toFixed(0)}€`, color: 'success' },
+              { label: 'Vyčerpané', value: `${(stats?.creditUsage ?? 0).toFixed(0)}€`, color: 'warning' },
+              { label: 'Net', value: `${(stats?.netRevenue ?? 0).toFixed(0)}€`, color: (stats?.netRevenue ?? 0) >= 0 ? 'success' : 'destructive' },
+            ]}
             loading={statsLoading}
-            color="success"
-            className="col-span-2 sm:col-span-1"
           />
         </div>
+
+        {/* Action Alerts - "Potrebujem riešiť dnes" */}
+        {stats && <AdminActionAlerts stats={stats} />}
 
         {/* Intelligent Stats Section */}
         <AdminStatsSection stats={stats} isLoading={statsLoading} />
@@ -239,7 +267,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Today's trainings with new actions */}
+        {/* Today's trainings */}
         <div className="space-y-2">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-4">
             Dnešné tréningy ({todayBookings.length})
@@ -368,30 +396,6 @@ export default function AdminDashboardPage() {
         )}
       </div>
     </AdminLayout>
-  );
-}
-
-// KPI Card component
-function KPICard({ icon, label, value, loading, color, className = '' }: {
-  icon: React.ReactNode;
-  label: string;
-  value: number | string;
-  loading?: boolean;
-  color: string;
-  className?: string;
-}) {
-  return (
-    <div className={`ios-card p-4 ${className}`}>
-      <div className="flex items-center gap-2 mb-2">
-        {icon}
-      </div>
-      {loading ? (
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      ) : (
-        <p className="text-2xl font-bold tabular-nums">{value}</p>
-      )}
-      <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
-    </div>
   );
 }
 

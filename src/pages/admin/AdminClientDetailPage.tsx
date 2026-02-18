@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, subWeeks } from 'date-fns';
+import { format, subWeeks, differenceInMonths } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import {
   ArrowLeft, User, Mail, Phone, CreditCard, Calendar, Target,
@@ -55,6 +55,20 @@ export default function AdminClientDetailPage() {
     enabled: !!id,
   });
 
+  // All bookings for stats (storno rate, CLV)
+  const { data: allClientBookings = [] } = useQuery({
+    queryKey: ['client-all-bookings', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('id, status, price, created_at')
+        .eq('client_id', id!);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
   // Training frequency (last 4 weeks)
   const fourWeeksAgo = subWeeks(new Date(), 4).toISOString();
   const { data: recentBookings = [] } = useQuery({
@@ -88,6 +102,21 @@ export default function AdminClientDetailPage() {
   };
 
   const weeklyFrequency = recentBookings.length / 4;
+
+  // Computed stats
+  const completedCount = allClientBookings.filter(b => b.status === 'completed').length;
+  const cancelledCount = allClientBookings.filter(b => b.status === 'cancelled').length;
+  const bookedCount = allClientBookings.filter(b => b.status === 'booked').length;
+  const totalRelevant = completedCount + cancelledCount + bookedCount;
+  const stornoRate = totalRelevant > 0 ? (cancelledCount / totalRelevant) * 100 : 0;
+  
+  const clv = allClientBookings
+    .filter(b => b.status === 'completed')
+    .reduce((sum, b) => sum + (b.price || 0), 0);
+
+  const monthsInSystem = client 
+    ? Math.max(1, differenceInMonths(new Date(), new Date(client.created_at)))
+    : 1;
 
   if (isLoading) {
     return (
@@ -193,6 +222,29 @@ export default function AdminClientDetailPage() {
                 <span className="text-xs text-muted-foreground">Frekvencia / týždeň</span>
               </div>
               <p className="text-2xl font-bold">{weeklyFrequency.toFixed(1)}×</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Target className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Storno rate</span>
+              </div>
+              <p className={`text-2xl font-bold ${stornoRate > 25 ? 'text-destructive' : stornoRate > 15 ? 'text-warning' : 'text-success'}`}>
+                {stornoRate.toFixed(0)}%
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <span className="text-xs text-muted-foreground">CLV</span>
+              </div>
+              <p className="text-2xl font-bold text-primary">{clv.toFixed(0)}€</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {monthsInSystem} mes. v systéme · {completedCount} tréningov
+              </p>
             </CardContent>
           </Card>
         </div>

@@ -20,6 +20,7 @@ export default function ProfilePage() {
     phone: profile?.phone || '',
     notifications_enabled: profile?.notifications_enabled ?? true,
     email_notifications: profile?.email_notifications ?? true,
+    last_minute_notifications: (profile as any)?.last_minute_notifications ?? true,
   });
 
   const handleSave = async () => {
@@ -34,6 +35,7 @@ export default function ProfilePage() {
           phone: formData.phone,
           notifications_enabled: formData.notifications_enabled,
           email_notifications: formData.email_notifications,
+          last_minute_notifications: formData.last_minute_notifications,
         })
         .eq('id', profile.id);
 
@@ -173,8 +175,11 @@ export default function ProfilePage() {
                 </p>
               </div>
               <Switch
-                checked={formData.notifications_enabled}
-                disabled
+                checked={formData.last_minute_notifications}
+                onCheckedChange={(checked) =>
+                  setFormData(prev => ({ ...prev, last_minute_notifications: checked }))
+                }
+                disabled={isLoading}
               />
             </div>
           </CardContent>

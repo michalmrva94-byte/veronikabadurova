@@ -165,6 +165,7 @@ export type Database = {
           flexibility_note: string | null
           full_name: string
           id: string
+          last_minute_notifications: boolean | null
           notifications_enabled: boolean | null
           phone: string | null
           preferred_days: string | null
@@ -186,6 +187,7 @@ export type Database = {
           flexibility_note?: string | null
           full_name: string
           id?: string
+          last_minute_notifications?: boolean | null
           notifications_enabled?: boolean | null
           phone?: string | null
           preferred_days?: string | null
@@ -207,6 +209,7 @@ export type Database = {
           flexibility_note?: string | null
           full_name?: string
           id?: string
+          last_minute_notifications?: boolean | null
           notifications_enabled?: boolean | null
           phone?: string | null
           preferred_days?: string | null

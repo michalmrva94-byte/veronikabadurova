@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN last_minute_notifications boolean DEFAULT true;

@@ -162,8 +162,8 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Referral code */}
-        <Card>
+        {/* Referral code - temporarily hidden */}
+        {/* <Card>
           <CardHeader>
             <CardTitle className="text-lg">Váš odporúčací kód</CardTitle>
             <CardDescription>
@@ -191,7 +191,7 @@ export default function ProfilePage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Save button */}
         <Button 

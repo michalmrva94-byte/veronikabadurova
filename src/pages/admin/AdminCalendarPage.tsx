@@ -5,15 +5,17 @@ import { Calendar } from '@/components/ui/calendar';
 import { useState } from 'react';
 import { format, addWeeks, subWeeks, startOfWeek } from 'date-fns';
 import { sk } from 'date-fns/locale';
-import { Plus, Clock, Loader2, CalendarDays, CalendarIcon } from 'lucide-react';
+import { Plus, Clock, Loader2, CalendarDays, CalendarIcon, CalendarRange } from 'lucide-react';
 import { useTrainingSlots } from '@/hooks/useTrainingSlots';
 import { useWeeklySlots, useSlotsForMonth, SlotWithBooking } from '@/hooks/useWeeklySlots';
+import { useSlotsForYear } from '@/hooks/useSlotsForYear';
 import { useClients } from '@/hooks/useClients';
 import { useAssignTraining } from '@/hooks/useAssignTraining';
 import { useAdminBookings } from '@/hooks/useAdminBookings';
 import { useCompleteTraining } from '@/hooks/useCompleteTraining';
 import { CreateTrainingDialog } from '@/components/admin/CreateTrainingDialog';
 import { WeeklyCalendarGrid } from '@/components/admin/WeeklyCalendarGrid';
+import { YearCalendarGrid } from '@/components/admin/YearCalendarGrid';
 import { SlotDetailDialog } from '@/components/admin/SlotDetailDialog';
 import { SlotCard } from '@/components/admin/SlotCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,14 +27,16 @@ export default function AdminCalendarPage() {
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [dialogDate, setDialogDate] = useState<Date>(new Date());
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [viewMode, setViewMode] = useState<'week' | 'month' | 'year'>('week');
   const [selectedSlot, setSelectedSlot] = useState<SlotWithBooking | null>(null);
   const [isSlotDetailOpen, setIsSlotDetailOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
   const { slots, isLoading, createSlot, deleteSlot } = useTrainingSlots(selectedDate);
   const { data: weeklySlots, isLoading: weeklyLoading } = useWeeklySlots(weekStart);
   const { data: monthSlots } = useSlotsForMonth(selectedDate || new Date());
+  const { data: yearSlots, isLoading: yearLoading } = useSlotsForYear(selectedYear);
   const { data: clients = [] } = useClients();
   const assignTraining = useAssignTraining();
   const { approveBooking, rejectBooking, cancelBooking } = useAdminBookings();
@@ -143,7 +147,11 @@ export default function AdminCalendarPage() {
     }
   };
 
-  // Modifiers for calendar highlighting
+  const handleYearDayClick = (date: Date) => {
+    setSelectedDate(date);
+    setViewMode('month');
+  };
+
   const getDayModifiers = () => {
     if (!monthSlots) return {};
     const hasAvailable: Date[] = [];
@@ -172,15 +180,20 @@ export default function AdminCalendarPage() {
           </Button>
         </div>
 
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'week' | 'month')} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-[300px]">
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'week' | 'month' | 'year')} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 max-w-[400px]">
             <TabsTrigger value="week" className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4" />
-              Týždeň
+              <span className="hidden sm:inline">Týždeň</span>
+              <span className="sm:hidden">Týž.</span>
             </TabsTrigger>
             <TabsTrigger value="month" className="flex items-center gap-2">
               <CalendarIcon className="h-4 w-4" />
-              Mesiac
+              <span>Mesiac</span>
+            </TabsTrigger>
+            <TabsTrigger value="year" className="flex items-center gap-2">
+              <CalendarRange className="h-4 w-4" />
+              <span>Rok</span>
             </TabsTrigger>
           </TabsList>
 
@@ -233,7 +246,6 @@ export default function AdminCalendarPage() {
               </CardContent>
             </Card>
 
-            {/* Day detail section */}
             <Card className="ios-card border-0">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -270,6 +282,27 @@ export default function AdminCalendarPage() {
                       <SlotCard key={slot.id} slot={slot} onDelete={handleDeleteSlot} isDeleting={deleteSlot.isPending} />
                     ))}
                   </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="year" className="mt-4">
+            <Card className="ios-card border-0">
+              <CardContent className="p-4">
+                {yearLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <YearCalendarGrid
+                    year={selectedYear}
+                    yearSlots={yearSlots}
+                    onPreviousYear={() => setSelectedYear(y => y - 1)}
+                    onNextYear={() => setSelectedYear(y => y + 1)}
+                    onDayClick={handleYearDayClick}
+                    selectedDate={selectedDate}
+                  />
                 )}
               </CardContent>
             </Card>

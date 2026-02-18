@@ -45,9 +45,42 @@ export function useBookings() {
       }
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
+
+      // Send notification to all admins
+      try {
+        const [{ data: clientProfile }, { data: slot }, { data: adminRoles }] = await Promise.all([
+          supabase.from('profiles').select('full_name').eq('id', variables.client_id).single(),
+          supabase.from('training_slots').select('start_time').eq('id', variables.slot_id).single(),
+          supabase.from('user_roles').select('user_id').eq('role', 'admin'),
+        ]);
+
+        if (adminRoles && adminRoles.length > 0) {
+          const timeStr = slot ? new Date(slot.start_time).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+          const name = clientProfile?.full_name || 'Klient';
+
+          // Get admin profile IDs
+          const { data: adminProfiles } = await supabase
+            .from('profiles')
+            .select('id')
+            .in('user_id', adminRoles.map(r => r.user_id));
+
+          if (adminProfiles && adminProfiles.length > 0) {
+            await supabase.from('notifications').insert(
+              adminProfiles.map(a => ({
+                user_id: a.id,
+                title: 'Nová žiadosť o tréning',
+                message: `${name} požiadal/a o tréning dňa ${timeStr}.`,
+                type: 'booking_request',
+              }))
+            );
+          }
+        }
+      } catch (e) {
+        console.error('Failed to send admin notification:', e);
+      }
     },
   });
 

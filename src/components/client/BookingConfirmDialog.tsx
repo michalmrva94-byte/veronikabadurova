@@ -94,10 +94,13 @@ export function BookingConfirmDialog({
 
           {/* Cancellation conditions */}
           <div className="flex gap-3 p-3 rounded-lg border border-warning/30 bg-warning/5">
-            <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
-            <div className="text-sm w-full">
-              <p className="font-medium text-foreground mb-2">Podmienky zrušenia</p>
-              <div className="space-y-1.5 text-muted-foreground">
+            <AlertCircle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
+            <div className="text-xs w-full">
+              <p className="font-medium text-foreground text-sm mb-1">Podmienky zrušenia</p>
+              <p className="text-muted-foreground mb-2 leading-relaxed">
+                Rozumiem, že sa plány menia. Storno podmienky sú nastavené férovo, aby sme si navzájom chránili čas.
+              </p>
+              <div className="space-y-1 text-muted-foreground">
                 <div className="flex justify-between">
                   <span>{CANCELLATION_RULES.MORE_THAN_48H.label} pred tréningom</span>
                   <span className="font-medium text-success">bez poplatku</span>
@@ -115,7 +118,7 @@ export function BookingConfirmDialog({
                   <span className="font-medium text-destructive">{CANCELLATION_RULES.NO_SHOW.percentage} %</span>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground/70 mt-2">
+              <p className="text-[11px] text-muted-foreground/60 mt-2">
                 Percentá sa počítajú z ceny tréningu ({DEFAULT_TRAINING_PRICE} €).
               </p>
             </div>

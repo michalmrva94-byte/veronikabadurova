@@ -5,15 +5,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { useState } from 'react';
 import { format, addWeeks, subWeeks, startOfWeek } from 'date-fns';
 import { sk } from 'date-fns/locale';
-import { Plus, Clock, Loader2, UserPlus, CalendarDays, CalendarIcon } from 'lucide-react';
+import { Plus, Clock, Loader2, CalendarDays, CalendarIcon } from 'lucide-react';
 import { useTrainingSlots } from '@/hooks/useTrainingSlots';
 import { useWeeklySlots, useSlotsForMonth, SlotWithBooking } from '@/hooks/useWeeklySlots';
 import { useClients } from '@/hooks/useClients';
 import { useAssignTraining } from '@/hooks/useAssignTraining';
 import { useAdminBookings } from '@/hooks/useAdminBookings';
 import { useCompleteTraining } from '@/hooks/useCompleteTraining';
-import { AddSlotDialog } from '@/components/admin/AddSlotDialog';
-import { AssignTrainingDialog } from '@/components/admin/AssignTrainingDialog';
+import { CreateTrainingDialog } from '@/components/admin/CreateTrainingDialog';
 import { WeeklyCalendarGrid } from '@/components/admin/WeeklyCalendarGrid';
 import { SlotDetailDialog } from '@/components/admin/SlotDetailDialog';
 import { SlotCard } from '@/components/admin/SlotCard';
@@ -24,8 +23,7 @@ import { cn } from '@/lib/utils';
 export default function AdminCalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [dialogDate, setDialogDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
   const [selectedSlot, setSelectedSlot] = useState<SlotWithBooking | null>(null);
@@ -44,7 +42,7 @@ export default function AdminCalendarPage() {
     try {
       await createSlot.mutateAsync(data);
       toast.success('Slot vytvorený');
-      setIsAddDialogOpen(false);
+      setIsCreateDialogOpen(false);
     } catch (error) {
       toast.error('Nepodarilo sa vytvoriť termín.');
     }
@@ -60,7 +58,7 @@ export default function AdminCalendarPage() {
     try {
       await assignTraining.mutateAsync(data);
       toast.success('Tréning priradený');
-      setIsAssignDialogOpen(false);
+      setIsCreateDialogOpen(false);
     } catch (error) {
       toast.error('Nepodarilo sa priradiť tréning.');
     }
@@ -75,14 +73,9 @@ export default function AdminCalendarPage() {
     }
   };
 
-  const openAddDialog = (date: Date) => {
+  const openCreateDialog = (date: Date) => {
     setDialogDate(date);
-    setIsAddDialogOpen(true);
-  };
-
-  const openAssignDialog = (date: Date) => {
-    setDialogDate(date);
-    setIsAssignDialogOpen(true);
+    setIsCreateDialogOpen(true);
   };
 
   const handleSlotClick = (slot: SlotWithBooking) => {
@@ -173,16 +166,10 @@ export default function AdminCalendarPage() {
             <h1 className="text-2xl font-bold text-foreground">Kalendár</h1>
             <p className="text-muted-foreground">Spravujte tréningové termíny</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => openAddDialog(selectedDate || new Date())} className="ios-press">
-              <Plus className="mr-2 h-4 w-4" />
-              Pridať slot
-            </Button>
-            <Button onClick={() => openAssignDialog(selectedDate || new Date())} className="ios-press">
-              <UserPlus className="mr-2 h-4 w-4" />
-              Priradiť tréning
-            </Button>
-          </div>
+          <Button onClick={() => openCreateDialog(selectedDate || new Date())} className="ios-press">
+            <Plus className="mr-2 h-4 w-4" />
+            Nový tréning
+          </Button>
         </div>
 
         <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'week' | 'day')} className="w-full">
@@ -210,7 +197,7 @@ export default function AdminCalendarPage() {
                     slots={weeklySlots || []}
                     onPreviousWeek={() => setWeekStart(subWeeks(weekStart, 1))}
                     onNextWeek={() => setWeekStart(addWeeks(weekStart, 1))}
-                    onAddSlot={openAddDialog}
+                    onAddSlot={openCreateDialog}
                     onSlotClick={handleSlotClick}
                   />
                 )}
@@ -263,16 +250,10 @@ export default function AdminCalendarPage() {
                   <div className="flex flex-col items-center justify-center py-8 text-center">
                     <Clock className="mb-4 h-12 w-12 text-muted-foreground/50" />
                     <p className="text-muted-foreground mb-4">Na tento deň nie sú vytvorené žiadne termíny</p>
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => openAddDialog(selectedDate || new Date())} disabled={!selectedDate} className="ios-press">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Pridať slot
-                      </Button>
-                      <Button onClick={() => openAssignDialog(selectedDate || new Date())} disabled={!selectedDate} className="ios-press">
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Priradiť
-                      </Button>
-                    </div>
+                    <Button onClick={() => openCreateDialog(selectedDate || new Date())} disabled={!selectedDate} className="ios-press">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Nový tréning
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -287,8 +268,15 @@ export default function AdminCalendarPage() {
         </Tabs>
       </div>
 
-      <AddSlotDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} selectedDate={dialogDate} onSubmit={handleAddSlot} isLoading={createSlot.isPending} />
-      <AssignTrainingDialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen} selectedDate={dialogDate} clients={clients} onSubmit={handleAssignTraining} isLoading={assignTraining.isPending} />
+      <CreateTrainingDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        selectedDate={dialogDate}
+        clients={clients}
+        onCreateSlot={handleAddSlot}
+        onAssignTraining={handleAssignTraining}
+        isLoading={createSlot.isPending || assignTraining.isPending}
+      />
       <SlotDetailDialog
         slot={selectedSlot}
         open={isSlotDetailOpen}

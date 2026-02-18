@@ -1,51 +1,60 @@
 
-# Last-minute broadcast -- redizajn stranky
 
-## Prehlad zmien
+# Last-minute sekcia v klientskom menu
 
-Stranka sa preorganizuje tak, aby hlavnou castou boli **automaticky zistene zrusene treningy**, ktore sa kvalifikuju ako last-minute ponuky. Manualne vytvorenie slotu zostane, ale bude vizualne menej dominantne (v rozbalitelnej sekcii).
+## Prehlad
 
-## Struktura stranky (zhora nadol)
+Pridanie 5. polozky "Last-minute" do spodneho menu klienta. Tato polozka sa zobrazi len ak ma klient v profile zapnute `last_minute_notifications`. Stranka bude sluzit ako dedicke miesto pre last-minute ponuky -- vysvetli mechaniku a zobrazi aktivne ponuky na prijatie.
 
-### 1. Hlavicka + Info karta
-Zostava rovnaka ako teraz.
+## Struktura novej stranky `/last-minute`
 
-### 2. NOVA: Sekcia "Zrusene treningy na ponuku" (hlavna cast)
-- Nacitaju sa bookings so statusom `cancelled` kde `slot.start_time` je v buducnosti (nasledujucich 48 hodin) a slot je `is_available = true` (uvolneny)
-- Pouzije sa `useAdminBookings` -- z existujucich dat sa vyfiltruju zrusene bookings s buducim slotom
-- Kazdy zruseny trening sa zobrazi ako karta obsahujuca:
-  - Datum a cas treningu
-  - Meno klienta, ktory zrusil
-  - Dovod zrusenia (ak existuje)
-  - Cas od zrusenia (napr. "pred 2 hodinami")
-  - Tlacidlo **"Ponuknut ako last-minute"** -- kliknutim sa automaticky predvyplni broadcast formular (title + message) s datami tohto treningu
-- Ak ziadne zrusene treningy neexistuju, zobrazi sa prazdny stav s ikonou a textom "Ziadne zrusene treningy na ponuku"
+### Prazdny stav (ziadne aktivne ponuky)
+- Ikona Zap (blesk) s jemnym pozadim
+- Nadpis: "Last-minute treningy"
+- Vysvetlujuci text o mechanike: "Ak sa uvolni termin na poslednú chvilu, ponuka sa zobrazi priamo tu. Staci ju jednym klikom prijat a mam miesto na treningu."
+- Info karta s 3 bodmi: kedy sa to stava, ako rychlo reagovat, cenova vyhoda (zlava)
 
-### 3. Broadcast formular
-Zostava rovnaky -- title, message, tlacidlo odoslat. Predvyplna sa bud z automatickej sekcie (klik na "Ponuknut") alebo z manualneho formulara.
+### Aktivny stav (existuju ponuky)
+- Zoznam notifikacii typu `last_minute` z tabulky `notifications` ktore su `is_last_minute = true`
+- Kazda ponuka ako karta s: datum, cas, cena (ak je v sprave), cas prijatia
+- Tlacidlo "Rezervovat" ktore presmeruje na kalendar (kde klient dokaze slot zarezervovat standardnym sposobom)
+- Moznost zavriet/odmietnuť ponuku (oznaci notifikaciu ako precitanu)
 
-### 4. Manualne vytvorenie slotu (v Collapsible/Accordion)
-- Existujuci formular na manualne vytvorenie slotu (datum, cas, zlava) sa presunie do **rozbalitelnej sekcie** (Collapsible)
-- Defaultne zatvoreny s nadpisom "Vytvorit slot manualne" a ikonou Plus
-- Obsah zostava identicky (datum picker, casy, zlava, poznamky)
+## Zmeny v suboroch
 
-### 5. Upozornenie
-Zostava rovnake ako teraz.
+### 1. `src/lib/constants.ts`
+- Pridat novu route: `LAST_MINUTE: '/last-minute'`
+
+### 2. `src/components/layout/ClientLayout.tsx`
+- Pridat 5. polozku do `navItems`: ikona `Zap`, label "Last-minute", path `ROUTES.LAST_MINUTE`
+- Podmienene zobrazenie -- polozka sa zobrazi len ak `profile?.last_minute_notifications === true`
+- Import `useAuth` pre pristup k profilu
+
+### 3. `src/pages/client/LastMinutePage.tsx` (novy subor)
+- Nacitanie notifikacii typu `last_minute` (neprecitanych) cez Supabase query
+- Prazdny stav s vysvetlenim mechaniky
+- Aktivny stav so zoznamom ponuk
+- Kazda ponuka obsahuje tlacidlo "Rezervovat" (link na `/kalendar`) a "Zavriet" (mark as read)
+- Pouzitie `ClientLayout` obalenia
+
+### 4. `src/App.tsx`
+- Pridat route `/last-minute` s `ProtectedRoute`
+
+### 5. `src/pages/admin/AdminBroadcastPage.tsx`
+- Uprava broadcast odosielania -- filtrovat len klientov s `last_minute_notifications = true`
+- Zobrazit pocet klientov s aktivnym last-minute odberom
 
 ## Technicke detaily
 
-### Subory na upravu
-- **`src/pages/admin/AdminBroadcastPage.tsx`** -- jediny subor
+### Filtrovanie v broadcast
+Aktualne sa broadcast posiela vsetkym `approvedClients`. Upravime na:
+```
+approvedClients.filter(c => c.last_minute_notifications !== false)
+```
 
-### Logika filtrovania zrusenych treningov
-- Z `useAdminBookings()` sa pouziju vsetky bookings
-- Filter: `status === 'cancelled'` AND `slot.start_time` je v buducnosti (do 48h) AND `slot.is_available === true`
-- Zoradenie podla `cancelled_at` (najnovsie prvy)
+### Podmienene zobrazenie tab polozky
+V `ClientLayout` sa nacita profil cez `useAuth()` a 5. tab sa prida do pola `navItems` dynamicky len ak je `last_minute_notifications` zapnute.
 
-### UI komponenty
-- Pouzije sa existujuci `Collapsible` pre manualny formular
-- Karty zrusenych treningov budu pouzivat existujuci `Card` komponent
-- Ikony: `XCircle` pre zrusene, `Zap` pre "Ponuknut ako last-minute"
+### Zobrazenie ponuk
+Query na notifikacie: `type = 'last_minute'` AND `is_read = false` AND `user_id = profileId`, zoradene podla `created_at DESC`.
 
-### Predvyplnenie broadcastu z zruseneho treningu
-- Kliknutim na "Ponuknut" sa nastavi `title` a `message` rovnako ako pri manualnom vytvoreni -- s datumom, casom a volitelnou zlavou

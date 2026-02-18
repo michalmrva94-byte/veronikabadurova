@@ -76,7 +76,7 @@ export function AdminNotificationBell() {
             )}
           </div>
         </div>
-        <ScrollArea className="max-h-[400px]">
+        <ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
               <Bell className="h-8 w-8 mb-2 opacity-40" />

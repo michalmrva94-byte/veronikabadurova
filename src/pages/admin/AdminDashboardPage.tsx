@@ -175,73 +175,59 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* KPI Cards - 5 blocks, mobile: 1 per row, desktop: 5 cols */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {/* KPI Summary - Clean 2x2 grid */}
+        <div className="grid grid-cols-2 gap-3">
           <KPICard
             icon={<Users className="h-4 w-4 text-success" />}
             title="Aktívni klienti"
             tooltip="Klienti s aspoň 1 potvrdeným alebo odplávaným tréningom v zvolenom období. Pravidelní = 2+ tréningy."
             mainValue={stats?.activeClients ?? 0}
             mainColor="success"
-            subValues={[
-              { label: 'Pravidelní (≥2)', value: stats?.regularClients ?? 0, color: 'success' },
-            ]}
             loading={statsLoading}
           />
           <KPICard
             icon={<Calendar className="h-4 w-4 text-primary" />}
-            title={`Tréningy`}
-            tooltip="Celkový počet tréningov v období rozdelený na plánované (potvrdené), odplávané (dokončené) a zrušené."
+            title={`Tréningy / ${periodLabel}`}
+            tooltip="Celkový počet tréningov v období: plánované + odplávané. Zrušené sa nezapočítavajú."
             mainValue={`${(stats?.plannedTrainings ?? 0) + (stats?.completedTrainings ?? 0)}`}
             mainColor="primary"
-            subValues={[
-              { label: 'Plánované', value: stats?.plannedTrainings ?? 0 },
-              { label: 'Odplávané', value: stats?.completedTrainings ?? 0, color: 'success' },
-              { label: 'Zrušené', value: stats?.cancelledTrainings ?? 0, color: 'destructive' },
-            ]}
             loading={statsLoading}
           />
           <KPICard
             icon={<Clock className="h-4 w-4 text-warning" />}
             title="Nepotvrdené"
-            tooltip="Rezervácie čakajúce na potvrdenie (pending, navrhnuté, awaiting). Kritické = deadline vyprší do 6 hodín."
+            tooltip="Rezervácie čakajúce na potvrdenie. Kritické = deadline vyprší do 6 hodín."
             mainValue={stats?.unconfirmedBookings ?? 0}
             mainColor={(stats?.criticalBookings ?? 0) > 0 ? 'destructive' : 'warning'}
             badge={(stats?.criticalBookings ?? 0) > 0 
               ? { label: `${stats!.criticalBookings} <6h`, variant: 'destructive' as const }
               : undefined
             }
-            subValues={[
-              { label: 'Kritické (<6h)', value: stats?.criticalBookings ?? 0, color: (stats?.criticalBookings ?? 0) > 0 ? 'destructive' : 'muted' },
-            ]}
             loading={statsLoading}
           />
           <KPICard
             icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
             title="Rizikové"
-            tooltip="Dlžníci = klienti so záporným zostatkom. Riziko rušení = 2+ neskoré storna (<24h) alebo 1+ neúčasť za posledných 30 dní."
-            mainValue={stats?.debtClients ?? 0}
-            mainColor={((stats?.debtClients ?? 0) > 0) ? 'destructive' : 'success'}
-            subValues={[
-              { label: 'Celkový dlh', value: `${(stats?.totalDebt ?? 0).toFixed(0)}€`, color: (stats?.totalDebt ?? 0) > 0 ? 'destructive' : 'muted' },
-              { label: 'Riziko rušení', value: stats?.riskyCancellers ?? 0, color: (stats?.riskyCancellers ?? 0) > 0 ? 'warning' : 'muted' },
-            ]}
-            loading={statsLoading}
-          />
-          <KPICard
-            icon={<Euro className="h-4 w-4 text-success" />}
-            title={`Príjem`}
-            tooltip="Vklady = kreditné vklady v období. Vyčerpané = kredit spotrebovaný na tréningy. Net = rozdiel medzi vkladmi a spotrebou."
-            mainValue={`${(stats?.deposits ?? 0).toFixed(0)}€`}
-            mainColor="success"
-            subValues={[
-              { label: 'Vklady', value: `${(stats?.deposits ?? 0).toFixed(0)}€`, color: 'success' },
-              { label: 'Vyčerpané', value: `${(stats?.creditUsage ?? 0).toFixed(0)}€`, color: 'warning' },
-              { label: 'Net', value: `${(stats?.netRevenue ?? 0).toFixed(0)}€`, color: (stats?.netRevenue ?? 0) >= 0 ? 'success' : 'destructive' },
-            ]}
+            tooltip="Dlžníci + klienti s vysokou mierou storn/neúčastí za posledných 30 dní."
+            mainValue={(stats?.debtClients ?? 0) + (stats?.riskyCancellers ?? 0)}
+            mainColor={((stats?.debtClients ?? 0) + (stats?.riskyCancellers ?? 0)) > 0 ? 'destructive' : 'success'}
             loading={statsLoading}
           />
         </div>
+
+        {/* Income row - full width */}
+        <KPICard
+          icon={<Euro className="h-4 w-4 text-success" />}
+          title={`Príjem / ${periodLabel}`}
+          tooltip="Vklady = kreditné vklady. Vyčerpané = kredit spotrebovaný na tréningy. Net = rozdiel."
+          mainValue={`${(stats?.netRevenue ?? 0) >= 0 ? '+' : ''}${(stats?.netRevenue ?? 0).toFixed(0)}€`}
+          mainColor={(stats?.netRevenue ?? 0) >= 0 ? 'success' : 'destructive'}
+          subValues={[
+            { label: 'Vklady', value: `${(stats?.deposits ?? 0).toFixed(0)}€`, color: 'success' },
+            { label: 'Vyčerpané', value: `${(stats?.creditUsage ?? 0).toFixed(0)}€`, color: 'warning' },
+          ]}
+          loading={statsLoading}
+        />
 
         {/* Action Alerts - "Potrebujem riešiť dnes" */}
         {stats && <AdminActionAlerts stats={stats} />}

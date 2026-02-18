@@ -8,7 +8,8 @@ import { useState } from 'react';
 import { Euro, TrendingUp, TrendingDown, Plus, Users, Loader2, User, History, CreditCard, ArrowRight, Wallet } from 'lucide-react';
 import { useClients } from '@/hooks/useClients';
 import { useAddCredit } from '@/hooks/useAddCredit';
-import { useAdminFinancesStats, useClientsWithDebt, FinancePeriod } from '@/hooks/useAdminFinances';
+import { useAdminFinancesStats, useClientsWithDebt, FinancePeriod, FinanceDateRange } from '@/hooks/useAdminFinances';
+import { DashboardHistoryPicker } from '@/components/admin/DashboardHistoryPicker';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -26,13 +27,16 @@ export default function AdminFinancesPage() {
   const [description, setDescription] = useState('');
   const [paymentType, setPaymentType] = useState('prevod');
   const [period, setPeriod] = useState<FinancePeriod>('month');
+  const [customRange, setCustomRange] = useState<FinanceDateRange | null>(null);
 
   const { data: clients = [], isLoading: clientsLoading } = useClients();
-  const { data: stats, isLoading: statsLoading } = useAdminFinancesStats(period);
+  const { data: stats, isLoading: statsLoading } = useAdminFinancesStats(period, customRange);
   const { data: clientsWithDebt = [], isLoading: debtLoading } = useClientsWithDebt();
   const addCredit = useAddCredit();
 
-  const periodLabel = period === 'week' ? 'tento týždeň' : 'tento mesiac';
+  const periodLabel = customRange?.label
+    ? customRange.label
+    : period === 'week' ? 'tento týždeň' : 'tento mesiac';
 
   // Transaction history - FIXED: explicit foreign key hint
   const { data: recentTransactions = [], isLoading: transLoading } = useQuery({
@@ -81,28 +85,45 @@ export default function AdminFinancesPage() {
         </div>
 
         {/* Period Toggle */}
-        <div className="flex gap-1 bg-muted/60 rounded-xl p-0.5 h-8 w-fit">
-          <button
-            onClick={() => setPeriod('week')}
-            className={`text-xs rounded-lg px-3 h-7 transition-all ${
-              period === 'week'
-                ? 'bg-background shadow-sm font-medium text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Týždeň
-          </button>
-          <button
-            onClick={() => setPeriod('month')}
-            className={`text-xs rounded-lg px-3 h-7 transition-all ${
-              period === 'month'
-                ? 'bg-background shadow-sm font-medium text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Mesiac
-          </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex gap-1 bg-muted/60 rounded-xl p-0.5 h-8">
+            <button
+              onClick={() => { setPeriod('week'); setCustomRange(null); }}
+              className={`text-xs rounded-lg px-3 h-7 transition-all ${
+                !customRange && period === 'week'
+                  ? 'bg-background shadow-sm font-medium text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Týždeň
+            </button>
+            <button
+              onClick={() => { setPeriod('month'); setCustomRange(null); }}
+              className={`text-xs rounded-lg px-3 h-7 transition-all ${
+                !customRange && period === 'month'
+                  ? 'bg-background shadow-sm font-medium text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Mesiac
+            </button>
+          </div>
+          <DashboardHistoryPicker
+            onSelectRange={(range) => setCustomRange({ start: range.start, end: range.end, label: range.label })}
+            currentRange={customRange ? { start: customRange.start, end: customRange.end, label: customRange.label || '' } : null}
+            onClear={() => setCustomRange(null)}
+          />
         </div>
+
+        {/* Period indicator when custom */}
+        {customRange && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+            <span>Zobrazené obdobie:</span>
+            <Badge variant="secondary" className="text-xs capitalize">
+              {customRange.label}
+            </Badge>
+          </div>
+        )}
 
         {/* 4 KPI Cards - 2x2 grid */}
         <div className="grid grid-cols-2 gap-3">

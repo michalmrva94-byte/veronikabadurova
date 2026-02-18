@@ -20,20 +20,22 @@ interface WeeklyCalendarGridProps {
 const getSlotColor = (slot: SlotWithBooking) => {
   const status = slot.booking?.status;
   if (status === 'proposed') return 'bg-muted border-muted-foreground/30 text-muted-foreground';
-  if (status === 'pending' || status === 'awaiting_confirmation') return 'bg-warning/20 border-warning text-warning-foreground';
-  if (status === 'booked') return 'bg-primary/20 border-primary text-primary';
-  if (status === 'cancelled' || status === 'no_show') return 'bg-destructive/20 border-destructive text-destructive';
-  if (status === 'completed') return 'bg-success/20 border-success text-success';
+  if (status === 'pending' || status === 'awaiting_confirmation') return 'bg-amber-100 border-amber-500 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-600';
+  if (status === 'booked') return 'bg-sky-100 border-sky-500 text-sky-800 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-600';
+  if (status === 'cancelled' || status === 'no_show') return 'bg-rose-100 border-rose-500 text-rose-800 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-600';
+  if (status === 'completed') return 'bg-violet-100 border-violet-500 text-violet-800 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600';
+  // Available (no booking)
   return 'bg-emerald-100 border-emerald-500 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400';
 };
 
 const getSlotChipColor = (slot: SlotWithBooking) => {
   const status = slot.booking?.status;
   if (status === 'proposed') return 'bg-muted text-muted-foreground border-muted-foreground/30';
-  if (status === 'pending' || status === 'awaiting_confirmation') return 'bg-warning/20 text-warning-foreground border-warning';
-  if (status === 'booked') return 'bg-primary/20 text-primary border-primary';
-  if (status === 'cancelled' || status === 'no_show') return 'bg-destructive/20 text-destructive border-destructive';
-  if (status === 'completed') return 'bg-success/20 text-success border-success';
+  if (status === 'pending' || status === 'awaiting_confirmation') return 'bg-amber-100 text-amber-800 border-amber-500 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-600';
+  if (status === 'booked') return 'bg-sky-100 text-sky-800 border-sky-500 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-600';
+  if (status === 'cancelled' || status === 'no_show') return 'bg-rose-100 text-rose-800 border-rose-500 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-600';
+  if (status === 'completed') return 'bg-violet-100 text-violet-800 border-violet-500 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600';
+  // Available (no booking)
   return 'bg-emerald-100 text-emerald-700 border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-400';
 };
 
@@ -271,19 +273,19 @@ export function WeeklyCalendarGrid({
           <span>Návrh</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-warning/20 border border-warning" />
+          <div className="w-3 h-3 rounded bg-amber-100 border border-amber-500" />
           <span>Čaká</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-primary/20 border border-primary" />
+          <div className="w-3 h-3 rounded bg-sky-100 border border-sky-500" />
           <span>Potvrdené</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-success/20 border border-success" />
+          <div className="w-3 h-3 rounded bg-violet-100 border border-violet-500" />
           <span>Odpláv.</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-destructive/20 border border-destructive" />
+          <div className="w-3 h-3 rounded bg-rose-100 border border-rose-500" />
           <span>Zrušené</span>
         </div>
       </div>

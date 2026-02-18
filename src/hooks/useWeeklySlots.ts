@@ -45,17 +45,17 @@ export function useWeeklySlots(weekStart: Date) {
 
       // Transform data to include booking info
       return (data || []).map((slot: any) => {
-        // bookings is a single object (1:1 relation), not an array
-        const b = slot.bookings;
         const activeStatuses = ['booked', 'pending', 'proposed', 'awaiting_confirmation', 'completed', 'no_show'];
-        const hasActive = b && activeStatuses.includes(b.status);
+        // bookings is an array from Supabase (one-to-many relation)
+        const bookingsArr = Array.isArray(slot.bookings) ? slot.bookings : (slot.bookings ? [slot.bookings] : []);
+        const activeBooking = bookingsArr.find((b: any) => activeStatuses.includes(b.status));
         return {
           ...slot,
-          booking: hasActive ? {
-            id: b.id,
-            status: b.status,
-            client: b.client,
-            price: b.price,
+          booking: activeBooking ? {
+            id: activeBooking.id,
+            status: activeBooking.status,
+            client: activeBooking.client,
+            price: activeBooking.price,
           } : undefined,
         };
       }) as SlotWithBooking[];
@@ -94,9 +94,11 @@ export function useSlotsForMonth(month: Date) {
         const dateKey = format(new Date(slot.start_time), 'yyyy-MM-dd');
         const existing = dateMap.get(dateKey) || { hasAvailable: false, hasBooked: false, availableCount: 0, bookedCount: 0 };
         
-        // bookings is a single object (1:1 relation)
-        const b = slot.bookings;
-        const hasActiveBooking = b && (b.status === 'booked' || b.status === 'pending' || b.status === 'awaiting_confirmation' || b.status === 'completed');
+        // bookings is an array from Supabase
+        const bookingsArr = Array.isArray(slot.bookings) ? slot.bookings : (slot.bookings ? [slot.bookings] : []);
+        const hasActiveBooking = bookingsArr.some((b: any) => 
+          b.status === 'booked' || b.status === 'pending' || b.status === 'awaiting_confirmation' || b.status === 'completed'
+        );
         
         if (hasActiveBooking) {
           existing.hasBooked = true;

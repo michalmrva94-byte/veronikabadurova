@@ -83,26 +83,27 @@ export function useSlotsForMonth(month: Date) {
           bookings(id, status)
         `)
         .gte('start_time', monthStart.toISOString())
-        .lte('start_time', monthEnd.toISOString())
-        .eq('is_available', true);
+        .lte('start_time', monthEnd.toISOString());
 
       if (error) throw error;
 
       // Group by date and determine availability
-      const dateMap = new Map<string, { hasAvailable: boolean; hasBooked: boolean }>();
+      const dateMap = new Map<string, { hasAvailable: boolean; hasBooked: boolean; availableCount: number; bookedCount: number }>();
       
       (data || []).forEach((slot: any) => {
         const dateKey = format(new Date(slot.start_time), 'yyyy-MM-dd');
-        const existing = dateMap.get(dateKey) || { hasAvailable: false, hasBooked: false };
+        const existing = dateMap.get(dateKey) || { hasAvailable: false, hasBooked: false, availableCount: 0, bookedCount: 0 };
         
-        const hasActiveBooking = slot.bookings?.some(
-          (b: any) => b.status === 'booked' || b.status === 'pending'
-        );
+        // bookings is a single object (1:1 relation)
+        const b = slot.bookings;
+        const hasActiveBooking = b && (b.status === 'booked' || b.status === 'pending' || b.status === 'awaiting_confirmation' || b.status === 'completed');
         
         if (hasActiveBooking) {
           existing.hasBooked = true;
+          existing.bookedCount++;
         } else {
           existing.hasAvailable = true;
+          existing.availableCount++;
         }
         
         dateMap.set(dateKey, existing);

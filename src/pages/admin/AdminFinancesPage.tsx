@@ -62,7 +62,7 @@ export default function AdminFinancesPage() {
     }
     try {
       const desc = description || `Vklad - ${paymentType}`;
-      await addCredit.mutateAsync({ clientId: selectedClient, amount: numAmount, description: desc });
+      await addCredit.mutateAsync({ clientId: selectedClient, amount: numAmount, description: desc, paidMethod: paymentType });
       const clientName = clients.find(c => c.id === selectedClient)?.full_name;
       toast.success(`Kredit ${numAmount.toFixed(2)}€ bol pridaný pre ${clientName}`);
       setSelectedClient('');
@@ -288,7 +288,7 @@ export default function AdminFinancesPage() {
                         <p className="text-sm text-muted-foreground">{client.email}</p>
                       </div>
                     </div>
-                    <span className="text-lg font-bold text-destructive">{(client.balance ?? 0).toFixed(2)}€</span>
+                    <span className="text-lg font-bold text-destructive">{((client as any).debt_balance ?? 0).toFixed(2)}€</span>
                   </div>
                 ))}
               </div>

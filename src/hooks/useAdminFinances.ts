@@ -128,7 +128,7 @@ export function useAdminFinancesStats(period: FinancePeriod = 'month', customRan
         // profiles for balance totals
         supabase
           .from('profiles')
-          .select('balance'),
+          .select('balance, debt_balance'),
       ]);
 
       if (earnedRes.error) throw earnedRes.error;
@@ -145,10 +145,11 @@ export function useAdminFinancesStats(period: FinancePeriod = 'month', customRan
 
       let totalCredits = 0;
       let totalDebts = 0;
-      (profilesRes.data || []).forEach((p) => {
+      (profilesRes.data || []).forEach((p: any) => {
         const b = p.balance ?? 0;
+        const d = p.debt_balance ?? 0;
         if (b > 0) totalCredits += b;
-        else if (b < 0) totalDebts += Math.abs(b);
+        totalDebts += d;
       });
 
       return {
@@ -183,8 +184,8 @@ export function useClientsWithDebt() {
         .from('profiles')
         .select('*')
         .in('user_id', clientUserIds)
-        .lt('balance', 0)
-        .order('balance', { ascending: true });
+        .gt('debt_balance', 0)
+        .order('debt_balance', { ascending: false });
 
       if (profilesError) throw profilesError;
 

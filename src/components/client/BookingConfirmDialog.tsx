@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, AlertCircle, Info, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { TrainingSlot } from '@/types/database';
@@ -19,6 +20,7 @@ interface BookingConfirmDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   isLoading: boolean;
+  creditBalance?: number;
 }
 
 export function BookingConfirmDialog({
@@ -27,6 +29,7 @@ export function BookingConfirmDialog({
   onClose,
   onConfirm,
   isLoading,
+  creditBalance,
 }: BookingConfirmDialogProps) {
   if (!slot) return null;
 
@@ -64,6 +67,19 @@ export function BookingConfirmDialog({
             <span className="text-muted-foreground">Cena tréningu</span>
             <span className="font-semibold text-lg">{DEFAULT_TRAINING_PRICE}€</span>
           </div>
+
+          {/* Credit balance info */}
+          {creditBalance !== undefined && (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              <span className="text-muted-foreground">Váš kredit</span>
+              <span className={cn(
+                'font-semibold',
+                creditBalance >= DEFAULT_TRAINING_PRICE ? 'text-success' : 'text-warning'
+              )}>
+                {creditBalance.toFixed(2)}€
+              </span>
+            </div>
+          )}
 
           {/* Approval info */}
           <div className="flex gap-3 p-3 rounded-lg border border-primary/30 bg-primary/5">

@@ -10,7 +10,11 @@ export type ClientType = 'fixed' | 'flexible';
 
 export type ClientApprovalStatus = 'pending' | 'approved' | 'rejected';
 
-export type TransactionType = 'deposit' | 'training' | 'cancellation' | 'referral_bonus' | 'manual_adjustment';
+export type TransactionType = 'deposit' | 'training' | 'cancellation' | 'referral_bonus' | 'manual_adjustment' | 'no_show';
+
+export type TransactionDirection = 'in' | 'out' | 'debt_increase' | 'debt_decrease';
+
+export type PaidMethod = 'cash' | 'bank_transfer' | 'other';
 
 export interface Profile {
   id: string;
@@ -23,6 +27,7 @@ export interface Profile {
   notifications_enabled: boolean;
   email_notifications: boolean;
   balance: number;
+  debt_balance: number;
   client_type: ClientType | null;
   approval_status: ClientApprovalStatus;
   approved_at: string | null;
@@ -82,6 +87,8 @@ export interface Transaction {
   description: string;
   booking_id: string | null;
   created_by: string | null;
+  direction: TransactionDirection | null;
+  paid_method: PaidMethod | null;
   created_at: string;
   // Joined data
   client?: Profile;

@@ -159,6 +159,7 @@ export type Database = {
           balance: number | null
           client_type: Database["public"]["Enums"]["client_type"] | null
           created_at: string
+          debt_balance: number | null
           email: string
           email_notifications: boolean | null
           flexibility_note: string | null
@@ -179,6 +180,7 @@ export type Database = {
           balance?: number | null
           client_type?: Database["public"]["Enums"]["client_type"] | null
           created_at?: string
+          debt_balance?: number | null
           email: string
           email_notifications?: boolean | null
           flexibility_note?: string | null
@@ -199,6 +201,7 @@ export type Database = {
           balance?: number | null
           client_type?: Database["public"]["Enums"]["client_type"] | null
           created_at?: string
+          debt_balance?: number | null
           email?: string
           email_notifications?: boolean | null
           flexibility_note?: string | null
@@ -319,7 +322,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string
+          direction: string | null
           id: string
+          paid_method: string | null
           type: Database["public"]["Enums"]["transaction_type"]
         }
         Insert: {
@@ -330,7 +335,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description: string
+          direction?: string | null
           id?: string
+          paid_method?: string | null
           type: Database["public"]["Enums"]["transaction_type"]
         }
         Update: {
@@ -341,7 +348,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string
+          direction?: string | null
           id?: string
+          paid_method?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
         }
         Relationships: [
@@ -394,6 +403,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_charge: {
+        Args: {
+          p_booking_id: string
+          p_charge: number
+          p_charge_type: Database["public"]["Enums"]["transaction_type"]
+          p_client_id: string
+          p_note: string
+        }
+        Returns: undefined
+      }
       generate_referral_code: { Args: never; Returns: string }
       get_my_profile_id: { Args: never; Returns: string }
       get_referrer_name: { Args: { code: string }; Returns: string }
@@ -403,15 +422,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      process_booking_cancellation: {
-        Args: {
-          p_booking_id: string
-          p_cancellation_fee: number
-          p_client_id: string
-          p_fee_percentage: number
-        }
-        Returns: undefined
       }
     }
     Enums: {
@@ -432,6 +442,7 @@ export type Database = {
         | "cancellation"
         | "referral_bonus"
         | "manual_adjustment"
+        | "no_show"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -577,6 +588,7 @@ export const Constants = {
         "cancellation",
         "referral_bonus",
         "manual_adjustment",
+        "no_show",
       ],
     },
   },

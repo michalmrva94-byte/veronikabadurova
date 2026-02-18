@@ -52,8 +52,8 @@ export function useAssignTraining() {
         .from('notifications')
         .insert({
           user_id: client_id,
-          title: 'Nový tréning priradený',
-          message: `Bol vám priradený nový tréning. Skontrolujte si detaily v sekcii "Moje tréningy".`,
+          title: 'Nový tréning',
+          message: 'Máte priradený nový tréning. Detaily nájdete v sekcii Moje tréningy.',
           type: 'booking_confirmed',
         });
 

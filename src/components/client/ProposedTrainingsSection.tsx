@@ -131,10 +131,10 @@ export function ProposedTrainingsSection({ proposedBookings }: Props) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-foreground">
-              Máš tréningy na potvrdenie
+              Máte návrhy tréningov
             </p>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {proposedBookings.length} {proposedBookings.length === 1 ? 'tréning čaká' : proposedBookings.length < 5 ? 'tréningy čakajú' : 'tréningov čaká'} na tvoju odpoveď
+              {proposedBookings.length} {proposedBookings.length === 1 ? 'tréning čaká' : proposedBookings.length < 5 ? 'tréningy čakajú' : 'tréningov čaká'} na vašu odpoveď
             </p>
             {nearestDeadline && (
               <div className="mt-1.5">

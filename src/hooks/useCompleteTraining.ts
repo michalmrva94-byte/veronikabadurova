@@ -54,8 +54,8 @@ export function useCompleteTraining() {
       // 3. Notify client
       await supabase.from('notifications').insert({
         user_id: clientId,
-        title: 'Tréning dokončený ✓',
-        message: `Váš tréning bol označený ako odplávaný. Z kreditu bolo odpočítaných ${price}€.`,
+        title: 'Tréning dokončený',
+        message: 'Váš tréning bol zaznamenaný. Ďakujeme a teším sa nabudúce 😊',
         type: 'training_completed',
       });
     },
@@ -87,7 +87,7 @@ export function useCompleteTraining() {
       await supabase.from('notifications').insert({
         user_id: clientId,
         title: 'Neúčasť na tréningu',
-        message: `Neprišli ste na tréning. Bol vám účtovaný poplatok ${price}€.`,
+        message: `Tréning nebol absolvovaný. Podľa podmienok sa účtuje ${price} €.`,
         type: 'no_show',
       });
     },

@@ -119,7 +119,7 @@ export default function ProfilePage() {
               Notifikácie
             </CardTitle>
             <CardDescription>
-              Nastavte si, aké upozornenia chcete dostávať
+              Vyberte si, aké upozornenia chcete dostávať
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -127,7 +127,7 @@ export default function ProfilePage() {
               <div className="space-y-0.5">
                 <Label>In-app notifikácie</Label>
                 <p className="text-sm text-muted-foreground">
-                  Upozornenia v aplikácii
+                  Upozornenia priamo v aplikácii
                 </p>
               </div>
               <Switch
@@ -148,7 +148,7 @@ export default function ProfilePage() {
                   <Label>Email notifikácie</Label>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Potvrdenia rezervácií, pripomienky, last-minute ponuky
+                  Potvrdenia, pripomienky a uvoľnené miesta
                 </p>
               </div>
               <Switch

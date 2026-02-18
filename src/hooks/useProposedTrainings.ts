@@ -255,14 +255,21 @@ export function useProposedTrainings() {
 
   const rejectProposedTraining = useMutation({
     mutationFn: async (bookingId: string) => {
-      // Cancel booking
+      // Fetch booking with slot and client info
       const { data: booking, error: fetchError } = await supabase
         .from('bookings')
-        .select('slot_id')
+        .select('slot_id, client_id, slot:training_slots(start_time)')
         .eq('id', bookingId)
         .single();
 
       if (fetchError) throw fetchError;
+
+      // Get client name for admin notification
+      const { data: clientProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', booking.client_id)
+        .single();
 
       const { error: updateError } = await supabase
         .from('bookings')
@@ -280,6 +287,37 @@ export function useProposedTrainings() {
         .from('training_slots')
         .update({ is_available: true })
         .eq('id', booking.slot_id);
+
+      // Notify all admins about the rejection
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (adminRoles && adminRoles.length > 0) {
+        // Get admin profile IDs
+        const { data: adminProfiles } = await supabase
+          .from('profiles')
+          .select('id')
+          .in('user_id', adminRoles.map((r) => r.user_id));
+
+        if (adminProfiles && adminProfiles.length > 0) {
+          const clientName = clientProfile?.full_name || 'Klient';
+          const slotDate = booking.slot?.start_time
+            ? new Date(booking.slot.start_time).toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+            : '';
+
+          const notifications = adminProfiles.map((admin) => ({
+            user_id: admin.id,
+            title: 'Odmietnutý tréning',
+            message: `${clientName} odmietol/a navrhnutý tréning${slotDate ? ` dňa ${slotDate}` : ''}. Termín bol uvoľnený.`,
+            type: 'proposal_rejected',
+            related_slot_id: booking.slot_id,
+          }));
+
+          await supabase.from('notifications').insert(notifications);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });

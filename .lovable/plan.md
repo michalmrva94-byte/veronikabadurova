@@ -1,51 +1,51 @@
 
-# Platba prevodom - IBAN karta
+# Admin Kalendar - Mobile-Friendly Redizajn
 
-## Prehlad
+Aktualny problem: Tyzdenny kalendar pouziva 7-stlpcovy grid (`grid-cols-7`) aj na mobile, co sposobuje, ze stlpce su prilis uzke, text je orezany a tlacidla "Pridat" su nefunkcne.
 
-Pridanie karty "Platba prevodom" do klientskej sekcie Financie s IBAN-om nastavitelnym v admin nastaveniach, kopirovacimi tlacidlami a zvyraznenim pri dlhu.
+---
 
-## Databazove zmeny
+## Riesenie
 
-Vlozit novy zaznam do `app_settings`:
-- `key`: `iban`, `value`: `''`, `description`: `IBAN pre platbu prevodom`
+Namiesto 7-stlpcoveho gridu na mobile sa prepne na **vertikalny zoznam dni** (stacked layout), kde kazdy den je kompaktny riadok s horizontalne zobrazenymi slotmi.
 
-## Zmeny v suboroch
+### Zmeny v `src/components/admin/WeeklyCalendarGrid.tsx`
 
-### 1. `src/pages/admin/AdminSettingsPage.tsx`
+1. **Responsivny layout**:
+   - Mobile (< 768px): vertikalny zoznam dni, kazdy den ako riadok s horizontalnymi slot chipmi
+   - Desktop (>= 768px): zachovat existujuci 7-stlpcovy grid
 
-- Pridat state `iban` a nacitat ho v `fetchSettings` (druhy query na `app_settings` s `key = 'iban'`)
-- Pridat novu kartu "IBAN pre platby" s textovym input polom
-- V `handleSave` ulozit aj IBAN (upsert alebo update)
-- Ak IBAN zaznam neexistuje, pouzit upsert
+2. **Mobilna verzia - struktura kazdeho dna**:
+   - Hlavicka: den + datum na jednom riadku (napr. "Po 16" alebo "Dnes - St 18")
+   - Sloty: horizontalne chipove tlacidla s casom a menom klienta
+   - Tlacidlo "+" na pridanie slotu - male, inline
+   - Dni bez slotov budu kompaktnejsie
 
-### 2. `src/pages/client/FinancesPage.tsx`
+3. **Detekcia mobile**: pouzit existujuci hook `useIsMobile()` z `src/hooks/use-mobile.tsx`
 
-- Pridat query na nacitanie IBAN z `app_settings` (`key = 'iban'`)
-- Importovat `useClientBookings` pre zistenie nadchadzajucich treningov
-- Pridat novu kartu "Platba prevodom" medzi storno poplatky a historiu transakcii:
-  - Text: "Ak si chces doplnit kredit, mozes poslat platbu prevodom."
-  - IBAN formatovany s medzerami po 4 znakoch (helper funkcia)
-  - Tlacidlo "Skopirovat IBAN" - `navigator.clipboard.writeText` + toast "IBAN skopirovaný"
-  - Pole "Poznamka k platbe" s hodnotou `profile.full_name` + tlacidlo na kopirovanie + toast "Poznamka skopirovaná"
-- Karta sa zobrazi len ak je IBAN nastaveny (neprazdny)
-- Zvyraznenie (warning border/pozadie) ak:
-  - `balance < 0`
-  - alebo `balance === 0` a `upcomingBookings.length > 0`
+4. **Legenda**: na mobile zobrazit v 2 riadkoch namiesto jedneho
 
-## Technicke detaily
+### Zmeny v `src/pages/admin/AdminCalendarPage.tsx`
 
-### IBAN formatovanie
+5. **Akcie v headeri**: na mobile zobrazit tlacidla pod nadpisom namiesto vedla neho (uz je `flex-wrap`, len overit spravanie)
+
+---
+
+## Technicky prehlad
+
+### WeeklyCalendarGrid.tsx - mobilna cast
+
 ```text
-formatIBAN("SK3112000000198742637541") -> "SK31 1200 0000 1987 4263 7541"
+Po 16        [06:00 Jana] [07:00 Peter] [+]
+Ut 17        Ziadne treningy
+St 18 (dnes) [06:00 voln.] [07:00 Eva]  [+]
+St 19        [06:00 voln.]              [+]
+...
 ```
-Jednoducha inline funkcia - odstranenie medzier, vlozenie medzery po kazdych 4 znakoch.
 
-### Zvyraznenie logika
-```text
-shouldHighlight = balance < 0 || (balance === 0 && upcomingBookings.length > 0)
-```
-Ak true: `border-warning/50 bg-warning/5`, inak standardny border.
+- Kazdy slot chip bude mat farbu podla statusu (rovnaky `getSlotColor`)
+- Kliknutie na chip otvori `SlotDetailDialog` (rovnake spravanie)
+- Prazdne dni zobrazia sedy text "Ziadne treningy" a tlacidlo [+]
 
-### Kopirovanie do clipboard
-Pouzit `navigator.clipboard.writeText()` s fallbackom a toast notifikaciou cez existujuci `useToast` hook.
+### Subory na upravu
+- `src/components/admin/WeeklyCalendarGrid.tsx` - hlavna zmena, pridanie mobilneho layoutu

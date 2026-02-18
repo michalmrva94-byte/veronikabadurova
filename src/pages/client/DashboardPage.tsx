@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/lib/constants';
-import { Calendar, Clock, TrendingUp, TrendingDown, Minus, Loader2, ClockIcon, Ban, Wallet } from 'lucide-react';
+import { Calendar, Loader2, ClockIcon, Ban, Wallet, ChevronDown, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useClientBookings } from '@/hooks/useClientBookings';
 import { ProposedTrainingsSection, getStatusBadge } from '@/components/client/ProposedTrainingsSection';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 
@@ -82,33 +83,74 @@ function ApprovedDashboard() {
   const balance = profile?.balance ?? 0;
   const debtBalance = (profile as any)?.debt_balance ?? 0;
   const netBalance = balance - debtBalance;
+  const firstName = profile?.full_name?.split(' ')[0] || '';
+
+  const nextBooking = upcomingBookings[0];
 
   return (
     <ClientLayout>
       <div className="space-y-6 animate-fade-in">
-        {/* Welcome section */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground">
-            Ahoj, {profile?.full_name?.split(' ')[0]}! 👋
-          </h1>
-           <p className="text-muted-foreground">
-            Teším sa na ďalší tréning.
-          </p>
+        {/* 1. Hero sekcia */}
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold text-foreground">
+              Ahoj, {firstName}! 👋
+            </h1>
+            <p className="text-muted-foreground">
+              Teším sa na ďalší tréning.
+            </p>
+          </div>
+
+          {bookingsLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : nextBooking ? (
+            <Card className="border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <Calendar className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Najbližšie</p>
+                      <p className="font-semibold text-foreground capitalize">
+                        {format(new Date(nextBooking.slot.start_time), 'EEEE, d. MMM', { locale: sk })} o {format(new Date(nextBooking.slot.start_time), 'HH:mm')}
+                      </p>
+                    </div>
+                  </div>
+                  <Button asChild variant="ghost" size="sm">
+                    <Link to={ROUTES.MY_TRAININGS}>
+                      Detail <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <p className="text-muted-foreground">
+              Zatiaľ nemáte rezervovaný tréning.
+            </p>
+          )}
         </div>
 
-        {/* Váš zostatok - unified balance card */}
+        {/* 2. Primárne CTA */}
+        <Button asChild className="w-full h-14 text-base">
+          <Link to={ROUTES.CALENDAR}>
+            Rezervovať nový tréning
+          </Link>
+        </Button>
+
+        {/* 3. Návrhy tréningov */}
+        {!bookingsLoading && <ProposedTrainingsSection proposedBookings={proposedBookings} />}
+
+        {/* 4. Zostatok – kompaktná karta */}
         <Card className={cn(
-          "relative overflow-hidden",
           netBalance > 0 && "border-success/30",
-          netBalance === 0 && "border-warning/30",
+          netBalance === 0 && "border-border",
           netBalance < 0 && "border-destructive/30"
         )}>
-          <div className={cn(
-            "absolute inset-0 opacity-5",
-            netBalance > 0 && "bg-success",
-            netBalance === 0 && "bg-warning",
-            netBalance < 0 && "bg-destructive"
-          )} />
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <Wallet className="h-4 w-4" />
@@ -116,23 +158,18 @@ function ApprovedDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-2">
-              {netBalance > 0 && <TrendingUp className="h-6 w-6 text-success" />}
-              {netBalance === 0 && <Minus className="h-6 w-6 text-warning" />}
-              {netBalance < 0 && <TrendingDown className="h-6 w-6 text-destructive" />}
-              <span className={cn(
-                "text-3xl font-bold",
-                netBalance > 0 && "text-success",
-                netBalance === 0 && "text-warning",
-                netBalance < 0 && "text-destructive"
-              )}>
-                {netBalance > 0 ? '+' : ''}{netBalance.toFixed(2)} €
-              </span>
-            </div>
+            <span className={cn(
+              "text-3xl font-bold",
+              netBalance > 0 && "text-success",
+              netBalance === 0 && "text-muted-foreground",
+              netBalance < 0 && "text-destructive"
+            )}>
+              {netBalance > 0 ? '+' : ''}{netBalance.toFixed(2)} €
+            </span>
             <p className="mt-1 text-sm text-muted-foreground">
-              {netBalance > 0 && "Máte kredit pripravený na tréning."}
-              {netBalance === 0 && "Tréning si môžete rezervovať. Platbu vyriešime neskôr."}
-              {netBalance < 0 && "Máte otvorenú platbu za predošlý tréning. Stačí ju uhradiť pri najbližšej príležitosti."}
+              {netBalance > 0 && "Máte dostupný kredit."}
+              {netBalance === 0 && "Momentálne nemáte kredit ani dlh."}
+              {netBalance < 0 && "Evidujeme nezaplatený zostatok."}
             </p>
             {netBalance < 0 && (
               <Button asChild variant="outline" size="sm" className="mt-3">
@@ -142,95 +179,7 @@ function ApprovedDashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick actions */}
-        <div className="grid grid-cols-2 gap-4">
-          <Link to={ROUTES.CALENDAR}>
-            <Card className="card-hover cursor-pointer">
-              <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                  <Calendar className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold">Rezervovať</h3>
-                <p className="text-xs text-muted-foreground">Nový tréning</p>
-              </CardContent>
-            </Card>
-          </Link>
-          
-          <Link to={ROUTES.MY_TRAININGS}>
-            <Card className="card-hover cursor-pointer">
-              <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10">
-                  <Clock className="h-6 w-6 text-accent" />
-                </div>
-                <h3 className="font-semibold">Moje tréningy</h3>
-                <p className="text-xs text-muted-foreground">Nadchádzajúce</p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-
-        {/* === SEKCIA: Vyžaduje pozornosť === */}
-        {!bookingsLoading && <ProposedTrainingsSection proposedBookings={proposedBookings} />}
-
-        {/* === SEKCIA: Nadchádzajúce tréningy === */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Nadchádzajúce tréningy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {bookingsLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : upcomingBookings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Calendar className="mb-4 h-12 w-12 text-muted-foreground/50" />
-                <p className="text-muted-foreground">Zatiaľ nemáte žiadne rezervácie</p>
-                <Button asChild className="mt-4">
-                  <Link to={ROUTES.CALENDAR}>Rezervovať tréning</Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {upcomingBookings.slice(0, 3).map((booking) => {
-                  const badge = getStatusBadge(booking.status || 'booked');
-                  return (
-                    <div
-                      key={booking.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                          <Calendar className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground capitalize">
-                            {format(new Date(booking.slot.start_time), 'EEEE, d. MMM', { locale: sk })}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(booking.slot.start_time), 'HH:mm')} - {format(new Date(booking.slot.end_time), 'HH:mm')}
-                          </p>
-                        </div>
-                      </div>
-                      <span className={cn("text-xs font-medium px-2 py-1 rounded-full", badge.className)}>
-                        {badge.label}
-                      </span>
-                    </div>
-                  );
-                })}
-                {upcomingBookings.length > 3 && (
-                  <Button asChild variant="ghost" className="w-full">
-                    <Link to={ROUTES.MY_TRAININGS}>
-                      Zobraziť všetky ({upcomingBookings.length})
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* === SEKCIA: História === */}
+        {/* 5. História */}
         {!bookingsLoading && pastBookings.length > 0 && (
           <Card>
             <CardHeader>
@@ -238,7 +187,7 @@ function ApprovedDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {pastBookings.slice(0, 5).map((booking) => {
+                {pastBookings.slice(0, 3).map((booking) => {
                   const badge = getStatusBadge(booking.status || 'completed', booking.confirmation_deadline);
                   return (
                     <div
@@ -264,32 +213,33 @@ function ApprovedDashboard() {
                     </div>
                   );
                 })}
-                {pastBookings.length > 5 && (
-                  <Button asChild variant="ghost" className="w-full">
-                    <Link to={ROUTES.MY_TRAININGS}>
-                      Zobraziť celú históriu ({pastBookings.length})
-                    </Link>
-                  </Button>
-                )}
+                <Button asChild variant="ghost" className="w-full">
+                  <Link to={ROUTES.MY_TRAININGS}>
+                    Zobraziť všetko
+                  </Link>
+                </Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Cancellation policy reminder */}
-        <Card className="border-border/50 bg-muted/30">
-          <CardContent className="p-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2">
-              Rezervačné podmienky
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-              <span>&gt;48h: <span className="text-success font-medium">0%</span></span>
-              <span>24-48h: <span className="text-warning font-medium">50%</span></span>
-              <span>&lt;24h: <span className="text-destructive font-medium">80%</span></span>
-              <span>neúčasť bez zrušenia: <span className="text-destructive font-medium">100%</span></span>
+        {/* 6. Rezervačné podmienky – Collapsible */}
+        <Collapsible>
+          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-4 text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
+            Rezervačné podmienky
+            <ChevronDown className="h-4 w-4 transition-transform [[data-state=open]_&]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 pb-4 pt-2">
+              <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                <span>&gt;48h: <span className="text-success font-medium">0%</span></span>
+                <span>24-48h: <span className="text-warning font-medium">50%</span></span>
+                <span>&lt;24h: <span className="text-destructive font-medium">80%</span></span>
+                <span>neúčasť bez zrušenia: <span className="text-destructive font-medium">100%</span></span>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </ClientLayout>
   );

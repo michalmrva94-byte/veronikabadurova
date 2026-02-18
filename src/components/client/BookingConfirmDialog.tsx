@@ -39,7 +39,7 @@ export function BookingConfirmDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Potvrdiť rezerváciu</DialogTitle>
           <DialogDescription>
@@ -47,7 +47,7 @@ export function BookingConfirmDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 overflow-y-auto flex-1">
           {/* Date and time */}
           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">

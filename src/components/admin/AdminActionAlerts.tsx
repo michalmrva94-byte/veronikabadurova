@@ -14,6 +14,7 @@ interface AlertItem {
   priority: AlertPriority;
   icon: React.ReactNode;
   text: string;
+  subtitle?: string;
   count: number;
   to: string;
 }
@@ -47,6 +48,7 @@ export function AdminActionAlerts({ stats }: AdminActionAlertsProps) {
       priority: 'high',
       icon: <CreditCard className="h-4 w-4" />,
       text: 'Kreditový problém',
+      subtitle: stats.creditRiskClientNames.join(', '),
       count: stats.creditRiskClients,
       to: ROUTES.ADMIN.FINANCES,
     });
@@ -119,7 +121,12 @@ export function AdminActionAlerts({ stats }: AdminActionAlertsProps) {
               className={`flex items-center gap-3 p-4 ios-press hover:bg-muted/50 transition-colors border-l-[3px] ${styles.border}`}
             >
               <span className={styles.icon}>{alert.icon}</span>
-              <span className="text-sm font-medium flex-1">{alert.text}</span>
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium">{alert.text}</span>
+                {alert.subtitle && (
+                  <p className="text-xs text-muted-foreground truncate">{alert.subtitle}</p>
+                )}
+              </div>
               <Badge className={`text-[10px] px-1.5 py-0 h-5 border-0 ${styles.badge}`}>
                 {alert.count}
               </Badge>

@@ -2,7 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ClientLayout } from '@/components/layout/ClientLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CreditCard, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Clock, XCircle, Loader2, Landmark, Copy, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, Clock, XCircle, Loader2, Landmark, Copy, Info, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TRANSACTION_LABELS } from '@/lib/constants';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -36,7 +36,8 @@ export default function FinancesPage() {
   
   const balance = profile?.balance ?? 0;
   const debtBalance = (profile as any)?.debt_balance ?? 0;
-  const shouldHighlightIban = debtBalance > 0 || (balance === 0 && upcomingBookings.length > 0);
+  const netBalance = balance - debtBalance;
+  const shouldHighlightIban = netBalance <= 0 || (balance === 0 && upcomingBookings.length > 0);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -70,45 +71,46 @@ export default function FinancesPage() {
           </p>
         </div>
 
-        {/* Credit card */}
-        <Card className="relative overflow-hidden border-success/30">
-          <div className="absolute inset-0 opacity-5 bg-success" />
+        {/* Unified balance card */}
+        <Card className={cn(
+          "relative overflow-hidden",
+          netBalance > 0 && "border-success/30",
+          netBalance === 0 && "border-warning/30",
+          netBalance < 0 && "border-destructive/30"
+        )}>
+          <div className={cn(
+            "absolute inset-0 opacity-5",
+            netBalance > 0 && "bg-success",
+            netBalance === 0 && "bg-warning",
+            netBalance < 0 && "bg-destructive"
+          )} />
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <CreditCard className="h-4 w-4" />
-              Aktuálny zostatok
+              <Wallet className="h-4 w-4" />
+              Váš zostatok
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-success" />
-              <span className="text-4xl font-bold text-success">
-                {balance.toFixed(2)} €
+              {netBalance > 0 && <TrendingUp className="h-8 w-8 text-success" />}
+              {netBalance === 0 && <Minus className="h-8 w-8 text-warning" />}
+              {netBalance < 0 && <TrendingDown className="h-8 w-8 text-destructive" />}
+              <span className={cn(
+                "text-4xl font-bold",
+                netBalance > 0 && "text-success",
+                netBalance === 0 && "text-warning",
+                netBalance < 0 && "text-destructive"
+              )}>
+                {netBalance > 0 ? '+' : ''}{netBalance.toFixed(2)} €
               </span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              Kredit dostupný na tréningy
+              {netBalance > 0 && "Máte dostupný kredit na tréningy."}
+              {netBalance === 0 && "Rezervácia je možná. Vznikne nedoplatok."}
+              {netBalance < 0 && "Máte nedoplatok. Prosím uhraďte platbu."}
             </p>
           </CardContent>
         </Card>
-
-        {/* Debt card */}
-        {debtBalance > 0 && (
-          <Card className="relative overflow-hidden border-destructive/30">
-            <div className="absolute inset-0 opacity-5 bg-destructive" />
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingDown className="h-5 w-5 text-destructive" />
-                  <span className="font-medium text-foreground">Nezaplatené</span>
-                </div>
-                <span className="text-xl font-bold text-destructive">
-                  {debtBalance.toFixed(2)} €
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Info cards */}
         <div className="grid grid-cols-2 gap-4">
@@ -184,7 +186,7 @@ export default function FinancesPage() {
           <div className="rounded-lg border border-warning/40 bg-warning/5 p-4 flex items-start gap-3 text-sm">
             <Info className="h-5 w-5 text-warning shrink-0 mt-0.5" />
             <p className="text-foreground">
-              {debtBalance > 0
+              {netBalance < 0
                 ? 'Máte nezaplatený zostatok. Prosím, doplňte kredit prevodom na účet.'
                 : 'Váš kredit nemusí pokryť nadchádzajúce tréningy. Zvážte doplnenie kreditu.'}
             </p>

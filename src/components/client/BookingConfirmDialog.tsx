@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { TrainingSlot } from '@/types/database';
-import { DEFAULT_TRAINING_PRICE } from '@/lib/constants';
+import { DEFAULT_TRAINING_PRICE, CANCELLATION_RULES } from '@/lib/constants';
 
 interface BookingConfirmDialogProps {
   slot: TrainingSlot | null;
@@ -92,13 +92,31 @@ export function BookingConfirmDialog({
             </div>
           </div>
 
-          {/* Cancellation warning */}
+          {/* Cancellation conditions */}
           <div className="flex gap-3 p-3 rounded-lg border border-warning/30 bg-warning/5">
             <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-foreground mb-1">Podmienky zrušenia</p>
-              <p className="text-muted-foreground">
-                Podľa podmienok sa pri zrušení menej ako 24 hodín vopred účtuje 80 % ceny tréningu.
+            <div className="text-sm w-full">
+              <p className="font-medium text-foreground mb-2">Podmienky zrušenia</p>
+              <div className="space-y-1.5 text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>{CANCELLATION_RULES.MORE_THAN_48H.label} pred tréningom</span>
+                  <span className="font-medium text-success">bez poplatku</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>{CANCELLATION_RULES.BETWEEN_24_48H.label} pred tréningom</span>
+                  <span className="font-medium text-foreground">{CANCELLATION_RULES.BETWEEN_24_48H.percentage} %</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>{CANCELLATION_RULES.LESS_THAN_24H.label} pred tréningom</span>
+                  <span className="font-medium text-foreground">{CANCELLATION_RULES.LESS_THAN_24H.percentage} %</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>{CANCELLATION_RULES.NO_SHOW.label}</span>
+                  <span className="font-medium text-destructive">{CANCELLATION_RULES.NO_SHOW.percentage} %</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground/70 mt-2">
+                Percentá sa počítajú z ceny tréningu ({DEFAULT_TRAINING_PRICE} €).
               </p>
             </div>
           </div>

@@ -19,24 +19,15 @@ export function useTrainingSlots(selectedDate?: Date) {
         .from('training_slots')
         .select(`
           *,
-          bookings(id, status)
+          bookings(id, status, price, client:profiles(id, full_name, email, client_type))
         `)
         .gte('start_time', dayStart)
         .lte('start_time', dayEnd)
-        .eq('is_available', true)
         .order('start_time', { ascending: true });
 
       if (error) throw error;
 
-      // Filtrovať len voľné sloty (bez aktívnej rezervácie - pending alebo booked)
-      const availableSlots = (data || []).filter((slot: any) => {
-        const activeBooking = slot.bookings?.find(
-          (b: any) => b.status === 'booked' || b.status === 'pending'
-        );
-        return !activeBooking;
-      });
-
-      return availableSlots as TrainingSlot[];
+      return (data || []) as TrainingSlot[];
     },
     enabled: !!selectedDate,
     staleTime: 10 * 1000, // 10 sekúnd - kratší interval pre aktuálnejšie dáta

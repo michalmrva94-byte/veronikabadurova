@@ -1,124 +1,86 @@
 
 
-# Refaktoring Admin Dashboard -- Riadiaci panel s presnými KPI
+# Dynamická sekcia "POTREBUJEM RIESIT DNES"
 
 ## Prehľad
 
-Kompletný refaktoring admin dashboardu (`/admin`) s cieľom poskytnúť Veronike presné, obdobím viazané KPI metriky, sekciu "Potrebujem riešiť dnes" a vylepšenú mobilnú skúsenosť.
+Prepísanie `AdminActionAlerts.tsx` s novými pravidlami alertov, prioritným zoradením (max 3) a rozšírenie `useAdminDashboardStats.ts` o nové dátové body.
 
 ---
 
-## 1. Obdobie (Period Logic)
+## Nové pravidlá alertov (5 typov)
 
-Prepínač zostáva: **Týždeň** (default) | **Mesiac** | **História**
+| Priorita | Alert | Podmienka | Odkaz |
+|----------|-------|-----------|-------|
+| Vysoka | Kreditovy problem | booked booking v nasledujucich 24h AND client.balance < booking.price | Financie |
+| Vysoka | Trening dnes bez potvrdenia | slot.start_time = dnes AND status NOT IN (booked, completed, cancelled) | Kalendar |
+| Stredna | Neodpovedane navrhy po deadline | status = proposed AND confirmation_deadline < NOW() | Dashboard |
+| Nizka | Vysoka miera storna | storno rate za 7 dni > 30% AND pocet treningov >= 5 | Klienti |
+| Nizka | Nizka obsadenost | obsadenost slotov < 50% za aktualny tyzden AND otvorenych slotov > 5 | Kalendar |
 
-Pridáme helper `getPeriodRange(period)` vracajúci `{ startDate, endDate }`:
-- Týždeň: ISO týždeň Po-Ne (existujúce)
-- Mesiac: 1. - posledný deň mesiaca (existujúce)
-- História: picker rok/mesiac/týždeň (existujúce `DashboardHistoryPicker`)
-
-Bez zmien v UI prepínačoch -- logika už funguje.
+Zobrazenie: max 3 alerty zoradene podla priority. Ak 0 alertov, sekcia sa nerenderuje.
 
 ---
 
-## 2. Refaktorovaný `useAdminDashboardStats.ts`
+## Technicke zmeny
 
-Rozšírený interface `AdminDashboardStats`:
+### 1. `useAdminDashboardStats.ts` -- nove fieldy v interface
+
+Pridat do `AdminDashboardStats`:
 
 ```text
-activeClients          -- distinct klienti s booked/completed v období
-regularClients         -- z nich tí s >=2 tréningami
-plannedTrainings       -- count(status=booked) v období
-completedTrainings     -- count(status=completed) v období
-cancelledTrainings     -- count(status=cancelled) v období
-unconfirmedBookings    -- pending/proposed/awaiting (globálne)
-criticalBookings       -- z nich tie s deadline < 6h
-debtClients            -- profiles kde balance < 0
-totalDebt              -- sum abs(balance) dlžníkov
-riskyCancellers        -- klienti s >=2 stornami <24h alebo >=1 no_show za 30 dní
-deposits               -- sum deposit transakcií v období
-creditUsage            -- sum training transakcií v období (alebo count(completed)*price)
-netRevenue             -- deposits - creditUsage
-stornoRate, avgTrainingsPerClient, slotOccupancy  -- existujúce, opravené
-clv, avgCooperationMonths, avgMonthlyRevenuePerClient  -- existujúce
+// Nove alert data
+creditRiskClients: number          -- klienti s booking <24h a nedostatocnym kreditom
+expiredProposals: number           -- proposed bookings kde deadline < now
+todayUnconfirmed: number           -- dnesne bookings ktore nie su booked/completed/cancelled
+weeklyStornoRate7d: number         -- storno % za poslednich 7 dni
+weeklyTrainingCount7d: number      -- pocet treningov za 7 dni
+weeklySlotOccupancy: number        -- obsadenost aktualneho tyzdna (%)
+weeklyOpenSlots: number            -- pocet otvorenych slotov tento tyzden
 ```
 
-Kľúčové opravy:
-- **Aktívni klienti**: `distinct client_id` z bookings kde `start_time` v období a `status IN (booked, completed)` -- namiesto počítania approved profilov
-- **Tréningy**: rozdelenie na planned/completed/cancelled
-- **Príjem**: deposit + training transakcie namiesto iba deposit
-- **Rizikové**: rozdelenie na dlžníkov a riziko rušení (posledných 30 dní)
-- **Kritické nepotvrdené**: filtrovanie podľa `confirmation_deadline`
+Pridat do `queryFn` nove queries (paralelne cez existujuci `Promise.all`):
+
+- **creditRiskClients**: existujuci `confirmedUpcomingRes` -- filter na `start_time < now + 24h` a `balance < price`
+- **expiredProposals**: z `unconfirmedRes` -- filter `status = proposed` a `confirmation_deadline < now`
+- **todayUnconfirmed**: z `periodBookingsRes` alebo novy query -- `start_time` je dnes a `status NOT IN (booked, completed, cancelled)`
+- **weeklyStorno**: novy query -- bookings za poslednich 7 dni, vypocet cancelled/(cancelled+completed+booked)
+- **weeklySlots**: existujuci `slotsRes` prepocitat pre aktualny tyzden
+
+### 2. `AdminActionAlerts.tsx` -- kompletne prepisanie
+
+Novy interface:
+
+```text
+interface AlertItem {
+  priority: 'high' | 'medium' | 'low'
+  icon: ReactNode
+  text: string
+  count: number
+  to: string
+}
+```
+
+Logika:
+1. Vybudovat pole alertov podla 5 pravidiel
+2. Zoradit: high -> medium -> low
+3. Orezat na max 3
+4. Ak pole prazdne, return null
+
+Vizual:
+- high = cerveny pruh vlavo + cervena ikona
+- medium = oranzovy pruh vlavo + oranzova ikona
+- low = sedy pruh vlavo + seda ikona
+- Minimalisticky: ikona + kratky text + pocet (badge) + sipka
+
+### 3. `AdminDashboardPage.tsx` -- ziadne zmeny
+
+Uz pouziva `{stats && <AdminActionAlerts stats={stats} />}`, takze staci upravit props cez interface.
 
 ---
 
-## 3. Nová sekcia: "Potrebujem riešiť dnes"
+## Subory na zmenu
 
-Nový komponent `AdminActionAlerts.tsx` zobrazený pod KPI kartami.
-
-Zobrazí sa len ak existuje aspoň 1 alert:
-- Kritické nepotvrdené bookings (deadline < 6h)
-- Klienti s negatívnym zostatkom
-- Klienti, ktorým kredit nepokrýva najbližší confirmed tréning
-
-Každý alert bude klikateľný -- presmeruje na detail klienta alebo booking.
-
----
-
-## 4. Nové KPI karty (5 blokov)
-
-| # | Karta | Hlavná hodnota | Detail |
-|---|---|---|---|
-| 1 | Aktívni klienti | X | z toho pravidelní: Y |
-| 2 | Tréningy | Plánované: X | Odplávané: Y, Zrušené: Z |
-| 3 | Nepotvrdené | X | Kritické (<6h): Y (červený badge) |
-| 4 | Rizikové | Dlžníci: X | Celkový dlh: Y EUR, Riziko rušení: Z |
-| 5 | Príjem | Vklady: X EUR | Vyčerpané: Y EUR, Net: Z EUR |
-
-Mobilný layout: 1 karta na riadok (plná šírka), desktop: grid 5 stĺpcov.
-
----
-
-## 5. Klient detail -- rozšírenie
-
-Na existujúcej stránke `AdminClientDetailPage.tsx` pridáme:
-- Počet tréningov v období (posledných 30 dní)
-- Storno rate (%) -- cancelled / (cancelled + completed + booked)
-- CLV per klient -- sum(completed * price)
-- Počet mesiacov v systéme
-
----
-
-## 6. Farebná hierarchia
-
-- Zelená: zdravé hodnoty (aktívni klienti, kladný príjem)
-- Oranžová: pozor (nepotvrdené, nízka frekvencia)
-- Červená: akcia potrebná (kritické, dlhy, rizikové)
-
----
-
-## 7. Performance optimalizácia
-
-- Agregované queries s `Promise.all` (existujúce, rozšírime)
-- Filtrovanie cez Supabase `.gte()/.lte()` namiesto client-side filtra
-- Odstránenie N+1: všetky dáta v jednom fetch cykle
-
----
-
-## Technický plán -- súbory na zmenu
-
-### Upravené súbory:
-1. **`src/hooks/useAdminDashboardStats.ts`** -- kompletný refaktor: nový interface, nové queries, opravená logika všetkých KPI
-2. **`src/pages/admin/AdminDashboardPage.tsx`** -- nové KPI karty s detailmi, mobilný layout (1 stĺpec), integrácia ActionAlerts
-3. **`src/components/admin/AdminStatsSection.tsx`** -- aktualizácia pre nové stats fieldy
-4. **`src/pages/admin/AdminClientDetailPage.tsx`** -- rozšírenie o storno rate, CLV, počet mesiacov
-
-### Nové súbory:
-5. **`src/components/admin/AdminActionAlerts.tsx`** -- sekcia "Potrebujem riešiť dnes"
-6. **`src/components/admin/KPICard.tsx`** -- znovupoužiteľný KPI komponent s podporou sub-values a farebnej hierarchie
-
-### Cleanup:
-- Odstránenie starej `KPICard` inline funkcie z `AdminDashboardPage`
-- Odstránenie starej logiky počítajúcej iba deposity ako príjem
-- Odstránenie `activeClients` založeného na `approval_status`
+1. **`src/hooks/useAdminDashboardStats.ts`** -- pridanie novych fieldov + queries
+2. **`src/components/admin/AdminActionAlerts.tsx`** -- kompletne prepisanie s novymi pravidlami
 

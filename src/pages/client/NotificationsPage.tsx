@@ -80,6 +80,18 @@ export default function NotificationsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['client-notifications'] }),
   });
 
+  const deleteAll = useMutation({
+    mutationFn: async () => {
+      if (!profileId) return;
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', profileId);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['client-notifications'] }),
+  });
+
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
@@ -92,17 +104,31 @@ export default function NotificationsPage() {
               {unreadCount > 0 ? `${unreadCount} neprečítaných` : 'Vaše upozornenia a správy'}
             </p>
           </div>
-          {unreadCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => markAllRead.mutate()}
-              disabled={markAllRead.isPending}
-            >
-              <Check className="mr-2 h-4 w-4" />
-              Označiť všetky
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => markAllRead.mutate()}
+                disabled={markAllRead.isPending}
+              >
+                <Check className="mr-2 h-4 w-4" />
+                Prečítať
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => deleteAll.mutate()}
+                disabled={deleteAll.isPending}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Zmazať všetky
+              </Button>
+            )}
+          </div>
         </div>
 
         {isLoading ? (

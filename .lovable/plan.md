@@ -1,151 +1,117 @@
 
 
-# Plan: Redizajn sekcie DOMOV -- 3 otazky
+# Plan: Human tone mikrocopy -- sekcia DOMOV
 
-Cela obrazovka odpoveda na 3 otazky:
-1. Kedy idem najblizsie plavat?
-2. Musim teraz nieco spravit?
-3. Ako sa mi dari?
+## Prehlad
 
-Vsetko ostatne je sekundarne.
+Uprava vsetkych textov na klientskom dashboarde a v ProposedTrainingsSection tak, aby komunikacia posobila ludsky, milo a prirodzene v style Veroniky. Ziadna logika sa nemeni, iba texty a drobne vizualne upravy.
 
 ---
 
-## Nova struktura (zhora nadol)
+## Zmeny v DashboardPage.tsx
 
-1. **Pozdrav** -- "Ahoj, {meno}! Tesim sa na dalsi trening."
-2. **Najblizssi trening / Akcia** (absolutna priorita, najvacsi blok)
-3. **Primarne CTA** -- "Rezervovat novy trening"
-4. **Moja aktivita** -- motivacne metriky (3 cisla)
-5. **Zostatok** -- kompaktna karta
-6. **Posledne treningy** -- max 3 + "Zobrazit vsetko"
-7. **Rezervacne podmienky** -- Collapsible, zatvoreny
+### 1. Greeting (riadky 124-131)
 
----
+**S treningom:**
+- Stare: `"Teším sa na ďalší tréning."`
+- Nove: `"Teším sa na náš najbližší tréning. 💙"`
 
-## Detailne zmeny v DashboardPage.tsx
+**Bez treningu (ked nextBooking === null a proposedBookings === 0):**
+- Stare: rovnaky text vzdy
+- Nove: dynamicky podtext: ak `nextBooking || proposedBookings.length > 0` -> `"Teším sa na náš najbližší tréning. 💙"`, inak -> `"Kedy sa vidíme najbližšie? 😊"`
 
-### 1. Pozdrav (bez zmeny)
-Ponechat aktualny text: "Ahoj, {meno}! Tesim sa na dalsi trening."
+### 2. Hero blok -- Navrhnuty trening (riadok 141-142)
 
-### 2. Najblizssi trening / Akcia -- NOVY hero blok
+Zmeny su v ProposedTrainingsSection (vid nizsie).
 
-Tri scenare (vzajomne sa vylucuju, priorita A > B > C):
+### 3. Hero blok -- Potvrdeny trening (riadky 146-149)
 
-**A) Navrhy od Veroniky (proposedBookings.length > 0)**
-- Zobrazit ProposedTrainingsSection na 1. mieste (uz existuje komponent)
-- Tento blok bude vizualne dominantny
+- Stare nadpis: `"Najbližší tréning"`
+- Nove: `"Najbližší tréning"` (ponechat)
+- Pridat podtext pod nadpis: `"Už sa na vás teším."`
 
-**B) Potvrdeny trening (upcomingBookings.length > 0)**
-- Karta s nadpisom "Najblizssi trening"
-- Datum + cas prveho upcoming bookingu: "streda, 19. feb o 09:00"
-- Tlacidlo: "Detail treningu" -> naviguje na `/moje-treningy`
-- Ak je viacero, pod kartou text: "+X dalsich treningov" s linkou
+### 4. Hero blok -- Nic naplanované (riadky 174-185)
 
-**C) Nic naplanované**
-- Text: "Zatial nemate rezervovany trening tento tyzden."
-- CTA: "Rezervovat trening" (v ramci karty)
+- Stare: `"Zatiaľ nemáte naplánovaný tréning."`
+- Nove: `"Momentálne nemáme naplánovaný tréning."` + novy riadok `"Vyberte si termín, ktorý vám vyhovuje."`
+- CTA: `"Rezervovať tréning"` (ponechat)
 
-### 3. Primarne CTA
-- Jedno velke tlacidlo plnej sirky: "Rezervovat novy trening"
-- Naviguje na `/kalendar`
-- Zobrazit vzdy (aj ked su upcoming treningy)
+### 5. Primarne CTA (riadky 188-191)
 
-### 4. Moja aktivita -- NOVY motivacny blok
-- Kompaktna karta s nadpisom "Moja aktivita"
-- Grid 3 stlpcov s metrikami:
-  - **Tento tyzden**: pocet completed treningov od pondelka aktualneho tyzdna
-  - **Tento mesiac**: pocet completed treningov od 1. dna aktualneho mesiaca
-  - **Seria**: pocet po sebe iducich tyzdnov s min. 1 completed treningom (streak, pocitane dozadu od aktualneho tyzdna)
-- Vypocet z `pastBookings` filtrovanych na `status === 'completed'`
-- Dizajn: male cisla s popiskami, jemne farby
-- Pri streak > 0 zobrazit malu ikonu Flame
+- Odstranit -- je duplicitne. CTA uz je v hero bloku (scenar C) alebo nie je potrebne duplicitne ked ma trening.
+- ALTERNATIVA: Ponechat iba ak `nextBooking` existuje (klient ma trening, ale moze chciet dalsi). Ak nema trening, CTA je uz v karte vyssie.
 
-### 5. Zostatok -- kompaktna karta (UPRAVENA)
-- Odstranit absolutny div s opacity-5 overlay
-- Odstranit ikony TrendingUp, TrendingDown, Minus
-- Zjednodusit na: nadpis "Vas zostatok" + suma + microcopy
-- Farebna logika:
-  - `> 0`: border-success/30, text-success, "Mate dostupny kredit."
-  - `=== 0`: border-border, text-muted-foreground, "Momentalne nemate kredit ani dlh."
-  - `< 0`: border-destructive/30, text-destructive, "Evidujeme nezaplateny zostatok."
-- Pri < 0: male tlacidlo "Zobrazit platobne udaje"
+### 6. Moja aktivita (riadky 193-223)
 
-### 6. Posledne treningy (ZJEDNODUSENE)
-- Zobrazit max 3 polozky (namiesto 5)
-- Tlacidlo: "Zobrazit vsetko" (bez poctu v zatvorke)
+- Stare nadpis: `"Moja aktivita"`
+- Nove: `"Vaša aktivita"`
+- Pridat motivacnu spravu pod metriky:
+  - Ak `streak > 0`: `"Skvelá konzistentnosť."`
+  - Ak `thisWeekCount === 0 && thisMonthCount === 0 && streak === 0`: `"Každý začiatok sa počíta. 💪"`
 
-### 7. Rezervacne podmienky -- Collapsible
-- Pouzit Collapsible komponent
-- Trigger: "Rezervacne podmienky" s ChevronDown ikonou
-- Standardne zatvoreny
+### 7. Zostatok (riadky 226-258)
 
-### 8. Odstranit
-- 2-stlpcovy grid s kartami "Rezervovat" a "Moje treningy" (riadky 146-170)
-- Sekciu "Nadchadzajuce treningy" ako separatnu kartu (riadky 175-231) -- nahradena hero blokom
-- Ikony TrendingUp, TrendingDown, Minus, Clock z importov
+- Mikrocopy zmeny:
+  - Stare `netBalance > 0`: `"Máte dostupný kredit."`
+  - Nove: `"Máte dostupný kredit na tréningy."`
+  
+  - Stare `netBalance === 0`: `"Momentálne nemáte kredit ani dlh."`
+  - Nove: `"Momentálne nemáte kredit ani záväzok."`
+  
+  - Stare `netBalance < 0`: `"Evidujeme nezaplatený zostatok."`
+  - Nove: `"Momentálne evidujem neuhradený tréning. Platbu si vyriešime pri najbližšom stretnutí."`
+
+- Farba pri 0: zmenit border z `border-border` na `border-warning/20` (jemna oranzova namiesto sivej)
+
+### 8. Posledne treningy -- statusy (riadky 260-299)
+
+Zmeny su v getStatusBadge v ProposedTrainingsSection:
+- `completed`: zmenit label z `"Dokončené"` na `"Prebehlo"`
+- `booked`: zmenit label z `"Potvrdené"` -- ponechat, ale v historii sa nebude zobrazovat (booked je upcoming, nie past)
+
+### 9. Rezervacne podmienky (riadky 302-316)
+
+- Stare trigger text: `"Rezervačné podmienky"`
+- Nove: `"Storno pravidlá (pre istotu 😊)"`
+- Pridat kratky uvod pred percentualne pravidla:
+  `"Ak sa niečo zmení, dajte mi vedieť čo najskôr. Spolu to vždy vyriešime."`
 
 ---
 
-## Vypocet metrik (priamo v komponente)
+## Zmeny v ProposedTrainingsSection.tsx
 
-```text
-const completedBookings = pastBookings.filter(b => b.status === 'completed');
+### Hero alert box (riadky 128-145)
 
-// Tento tyzden
-const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // pondelok
-const thisWeekCount = completedBookings.filter(
-  b => new Date(b.slot.start_time) >= weekStart
-).length;
+- Ikona: zmenit z `AlertTriangle` (varovanie) na nieco miernejsie -- pouzit `Clock` alebo ponechat ale zmenit farbu
+- Stare text: `"Máte návrhy tréningov"`
+- Nove: `"Navrhla som vám tréning ✨"` (ak 1) / `"Navrhla som vám tréningy ✨"` (ak viac)
+- Stare podtext: `"X tréningov čaká na vašu odpoveď"`
+- Nove: `"Dajte mi vedieť, či vám termín vyhovuje."` (ak 1) / `"Dajte mi vedieť, či vám termíny vyhovujú."` (ak viac)
 
-// Tento mesiac
-const monthStart = startOfMonth(now);
-const thisMonthCount = completedBookings.filter(
-  b => new Date(b.slot.start_time) >= monthStart
-).length;
+### Tlacidla (riadky 148-176)
 
-// Streak -- iterovat dozadu po tyzdnoch
-let streak = 0;
-let checkWeek = startOfWeek(now, { weekStartsOn: 1 });
-// Ak aktualny tyzden este nema completed, zaciname od predchadzajuceho
-if (thisWeekCount === 0) {
-  checkWeek = subWeeks(checkWeek, 1);
-}
-while (true) {
-  const weekEnd = endOfWeek(checkWeek, { weekStartsOn: 1 });
-  const hasTraining = completedBookings.some(b => {
-    const d = new Date(b.slot.start_time);
-    return d >= checkWeek && d <= weekEnd;
-  });
-  if (!hasTraining) break;
-  streak++;
-  checkWeek = subWeeks(checkWeek, 1);
-}
-```
+- `"Potvrdiť všetky"` -> `"Potvrdiť všetky termíny"`
+- `"Zobraziť detaily"` -> `"Zobraziť termíny"`
 
----
+### Reject tlacidlo v detaile (riadky 210-217)
 
-## Importy
+- Zmenit tooltip/label z reject na "Navrhnúť iný čas" -- vizualne ponechat X ikonu ale zmenit hover farbu z `text-destructive` na `text-muted-foreground`
 
-### Pridat
-- `ChevronDown`, `ArrowRight`, `Flame` z `lucide-react`
-- `Collapsible, CollapsibleTrigger, CollapsibleContent` z `@/components/ui/collapsible`
-- `startOfWeek, startOfMonth, subWeeks, endOfWeek` z `date-fns`
+### getStatusBadge funkcia (riadky 37-63)
 
-### Odstranit
-- `TrendingUp`, `TrendingDown`, `Minus`, `Clock` (nepouzivane po zmenach)
+- `completed`: `"Dokončené"` -> `"Prebehlo"`
+- Ostatne ponechat
 
 ---
 
 ## Subory na upravu
 
-- `src/pages/client/DashboardPage.tsx` -- jediny subor
+- `src/pages/client/DashboardPage.tsx`
+- `src/components/client/ProposedTrainingsSection.tsx`
 
 ## Co sa NEMENI
 
-- PendingApprovalScreen, RejectedScreen
-- ProposedTrainingsSection komponent (logika aj dizajn)
-- useClientBookings hook
-- Backend / databaza
-- Ostatne stranky
-
+- Ziadna logika, ziadne hooks, ziadna databaza
+- PendingApprovalScreen, RejectedScreen (uz su v spravnom tone)
+- Admin texty
+- Layout, farby (okrem drobnych zmien pri zostatku 0 a reject buttone)

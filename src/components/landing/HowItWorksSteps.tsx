@@ -19,19 +19,19 @@ const steps = [
     icon: MessageCircle,
     number: '1',
     title: 'Ozvete sa mi',
-    description: 'Napíšte mi správu alebo zavolajte.',
+    description: '',
   },
   {
     icon: Handshake,
     number: '2',
-    title: 'Spoločne preberieme možnosti',
-    description: 'Zistíme, čo potrebujete a dohodneme si kapacitu.',
+    title: 'Preberieme možnosti',
+    description: '',
   },
   {
     icon: KeyRound,
     number: '3',
     title: 'Dostanete prístup do systému',
-    description: 'Po potvrdení si budete vedieť pohodlne rezervovať tréningy online.',
+    description: '',
   },
 ];
 
@@ -60,8 +60,7 @@ export default function HowItWorksSteps() {
                 {step.number}
               </div>
               <div>
-                <p className="font-semibold text-foreground mb-1">{step.title}</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                <p className="font-semibold text-foreground">{step.title}</p>
               </div>
             </motion.div>
           ))}

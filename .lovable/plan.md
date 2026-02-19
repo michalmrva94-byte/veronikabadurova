@@ -1,95 +1,65 @@
 
+# Návrat k iOS-inspired dizajnu z referenčných screenshotov
 
-# Zjednodušenie a zosobnenie Landing Page
+## Prehľad
 
-## Prehľad zmien
+Vrátiť landing page komponenty do pôvodného iOS-inspired štýlu viditeľného na screenshotoch -- s ios-card kartami, zelenými ikonovými bublinami, 2x2 gridmi a štruktúrovanejším layoutom. CTA tlačidlo zostane čierne.
 
-Celá landing page sa zredukuje z 8 sekcií na 6 čistejších, osobnejších blokov. Veronikina fotka bude dominantná v hero sekcii, jedno hlavné CTA, menej vizuálneho šumu a viac white space.
+## Zmeny v CSS (index.css)
 
-## Nová štruktúra stránky
+Vrátiť farebný systém na pôvodnú iOS zelenú tému:
+- `--background`: zmeniť z teplej off-white (`40 7% 95%`) na jemnú mint (`150 20% 96%`)
+- `--primary`: ponechať tmavé pre CTA tlačidlá (bez zmeny)
+- `--accent`: upraviť na pôvodnú teal zelenú (`160 40% 45%`) -- pre ikony a čísla
 
-```text
-┌─────────────────────────────┐
-│  HEADER (bez zmien)         │
-│  Veronika | Swim Coach      │
-│  Prihlásiť sa / Registrovať │
-├─────────────────────────────┤
-│  HERO (prepracovaný)        │
-│  Veľká fotka 180px          │
-│  Nový headline + osobný tón │
-│  1x CTA: "Chcem sa spojiť"  │
-├─────────────────────────────┤
-│  EXISTUJÚCI KLIENT (mini)   │
-│  Malá karta, secondary btns │
-├─────────────────────────────┤
-│  O VERONIKE (zjednodušený)  │
-│  Inline ikonové body         │
-│  Krátky osobný text          │
-├─────────────────────────────┤
-│  PRE KOHO + AKO PREBIEHA    │
-│  3 body + 3 kroky (mini)     │
-├─────────────────────────────┤
-│  KONTAKT (formulár + tel)    │
-│  Bez ďalšieho veľkého CTA   │
-├─────────────────────────────┤
-│  FOOTER                     │
-└─────────────────────────────┘
-```
+## Zmeny v komponentoch
 
-## Detailné zmeny po komponentoch
+### 1. DualPathSection.tsx -- dve karty
 
-### 1. LandingHero.tsx -- kompletne prepracovať
+Vrátiť dve karty vedľa seba (na mobile pod sebou):
+- Karta 1: "Ste už môj klient?" s tlačidlami Prihlásiť sa / Registrovať sa
+- Karta 2: "Máte záujem o tréning?" s tlačidlami Zavolať / Napísať
+- Obe karty používajú `ios-card` utility class
+- Zelené "Zavolať" tlačidlo, outline "Napísať" tlačidlo
+- Ikony: Phone a MessageCircle z lucide-react
 
-- Veľká kruhová fotka Veroniky (h-44 w-44 / ~180px) s jemným tieňom a glow efektom
-- Nový headline: "Plávanie s osobným prístupom v Pezinku"
-- Subheadline: "Som Veronika a rada vám pomôžem cítiť sa vo vode istejšie. 🤍"
-- Doplnok: "Každého klienta si vyberám individuálne, aby som zachovala kvalitu tréningov."
-- Jedno CTA: "Chcem sa spojiť s Veronikou" (scrollne na kontakt)
-- Pod CTA: "Nezáväzný kontakt. Ozvem sa vám osobne."
+### 2. AboutVeronika.tsx -- 2x2 grid kariet
 
-### 2. DualPathSection.tsx -- nahradiť mini blokom pre existujúcich klientov
+Nahradiť inline text za 2x2 grid ios-card kariet:
+- "14 rokov / skúseností"
+- "Certifikovaná / trénerka"  
+- "PK Pezinok / plavecký klub"
+- "Individuálny / prístup"
 
-- Odstrániť kartu pre nových záujemcov (tá je pokrytá hero CTA)
-- Nechať len malú kartu "Ste už môj klient?" s secondary tlačidlami Prihlásiť sa / Registrovať sa
-- Menšie, nenápadnejšie
+Každá karta: biele pozadie, zaoblené rohy, veľký bold nadpis + menší popis.
 
-### 3. AboutVeronika.tsx -- zjednodušiť
+### 3. TargetGroupsSection.tsx -- 5 položiek s ikonami
 
-- Zrušiť grid 2x2 s veľkými kartami
-- Nahradiť inline zoznamom s ikonami (3 body v rade):
-  - 14 rokov skúseností
-  - Certifikovaná trénerka
-  - Individuálny prístup
-- Ponechať osobný text pod tým
+Vrátiť 5 položiek (namiesto 3) s ikonovými bublinami:
+- Zlepšenie techniky plávania (Target icon)
+- Príprava na skúšky a športové výzvy (Award icon)
+- Naučenie kraulu a nových štýlov (Waves icon)
+- Prekonanie strachu z vody (Heart icon)
+- Zdravý pohyb pre deti aj dospelých (Users icon)
 
-### 4. TargetGroupsSection.tsx -- skrátiť na 3 body
+Každá položka: ios-card s zelenou ikonovou bublinou vľavo a textom vpravo.
 
-- Len 3 položky namiesto 5:
-  - Zlepšenie techniky
-  - Príprava na skúšky
-  - Prekonanie strachu z vody
-- Jednoduchší layout bez veľkých kariet (kompaktnejšie riadky)
+### 4. HowItWorksSteps.tsx -- karty s zelenými číslami
 
-### 5. HowItWorksSteps.tsx -- minimalistickejšie
+Nahradiť plain text za ios-card karty:
+- Každý krok v bielej karte so zaoblenými rohmi
+- Číslo v zelenej bubline (rounded-full, bg-accent/10, text-accent)
+- Zmeniť text kroku 3: "Dostanete prístup do systému" / "Po potvrdení si budete vedieť pohodlne rezervovať tréningy online."
 
-- Zmeniť text kroku 3: "Ak si sadneme, dostanete prístup do systému"
-- Menšie karty, kompaktnejší vizuál
-- Bez ďalšieho CTA
+### 5. ContactSection.tsx -- telefónna karta + formulár v karte
 
-### 6. ContactSection.tsx -- bez zmien
-
-- Už obsahuje presne to, čo treba (telefón + formulár)
-- Žiadne duplicitné CTA
-
-### 7. PublicLandingPage.tsx -- odstrániť prop
-
-- `DualPathSection` už nebude potrebovať `onScrollToContact` prop (karta pre nových záujemcov zmizne)
-- `LandingHero` bude naďalej používať `onScrollToContact`
+- Telefón: ios-card s Phone ikonou v zelenej bubline + "Zavolajte mi" nadpis + číslo
+- Formulár: ios-card s labelmi (Meno, Email, Správa) a štandardnými Input komponentmi
+- CTA tlačidlo zostáva čierne (rounded-full)
 
 ## Technické detaily
 
-- **Upravené súbory:** LandingHero.tsx, DualPathSection.tsx, AboutVeronika.tsx, TargetGroupsSection.tsx, HowItWorksSteps.tsx, PublicLandingPage.tsx
-- **Žiadne nové závislosti** -- všetko už je nainštalované (framer-motion, lucide-react)
-- **Žiadne zmeny v databáze**
-- Fotka Veroniky sa importuje z existujúceho `@/assets/veronika-photo.png`
-
+- Upravené súbory: `index.css`, `DualPathSection.tsx`, `AboutVeronika.tsx`, `TargetGroupsSection.tsx`, `HowItWorksSteps.tsx`, `ContactSection.tsx`
+- Použité utility classes: `ios-card`, `ios-card-elevated` z existujúceho CSS
+- Nové ikony z lucide-react: Target, Award, Waves, Heart, Users, Phone, MessageCircle
+- Žiadne nové závislosti, žiadne zmeny v databáze

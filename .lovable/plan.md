@@ -1,60 +1,55 @@
-
-
-# Last-minute sekcia v klientskom menu
+# Redesign Landing Page -- dominantna fotka Veroniky a zjednodusenie
 
 ## Prehlad
 
-Pridanie 5. polozky "Last-minute" do spodneho menu klienta. Tato polozka sa zobrazi len ak ma klient v profile zapnute `last_minute_notifications`. Stranka bude sluzit ako dedicke miesto pre last-minute ponuky -- vysvetli mechaniku a zobrazi aktivne ponuky na prijatie.
+Prerobenie uvodnej stranky tak, aby Veronikina fotografia bola vizualne dominantnym prvkom (velky kruh, cca 180-200px) a celkovy obsah bol strucnejsi, cistejsi a prehladnejsi. Zachovame existujuci look and feel (farby, zaoblene rohy, jemne animacie, iOS-inspired styl).
 
-## Struktura novej stranky `/last-minute`
+## Co sa zmeni
 
-### Prazdny stav (ziadne aktivne ponuky)
-- Ikona Zap (blesk) s jemnym pozadim
-- Nadpis: "Last-minute treningy"
-- Vysvetlujuci text o mechanike: "Ak sa uvolni termin na poslednú chvilu, ponuka sa zobrazi priamo tu. Staci ju jednym klikom prijat a mam miesto na treningu."
-- Info karta s 3 bodmi: kedy sa to stava, ako rychlo reagovat, cenova vyhoda (zlava)
+### 1. LandingHero -- uplna prestavba podla screenshotu
 
-### Aktivny stav (existuju ponuky)
-- Zoznam notifikacii typu `last_minute` z tabulky `notifications` ktore su `is_last_minute = true`
-- Kazda ponuka ako karta s: datum, cas, cena (ak je v sprave), cas prijatia
-- Tlacidlo "Rezervovat" ktore presmeruje na kalendar (kde klient dokaze slot zarezervovat standardnym sposobom)
-- Moznost zavriet/odmietnuť ponuku (oznaci notifikaciu ako precitanu)
+Aktualne hero nema fotku a ma vela textu. Nove rozlozenie:
 
-## Zmeny v suboroch
+- **Velka kruhova fotografia Veroniky** (cca 180px, ring + jemny glow efekt v primarnej farbe)
+- **Kratsi, raznejsi nadpis**: "Plavanje s osobnym pristupom v Pezinku"
+- **Jednovetny podnadpis**: "Som Veronika a pomaham ludom citit sa vo vode istejsie."
+- **Jedine CTA tlacidlo**: "Mám záujem o osobný tréning" (v primarnej farbe, nie cierne)
+- **Mikrocopy**: "Nezavazny kontakt. Ozvem sa vam osobne."
+- Zruseny italicky text a druhy odstavec
 
-### 1. `src/lib/constants.ts`
-- Pridat novu route: `LAST_MINUTE: '/last-minute'`
+### 2. DualPathSection -- zjednodusenie textov
 
-### 2. `src/components/layout/ClientLayout.tsx`
-- Pridat 5. polozku do `navItems`: ikona `Zap`, label "Last-minute", path `ROUTES.LAST_MINUTE`
-- Podmienene zobrazenie -- polozka sa zobrazi len ak `profile?.last_minute_notifications === true`
-- Import `useAuth` pre pristup k profilu
+- Skratit texty v oboch kartach, zachovat strukturu a tlacidla
+- Karta "Novy zaujemca" -- skratit dlhy odstavec na 1 vetu
 
-### 3. `src/pages/client/LastMinutePage.tsx` (novy subor)
-- Nacitanie notifikacii typu `last_minute` (neprecitanych) cez Supabase query
-- Prazdny stav s vysvetlenim mechaniky
-- Aktivny stav so zoznamom ponuk
-- Kazda ponuka obsahuje tlacidlo "Rezervovat" (link na `/kalendar`) a "Zavriet" (mark as read)
-- Pouzitie `ClientLayout` obalenia
+### 3. AboutVeronika -- bez zmien
 
-### 4. `src/App.tsx`
-- Pridat route `/last-minute` s `ProtectedRoute`
+Uz je strucna a prehladna, zachovame.
 
-### 5. `src/pages/admin/AdminBroadcastPage.tsx`
-- Uprava broadcast odosielania -- filtrovat len klientov s `last_minute_notifications = true`
-- Zobrazit pocet klientov s aktivnym last-minute odberom
+### 4. TargetGroupsSection -- bez zmien
+
+Uz je strucna, zachovame.
+
+### 5. HowItWorksSteps -- skratenie popisov
+
+- Skratit description texty na minimum (1 kratka veta alebo uplne odstranit)
+
+### 6. ContactSection -- bez zmien
+
+Zachovame formular a telefonne cislo.
+
+### 7. Header, Footer, WelcomeScreen -- bez zmien
 
 ## Technicke detaily
 
-### Filtrovanie v broadcast
-Aktualne sa broadcast posiela vsetkym `approvedClients`. Upravime na:
-```
-approvedClients.filter(c => c.last_minute_notifications !== false)
-```
+### Subory na upravu:
 
-### Podmienene zobrazenie tab polozky
-V `ClientLayout` sa nacita profil cez `useAuth()` a 5. tab sa prida do pola `navItems` dynamicky len ak je `last_minute_notifications` zapnute.
+1. `**src/components/landing/LandingHero.tsx**` -- kompletne prepisanie:
+  - Pridat `import veronikaPhoto from '@/assets/veronika-photo.png'`
+  - Velky kruhovy obrazok (h-44 w-44 / h-48 w-48) s `ring-4 ring-primary/20` a `bg-primary/10 blur-2xl` glow
+  - Novy kratsi heading a subheading
+  - CTA tlacidlo s primarnou farbou (nie cierne btn-dark)
+2. `**src/components/landing/DualPathSection.tsx**` -- skratenie textov v kartach
+3. `**src/components/landing/HowItWorksSteps.tsx**` -- skratenie description textov v krokoch
 
-### Zobrazenie ponuk
-Query na notifikacie: `type = 'last_minute'` AND `is_read = false` AND `user_id = profileId`, zoradene podla `created_at DESC`.
-
+Vsetky ostatne subory zostanu nezmenene. Zachovame framer-motion animacie, ios-card triedy, farebnú schemu a celkovy vizualny styl.

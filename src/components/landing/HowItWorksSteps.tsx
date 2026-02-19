@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { MessageCircle, Handshake, KeyRound } from 'lucide-react';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -15,29 +14,14 @@ const staggerContainer = {
 };
 
 const steps = [
-  {
-    icon: MessageCircle,
-    number: '1',
-    title: 'Ozvete sa mi',
-    description: '',
-  },
-  {
-    icon: Handshake,
-    number: '2',
-    title: 'Preberieme možnosti',
-    description: '',
-  },
-  {
-    icon: KeyRound,
-    number: '3',
-    title: 'Dostanete prístup do systému',
-    description: '',
-  },
+  { number: '1', title: 'Ozvite sa mi', description: 'Napíšte správu alebo mi zavolajte.' },
+  { number: '2', title: 'Krátka konzultácia', description: 'Zistíme vašu úroveň a cieľ.' },
+  { number: '3', title: 'Začneme tréning', description: 'Dohodneme termín a ideme do vody.' },
 ];
 
 export default function HowItWorksSteps() {
   return (
-    <section className="px-5 py-8">
+    <section className="px-5 py-10">
       <motion.div
         className="mx-auto max-w-sm space-y-4"
         initial="hidden"
@@ -53,14 +37,15 @@ export default function HowItWorksSteps() {
           {steps.map((step) => (
             <motion.div
               key={step.number}
-              className="ios-card p-5 flex items-start gap-4"
+              className="rounded-2xl border border-border p-5 flex items-start gap-4"
               variants={fadeInUp}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
+              <span className="text-3xl font-bold text-foreground leading-none mt-0.5">
                 {step.number}
-              </div>
+              </span>
               <div>
                 <p className="font-semibold text-foreground">{step.title}</p>
+                <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
               </div>
             </motion.div>
           ))}

@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-
 import { Button } from '@/components/ui/button';
 import veronikaPhoto from '@/assets/veronika-photo.png';
 
@@ -34,7 +33,6 @@ export default function LandingHero({ onScrollToContact }: LandingHeroProps) {
         animate="visible"
         variants={staggerContainer}
       >
-        {/* Dominant photo */}
         <motion.div className="relative mx-auto w-fit" variants={scaleIn}>
           <div className="absolute inset-0 rounded-full bg-primary/15 blur-3xl scale-150" />
           <img

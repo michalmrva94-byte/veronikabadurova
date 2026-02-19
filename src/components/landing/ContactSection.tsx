@@ -33,9 +33,8 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
       return;
     }
     setSending(true);
-    // Simulate send – replace with actual edge function later
     await new Promise(r => setTimeout(r, 1000));
-    toast.success('Správa odoslaná! Ozvem sa vám čo najskôr. 💙');
+    toast.success('Správa odoslaná! Ozvem sa vám čo najskôr.');
     setName('');
     setEmail('');
     setMessage('');
@@ -43,7 +42,7 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
   };
 
   return (
-    <section ref={ref} className="px-5 py-8">
+    <section ref={ref} className="px-5 py-10">
       <motion.div
         className="mx-auto max-w-sm space-y-5"
         initial="hidden"
@@ -57,7 +56,7 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
 
         <motion.a
           href="tel:+421000000000"
-          className="ios-card p-4 flex items-center gap-4 card-hover block"
+          className="rounded-2xl border border-border p-4 flex items-center gap-4 block hover:bg-muted/50 transition-colors"
           variants={fadeInUp}
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
@@ -70,7 +69,7 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
         </motion.a>
 
         <motion.form
-          className="ios-card p-6 space-y-4"
+          className="rounded-2xl border border-border p-6 space-y-4"
           variants={fadeInUp}
           onSubmit={handleSubmit}
         >
@@ -117,7 +116,7 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
             {sending ? 'Odosielam...' : 'Odoslať správu'}
           </Button>
           <p className="text-xs text-muted-foreground/70 text-center">
-            Ozvem sa vám čo najskôr. 💙
+            Ozvem sa vám čo najskôr.
           </p>
         </motion.form>
       </motion.div>

@@ -88,6 +88,7 @@ export default function AdminBroadcastPage() {
   const [isSending, setIsSending] = useState(false);
   const [broadcastDiscount, setBroadcastDiscount] = useState(false);
   const [broadcastDiscountPercent, setBroadcastDiscountPercent] = useState('20');
+  const [broadcastSlotId, setBroadcastSlotId] = useState<string | null>(null);
 
   const { createSlot } = useTrainingSlots();
   const { data: clients = [] } = useClients();
@@ -142,6 +143,7 @@ export default function AdminBroadcastPage() {
     const timeStr = format(slotStart, 'HH:mm');
     const dateStr = format(slotStart, 'd. MMMM', { locale: sk });
 
+    setBroadcastSlotId(booking.slot.id);
     setTitle(`🏊 Voľný termín ${dateStr} o ${timeStr}!`);
     setMessage(
       `Uvoľnil sa termín na ${dateStr} o ${timeStr} za ${basePrice.toFixed(2)}€. Prvý, kto si rezervuje, pláva! 🏊‍♀️`
@@ -160,11 +162,13 @@ export default function AdminBroadcastPage() {
       const startDateTime = setMinutes(setHours(slotDate, startH), startM);
       const endDateTime = setMinutes(setHours(slotDate, endH), endM);
 
-      await createSlot.mutateAsync({
+      const createdSlot = await createSlot.mutateAsync({
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
         notes: slotNotes || `Last-minute${discount > 0 ? ` (-${discount}%)` : ''}`,
       });
+
+      setBroadcastSlotId(createdSlot?.id || null);
 
       const timeStr = format(startDateTime, 'HH:mm');
       const dateStr = format(startDateTime, 'd. MMMM', { locale: sk });
@@ -199,6 +203,7 @@ export default function AdminBroadcastPage() {
         message,
         type: 'last_minute',
         is_last_minute: true,
+        related_slot_id: broadcastSlotId,
       }));
 
       const { error } = await supabase.from('notifications').insert(notifications);
@@ -207,6 +212,8 @@ export default function AdminBroadcastPage() {
       toast.success(`Broadcast odoslaný ${lastMinuteClients.length} klientom!`);
       setTitle('');
       setMessage('');
+      setBroadcastSlotId(null);
+      setBroadcastDiscount(false);
     } catch (err: any) {
       toast.error(err.message || 'Nepodarilo sa odoslať broadcast');
     } finally {

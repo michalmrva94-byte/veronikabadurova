@@ -13,7 +13,7 @@
 @layer base {
   :root {
     /* Premium Minimal Design System */
-    --background: 40 7% 95%;
+    --background: 150 20% 96%;
     --foreground: 0 0% 6%;
 
     --card: 0 0% 100%;
@@ -35,7 +35,7 @@
     --muted-foreground: 0 0% 40%;
 
     /* Accent - Sage green (used sparingly) */
-    --accent: 146 15% 49%;
+    --accent: 160 40% 45%;
     --accent-foreground: 0 0% 100%;
 
     /* Destructive */

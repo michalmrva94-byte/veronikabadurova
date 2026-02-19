@@ -13,10 +13,11 @@ const staggerContainer = {
   }
 };
 
-const highlights = [
-  '14 rokov skúseností',
-  'Certifikovaná trénerka',
-  'Individuálny prístup',
+const stats = [
+  { value: '14 rokov', label: 'skúseností' },
+  { value: 'Certifikovaná', label: 'trénerka' },
+  { value: 'PK Pezinok', label: 'plavecký klub' },
+  { value: 'Individuálny', label: 'prístup' },
 ];
 
 export default function AboutVeronika() {
@@ -33,11 +34,12 @@ export default function AboutVeronika() {
           O Veronike
         </motion.h2>
 
-        <motion.div className="flex flex-wrap gap-x-6 gap-y-2" variants={fadeInUp}>
-          {highlights.map((text) => (
-            <span key={text} className="text-sm text-muted-foreground">
-              {text}
-            </span>
+        <motion.div className="grid grid-cols-2 gap-3" variants={fadeInUp}>
+          {stats.map((item) => (
+            <div key={item.label} className="ios-card p-5">
+              <p className="text-lg font-bold text-card-foreground">{item.value}</p>
+              <p className="text-sm text-muted-foreground mt-1">{item.label}</p>
+            </div>
           ))}
         </motion.div>
 

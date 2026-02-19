@@ -45,6 +45,13 @@ export function useBookings() {
         }
         throw error;
       }
+
+      // Označiť slot ako nedostupný
+      await supabase
+        .from('training_slots')
+        .update({ is_available: false })
+        .eq('id', slot_id);
+
       return data;
     },
     onSuccess: async (_data, variables) => {

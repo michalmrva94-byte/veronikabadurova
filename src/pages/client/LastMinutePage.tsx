@@ -27,15 +27,17 @@ export default function LastMinutePage() {
     queryKey: ['last-minute-offers', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
+      // Načítať last-minute notifikácie za posledných 48h (bez ohľadu na is_read)
+      const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
         .from('notifications')
-        .select('id, title, message, created_at, related_slot_id')
+        .select('id, title, message, created_at, related_slot_id, is_read')
         .eq('user_id', profile.id)
         .eq('is_last_minute', true)
-        .eq('is_read', false)
+        .gte('created_at', cutoff)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as LastMinuteNotification[];
+      return data as (LastMinuteNotification & { is_read: boolean | null })[];
     },
     enabled: !!profile?.id,
   });

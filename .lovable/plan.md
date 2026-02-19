@@ -1,55 +1,89 @@
-# Redesign Landing Page -- dominantna fotka Veroniky a zjednodusenie
+
+# Kompletny redizajn Landing Page -- 7 sekcii
 
 ## Prehlad
 
-Prerobenie uvodnej stranky tak, aby Veronikina fotografia bola vizualne dominantnym prvkom (velky kruh, cca 180-200px) a celkovy obsah bol strucnejsi, cistejsi a prehladnejsi. Zachovame existujuci look and feel (farby, zaoblene rohy, jemne animacie, iOS-inspired styl).
+Cela landing page sa prestavuje na cistu, vzdusnu, modernu strukturu so 7 sekciami. DualPathSection sa odstranuje z hlavneho toku a nahradzuje sa novou kontrastnou CTA sekciou. Vsetky sekcie budu konzistentne, minimalisticke, bez emoji.
 
-## Co sa zmeni
+## Zmeny po sekciach
 
-### 1. LandingHero -- uplna prestavba podla screenshotu
+### 1. Hero (LandingHero.tsx) -- uprava stylu
+- Odstranit background box / ios-card -- cista biela sekcia
+- Zachovat velku kruhovu fotku (h-56 w-56), glow efekt
+- Headline: "Ahoj, som Veronika. Osobna trenerka plavania v Pezinku." (uz je spravne)
+- Subheadline: (uz je spravne)
+- CTA cierne tlacidlo "Dohodnit trening" (uz je spravne)
+- Mikrocopy bez emoji: "Nezavazny kontakt. Ozvem sa vam osobne."
 
-Aktualne hero nema fotku a ma vela textu. Nove rozlozenie:
+### 2. O mne (AboutVeronika.tsx) -- prestavba layoutu
+- Nadpis "O mne"
+- Najprv text: "Plavanie ma sprevadza cely zivot..."
+- Pod textom 4 horizontalne info bloky s jemnym borderom (nie plnou vyplnou)
+- Bloky: "14 rokov skusenosti", "Certifikovana trenerka", "Plavecky klub PK Pezinok", "Individualny pristup"
 
-- **Velka kruhova fotografia Veroniky** (cca 180px, ring + jemny glow efekt v primarnej farbe)
-- **Kratsi, raznejsi nadpis**: "Plavanje s osobnym pristupom v Pezinku"
-- **Jednovetny podnadpis**: "Som Veronika a pomaham ludom citit sa vo vode istejsie."
-- **Jedine CTA tlacidlo**: "Mám záujem o osobný tréning" (v primarnej farbe, nie cierne)
-- **Mikrocopy**: "Nezavazny kontakt. Ozvem sa vam osobne."
-- Zruseny italicky text a druhy odstavec
+### 3. Pre koho je trening (TargetGroupsSection.tsx) -- kompletne prepisanie
+- Kazda polozka je samostatny elegantny blok s nadpisom + kratkou vetou:
+  - "Zlepsenie techniky" + popis
+  - "Priprava na skusky" + popis
+  - "Naucenie kraulu" + popis
+  - "Prekonanie strachu" + popis
+  - "Zdravy pohyb" + popis
+- Odstranit ikony, pridat popisne texty
 
-### 2. DualPathSection -- zjednodusenie textov
+### 4. Ako to prebieha (HowItWorksSteps.tsx) -- prepisanie
+- 3 bloky s vyraznymi cislami (nie v pastelovej bubline)
+- Kazdy blok: cislo + nadpis + kratky popis
+  - 1: "Ozvite sa mi" / "Napisite spravu alebo mi zavolajte."
+  - 2: "Kratka konzultacia" / "Zistime vasu uroven a ciel."
+  - 3: "Zacneme trening" / "Dohodneme termin a ideme do vody."
 
-- Skratit texty v oboch kartach, zachovat strukturu a tlacidla
-- Karta "Novy zaujemca" -- skratit dlhy odstavec na 1 vetu
+### 5. Nova kontrastna CTA sekcia (novy komponent CTABanner.tsx)
+- Full-width cierne pozadie (#0F0F0F)
+- Biely text: "Zacnime spolu pracovat na vasom plavani."
+- Biele CTA tlacidlo: "Dohodnit trening"
+- Scrolluje na kontakt
 
-### 3. AboutVeronika -- bez zmien
+### 6. Kontakt (ContactSection.tsx) -- uprava
+- Odstranit emoji z mikrocopy ("Ozvem sa vam co najskor." bez 💙)
+- Telefonne cislo vyrazne hore
+- Formular v jednom elegantnom bloku
 
-Uz je strucna a prehladna, zachovame.
+### 7. Footer (LandingFooter.tsx) -- zjednodusenie
+- Odstranit emoji
+- Text: "(c) 2026 Veronika Swim"
+- Minimalisticky, bez odkazu na login
 
-### 4. TargetGroupsSection -- bez zmien
+### 8. PublicLandingPage.tsx -- uprava poradia sekcii
+- Odstranit DualPathSection z importov a renderingu
+- Pridat novy CTABanner komponent medzi HowItWorksSteps a ContactSection
 
-Uz je strucna, zachovame.
+## Poradie sekcii (vysledne)
 
-### 5. HowItWorksSteps -- skratenie popisov
-
-- Skratit description texty na minimum (1 kratka veta alebo uplne odstranit)
-
-### 6. ContactSection -- bez zmien
-
-Zachovame formular a telefonne cislo.
-
-### 7. Header, Footer, WelcomeScreen -- bez zmien
+```text
+Header
+Hero (fotka + headline + CTA)
+O mne (text + 4 info bloky)
+Pre koho je trening (5 blokov s popisom)
+Ako to prebieha (3 kroky)
+Kontrastna CTA (cierne pozadie)
+Kontakt (telefon + formular)
+Footer
+```
 
 ## Technicke detaily
 
 ### Subory na upravu:
+1. **src/components/landing/LandingHero.tsx** -- odstranit ios-card pozadie, ponechat cisty layout
+2. **src/components/landing/AboutVeronika.tsx** -- zmenit grid na border-only bloky, prehodit poradie (text prvy, bloky druhe)
+3. **src/components/landing/TargetGroupsSection.tsx** -- kompletne prepisat s popisnymi textami, bez ikon
+4. **src/components/landing/HowItWorksSteps.tsx** -- prepisat s vyraznymi cislami a popismi
+5. **src/components/landing/ContactSection.tsx** -- odstranit emoji
+6. **src/components/landing/LandingFooter.tsx** -- (c) 2026, bez emoji, bez login linku
 
-1. `**src/components/landing/LandingHero.tsx**` -- kompletne prepisanie:
-  - Pridat `import veronikaPhoto from '@/assets/veronika-photo.png'`
-  - Velky kruhovy obrazok (h-44 w-44 / h-48 w-48) s `ring-4 ring-primary/20` a `bg-primary/10 blur-2xl` glow
-  - Novy kratsi heading a subheading
-  - CTA tlacidlo s primarnou farbou (nie cierne btn-dark)
-2. `**src/components/landing/DualPathSection.tsx**` -- skratenie textov v kartach
-3. `**src/components/landing/HowItWorksSteps.tsx**` -- skratenie description textov v krokoch
+### Novy subor:
+7. **src/components/landing/CTABanner.tsx** -- cierna full-width CTA sekcia
 
-Vsetky ostatne subory zostanu nezmenene. Zachovame framer-motion animacie, ios-card triedy, farebnú schemu a celkovy vizualny styl.
+### Uprava hlavnej stranky:
+8. **src/pages/PublicLandingPage.tsx** -- odstranit DualPathSection, pridat CTABanner
+
+DualPathSection.tsx ostane v projekte (nepotrebujeme ho mazat), len sa nebude renderovat na hlavnej stranke. Existujuci klienti maju pristup cez header (Prihlasit / Registrovat sa).

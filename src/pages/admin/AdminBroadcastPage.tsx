@@ -86,6 +86,8 @@ export default function AdminBroadcastPage() {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [broadcastDiscount, setBroadcastDiscount] = useState(false);
+  const [broadcastDiscountPercent, setBroadcastDiscountPercent] = useState('20');
 
   const { createSlot } = useTrainingSlots();
   const { data: clients = [] } = useClients();
@@ -112,6 +114,28 @@ export default function AdminBroadcastPage() {
   const basePrice = DEFAULT_TRAINING_PRICE;
   const discount = hasDiscount ? Math.min(100, Math.max(0, parseInt(discountPercent) || 0)) : 0;
   const finalPrice = basePrice * (1 - discount / 100);
+
+  const broadcastDiscountValue = broadcastDiscount ? Math.min(100, Math.max(0, parseInt(broadcastDiscountPercent) || 0)) : 0;
+  const broadcastFinalPrice = basePrice * (1 - broadcastDiscountValue / 100);
+
+  const updateBroadcastMessageWithDiscount = (pct: string) => {
+    const d = Math.min(100, Math.max(0, parseInt(pct) || 0));
+    const price = basePrice * (1 - d / 100);
+    setMessage((prev) => {
+      const priceRegex = /za \d+[.,]\d{2}€/;
+      const discountRegex = /so zľavou \d+%.*?\d+[.,]\d{2}€/;
+      if (d > 0) {
+        const newText = `so zľavou ${d}% za ${price.toFixed(2)}€ (namiesto ${basePrice.toFixed(2)}€)`;
+        if (discountRegex.test(prev)) return prev.replace(discountRegex, newText);
+        if (priceRegex.test(prev)) return prev.replace(priceRegex, newText);
+      } else {
+        const newText = `za ${basePrice.toFixed(2)}€`;
+        if (discountRegex.test(prev)) return prev.replace(discountRegex, newText);
+        if (priceRegex.test(prev)) return prev.replace(priceRegex, newText);
+      }
+      return prev;
+    });
+  };
 
   const handleOfferCancelled = (booking: AdminBookingWithDetails) => {
     const slotStart = new Date(booking.slot.start_time);
@@ -321,6 +345,53 @@ export default function AdminBroadcastPage() {
                 rows={4}
               />
             </div>
+            {/* Broadcast discount */}
+            <div className="ios-card p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Percent className="h-4 w-4 text-primary" />
+                  Ponúknuť so zľavou
+                </Label>
+                <Switch checked={broadcastDiscount} onCheckedChange={(checked) => {
+                  setBroadcastDiscount(checked);
+                  if (checked) updateBroadcastMessageWithDiscount(broadcastDiscountPercent);
+                  else updateBroadcastMessageWithDiscount('0');
+                }} />
+              </div>
+              {broadcastDiscount && (
+                <div className="space-y-3 animate-ios-fade-in">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Výška zľavy (%)</Label>
+                    <div className="flex gap-2">
+                      {['10', '20', '30'].map((val) => (
+                        <Button
+                          key={val}
+                          type="button"
+                          variant={broadcastDiscountPercent === val ? 'default' : 'outline'}
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => {
+                            setBroadcastDiscountPercent(val);
+                            updateBroadcastMessageWithDiscount(val);
+                          }}
+                        >
+                          {val}%
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm bg-muted/50 rounded-xl p-3">
+                    <span className="text-muted-foreground">Pôvodná cena:</span>
+                    <span className="line-through">{basePrice.toFixed(2)}€</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm bg-primary/10 rounded-xl p-3 font-semibold">
+                    <span className="text-primary">Cena so zľavou:</span>
+                    <span className="text-primary text-lg">{broadcastFinalPrice.toFixed(2)}€</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Users className="h-4 w-4" />
               <span>Odošle sa {lastMinuteClients.length} klientom (s aktívnym last-minute odberom)</span>

@@ -47,11 +47,25 @@ export function useClientBookings() {
       const slot = booking.slot as TrainingSlot;
       const hoursUntilTraining = differenceInHours(new Date(slot.start_time), new Date());
       
+      // Fetch cancellation fee percentages from app_settings
+      const { data: settings } = await supabase
+        .from('app_settings')
+        .select('key, value')
+        .in('key', ['cancel_fee_24h', 'cancel_fee_48h']);
+
+      const settingsMap: Record<string, number> = {};
+      (settings || []).forEach((s: any) => {
+        settingsMap[s.key] = parseFloat(s.value) || 0;
+      });
+
+      const fee24h = settingsMap['cancel_fee_24h'] ?? 80;
+      const fee48h = settingsMap['cancel_fee_48h'] ?? 50;
+
       let cancellationFeePercentage = 0;
       if (hoursUntilTraining <= 24) {
-        cancellationFeePercentage = 80;
+        cancellationFeePercentage = fee24h;
       } else if (hoursUntilTraining <= 48) {
-        cancellationFeePercentage = 50;
+        cancellationFeePercentage = fee48h;
       }
 
       const cancellationFee = booking.price * (cancellationFeePercentage / 100);

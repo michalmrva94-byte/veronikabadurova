@@ -8,13 +8,14 @@ import { useState } from 'react';
 import { useClientBookings, BookingWithSlot } from '@/hooks/useClientBookings';
 import { BookingCard } from '@/components/client/BookingCard';
 import { CancelBookingDialog } from '@/components/client/CancelBookingDialog';
+import { ProposedTrainingsSection } from '@/components/client/ProposedTrainingsSection';
 import { toast } from 'sonner';
 
 export default function MyTrainingsPage() {
   const [cancellingBooking, setCancellingBooking] = useState<BookingWithSlot | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   
-  const { upcomingBookings, pastBookings, isLoading, cancelBooking } = useClientBookings();
+  const { upcomingBookings, pastBookings, proposedBookings, isLoading, cancelBooking } = useClientBookings();
 
   const handleCancelClick = (booking: BookingWithSlot) => {
     setCancellingBooking(booking);
@@ -60,6 +61,11 @@ export default function MyTrainingsPage() {
             Prehľad vašich rezervácií
           </p>
         </div>
+
+        {/* Proposed trainings */}
+        {proposedBookings.length > 0 && (
+          <ProposedTrainingsSection proposedBookings={proposedBookings} />
+        )}
 
         {/* Upcoming trainings */}
         <Card>

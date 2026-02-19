@@ -18,7 +18,7 @@ export function useBookings() {
         .from('bookings')
         .select('id, status')
         .eq('slot_id', slot_id)
-        .in('status', ['booked', 'pending'])
+        .in('status', ['booked', 'pending', 'awaiting_confirmation'])
         .maybeSingle();
 
       if (checkError) throw checkError;

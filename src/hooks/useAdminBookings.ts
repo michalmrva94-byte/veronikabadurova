@@ -83,6 +83,9 @@ export function useAdminBookings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['training-slots'] });
     },
   });
 
@@ -128,6 +131,8 @@ export function useAdminBookings() {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
     },
   });
 
@@ -181,6 +186,8 @@ export function useAdminBookings() {
       queryClient.invalidateQueries({ queryKey: ['admin-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
     },
   });
 

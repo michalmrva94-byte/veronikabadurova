@@ -64,7 +64,7 @@ export default function LandingHero({ onScrollToContact }: LandingHeroProps) {
             className="w-full h-14 text-base rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 ios-press"
             onClick={onScrollToContact}
           >
-            Chcem sa spojiť s Veronikou
+            Mám záujem o osobné tréningy
           </Button>
           <p className="text-sm text-muted-foreground/70 mt-3">
             Nezáväzný kontakt. Ozvem sa vám osobne.

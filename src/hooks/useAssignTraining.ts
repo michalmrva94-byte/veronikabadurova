@@ -21,7 +21,7 @@ export function useAssignTraining() {
           start_time,
           end_time,
           notes: notes || null,
-          is_available: true,
+          is_available: false,
           is_recurring: false,
         })
         .select()

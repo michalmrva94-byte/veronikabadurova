@@ -61,27 +61,36 @@ export function useProposedTrainings() {
     dates: Date[]
   ): Promise<ConflictInfo[]> => {
     const conflicts: ConflictInfo[] = [];
+    if (dates.length === 0) return conflicts;
+
+    // Get the full time range to filter bookings efficiently
+    const minDate = dates[0].toISOString();
+    const maxDate = addHours(dates[dates.length - 1], 1).toISOString();
+
+    // Fetch all relevant bookings in ONE query instead of N queries
+    const { data: allBookings } = await supabase
+      .from('bookings')
+      .select('*, slot:training_slots(*)')
+      .in('status', ['booked', 'awaiting_confirmation'])
+      .gte('slot.start_time', minDate)
+      .lte('slot.start_time', maxDate);
+
+    const bookings = allBookings || [];
 
     for (const date of dates) {
-      const startTime = date.toISOString();
-      const endTime = addHours(date, 1).toISOString();
+      const endTime = addHours(date, 1);
 
       // Check client's existing bookings at this time
-      const { data: clientBookings } = await supabase
-        .from('bookings')
-        .select('*, slot:training_slots(*)')
-        .eq('client_id', clientId)
-        .in('status', ['booked', 'awaiting_confirmation']);
-
-      const clientConflict = (clientBookings || []).some((b: any) => {
+      const clientConflict = bookings.some((b: any) => {
+        if (b.client_id !== clientId || !b.slot) return false;
         const slotStart = new Date(b.slot.start_time);
         const slotEnd = new Date(b.slot.end_time);
-        return date < slotEnd && new Date(endTime) > slotStart;
+        return date < slotEnd && endTime > slotStart;
       });
 
       if (clientConflict) {
         conflicts.push({
-          date: startTime,
+          date: date.toISOString(),
           time: `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`,
           reason: 'Klient má v tomto čase už tréning',
         });
@@ -89,20 +98,16 @@ export function useProposedTrainings() {
       }
 
       // Check trainer calendar - any booking at this time
-      const { data: trainerBookings } = await supabase
-        .from('bookings')
-        .select('*, slot:training_slots(*)')
-        .in('status', ['booked', 'awaiting_confirmation']);
-
-      const trainerConflict = (trainerBookings || []).some((b: any) => {
+      const trainerConflict = bookings.some((b: any) => {
+        if (!b.slot) return false;
         const slotStart = new Date(b.slot.start_time);
         const slotEnd = new Date(b.slot.end_time);
-        return date < slotEnd && new Date(endTime) > slotStart;
+        return date < slotEnd && endTime > slotStart;
       });
 
       if (trainerConflict) {
         conflicts.push({
-          date: startTime,
+          date: date.toISOString(),
           time: `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`,
           reason: 'Trénerka má v tomto čase iný tréning',
         });

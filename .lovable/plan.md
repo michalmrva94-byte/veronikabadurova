@@ -1,89 +1,85 @@
 
-# Kompletny redizajn Landing Page -- 7 sekcii
 
-## Prehlad
+# Audit kodu + opravy
 
-Cela landing page sa prestavuje na cistu, vzdusnu, modernu strukturu so 7 sekciami. DualPathSection sa odstranuje z hlavneho toku a nahradzuje sa novou kontrastnou CTA sekciou. Vsetky sekcie budu konzistentne, minimalisticke, bez emoji.
+Analyzoval som celý kód aplikacie Veronika Swim. Nasiel som 7 bugov a 4 optimalizacie. Odhadovaná cena: **2-3 kredity** (1 sprava na opravu bugov, 1 na optimalizacie).
 
-## Zmeny po sekciach
+---
 
-### 1. Hero (LandingHero.tsx) -- uprava stylu
-- Odstranit background box / ios-card -- cista biela sekcia
-- Zachovat velku kruhovu fotku (h-56 w-56), glow efekt
-- Headline: "Ahoj, som Veronika. Osobna trenerka plavania v Pezinku." (uz je spravne)
-- Subheadline: (uz je spravne)
-- CTA cierne tlacidlo "Dohodnit trening" (uz je spravne)
-- Mikrocopy bez emoji: "Nezavazny kontakt. Ozvem sa vam osobne."
+## Najdene bugy
 
-### 2. O mne (AboutVeronika.tsx) -- prestavba layoutu
-- Nadpis "O mne"
-- Najprv text: "Plavanie ma sprevadza cely zivot..."
-- Pod textom 4 horizontalne info bloky s jemnym borderom (nie plnou vyplnou)
-- Bloky: "14 rokov skusenosti", "Certifikovana trenerka", "Plavecky klub PK Pezinok", "Individualny pristup"
+### BUG 1: MyTrainingsPage nezobrazuje navrhnuté tréningy (awaiting_confirmation)
+- **Závažnosť:** Vysoká
+- **Súbor:** `src/pages/client/MyTrainingsPage.tsx`
+- Hook `useClientBookings` vracia `proposedBookings`, ale stránka ich vôbec nezobrazuje
+- Klient nevidí tréningy čakajúce na potvrdenie a nemôže ich potvrdiť/odmietnuť
+- **Oprava:** Pridať sekciu s navrhnutými tréningami vrátane tlačidiel Potvrdiť/Odmietnuť
 
-### 3. Pre koho je trening (TargetGroupsSection.tsx) -- kompletne prepisanie
-- Kazda polozka je samostatny elegantny blok s nadpisom + kratkou vetou:
-  - "Zlepsenie techniky" + popis
-  - "Priprava na skusky" + popis
-  - "Naucenie kraulu" + popis
-  - "Prekonanie strachu" + popis
-  - "Zdravy pohyb" + popis
-- Odstranit ikony, pridat popisne texty
+### BUG 2: Double-booking ochrana neblokuje awaiting_confirmation
+- **Závažnosť:** Vysoká
+- **Súbor:** `src/hooks/useBookings.ts` (riadok 22)
+- Klient si môže zarezervovať slot, ktorý už má booking v stave `awaiting_confirmation`
+- Kontrola používa len `['booked', 'pending']`, chýba `'awaiting_confirmation'`
+- **Oprava:** Pridať `'awaiting_confirmation'` do filtra
 
-### 4. Ako to prebieha (HowItWorksSteps.tsx) -- prepisanie
-- 3 bloky s vyraznymi cislami (nie v pastelovej bubline)
-- Kazdy blok: cislo + nadpis + kratky popis
-  - 1: "Ozvite sa mi" / "Napisite spravu alebo mi zavolajte."
-  - 2: "Kratka konzultacia" / "Zistime vasu uroven a ciel."
-  - 3: "Zacneme trening" / "Dohodneme termin a ideme do vody."
+### BUG 3: Storno poplatky sú hardcodované namiesto čítania z app_settings
+- **Závažnosť:** Stredná
+- **Súbor:** `src/hooks/useClientBookings.ts` (riadky 50-55)
+- Hodnoty 50% a 80% sú napevno, aj keď admin ich môže meniť v nastaveniach
+- **Oprava:** Načítať percentá z `app_settings` pred výpočtom
 
-### 5. Nova kontrastna CTA sekcia (novy komponent CTABanner.tsx)
-- Full-width cierne pozadie (#0F0F0F)
-- Biely text: "Zacnime spolu pracovat na vasom plavani."
-- Biele CTA tlacidlo: "Dohodnit trening"
-- Scrolluje na kontakt
+### BUG 4: Console warning - forwardRef na AdminFinancesPage
+- **Závažnosť:** Nízka
+- **Súbor:** `src/pages/admin/AdminFinancesPage.tsx`
+- React varuje o predávaní ref na Select a Badge komponenty
+- Vizuálne neškodí, ale zanáša konzolu
 
-### 6. Kontakt (ContactSection.tsx) -- uprava
-- Odstranit emoji z mikrocopy ("Ozvem sa vam co najskor." bez 💙)
-- Telefonne cislo vyrazne hore
-- Formular v jednom elegantnom bloku
+### BUG 5: is_available flag je nekonzistentný
+- **Závažnosť:** Stredná
+- Všetky sloty v databáze majú `is_available: true` aj keď majú aktívne bookingy
+- `useAssignTraining` vytvára slot s `is_available: true` aj keď hneď vytvorí booking
+- Klientský kalendár filtruje podľa tohto flagu, čo môže spôsobiť zobrazenie obsadených slotov
+- **Oprava:** Nastaviť `is_available: false` pri vytváraní priradenia
 
-### 7. Footer (LandingFooter.tsx) -- zjednodusenie
-- Odstranit emoji
-- Text: "(c) 2026 Veronika Swim"
-- Minimalisticky, bez odkazu na login
+### BUG 6: Kolízna kontrola fetchuje VŠETKY bookings pre každý dátum
+- **Závažnosť:** Stredná (výkon)
+- **Súbor:** `src/hooks/useProposedTrainings.ts`
+- Pre každý navrhovaný dátum sa sťahujú VŠETKY bookingy v systéme (N+1 problém)
+- Pri 10+ klientoch a desiatich tréningoch denne to bude citeľne pomalé
+- **Oprava:** Filtrovať bookings podľa časového rozsahu na úrovni query
 
-### 8. PublicLandingPage.tsx -- uprava poradia sekcii
-- Odstranit DualPathSection z importov a renderingu
-- Pridat novy CTABanner komponent medzi HowItWorksSteps a ContactSection
+### BUG 7: Admin zrušenie tréningu neaplikuje storno poplatok
+- **Závažnosť:** Nízka
+- **Súbor:** `src/hooks/useAdminBookings.ts` (cancelBooking)
+- Keď admin zruší tréning, neúčtuje sa žiadny storno poplatok (čo môže byť zámer, ale chýba možnosť voľby)
 
-## Poradie sekcii (vysledne)
+---
 
-```text
-Header
-Hero (fotka + headline + CTA)
-O mne (text + 4 info bloky)
-Pre koho je trening (5 blokov s popisom)
-Ako to prebieha (3 kroky)
-Kontrastna CTA (cierne pozadie)
-Kontakt (telefon + formular)
-Footer
-```
+## Optimalizácie
 
-## Technicke detaily
+### OPT 1: Invalidácia query keys po operáciách
+- Niektoré hooky neinvalidujú všetky relevánte query keys (napr. `useAdminBookings.approveBooking` neinvaliduje `weekly-slots` a `month-slots`)
+- To spôsobuje, že kalendár sa neaktualizuje po schválení bookingu
 
-### Subory na upravu:
-1. **src/components/landing/LandingHero.tsx** -- odstranit ios-card pozadie, ponechat cisty layout
-2. **src/components/landing/AboutVeronika.tsx** -- zmenit grid na border-only bloky, prehodit poradie (text prvy, bloky druhe)
-3. **src/components/landing/TargetGroupsSection.tsx** -- kompletne prepisat s popisnymi textami, bez ikon
-4. **src/components/landing/HowItWorksSteps.tsx** -- prepisat s vyraznymi cislami a popismi
-5. **src/components/landing/ContactSection.tsx** -- odstranit emoji
-6. **src/components/landing/LandingFooter.tsx** -- (c) 2026, bez emoji, bez login linku
+### OPT 2: Stale data v SlotDetailDialog
+- Dialog sa otvorí s dátami zo state, ale tie môžu byť zastarané
+- Po akcii (complete/cancel) sa dialog zavrie, ale ak sa znova otvorí pred refetch, zobrazí staré dáta
 
-### Novy subor:
-7. **src/components/landing/CTABanner.tsx** -- cierna full-width CTA sekcia
+### OPT 3: Transakčná história na finance stránke nemá filter podľa obdobia
+- `admin-all-transactions` query vždy načítava posledných 20 transakcií bez ohľadu na vybrané obdobie
 
-### Uprava hlavnej stranky:
-8. **src/pages/PublicLandingPage.tsx** -- odstranit DualPathSection, pridat CTABanner
+### OPT 4: Batch operácie pre hromadné návrhy
+- `useProposedTrainings` vytvára sloty a bookings jeden po druhom v slučke
+- Batch insert by bol výrazne rýchlejší
 
-DualPathSection.tsx ostane v projekte (nepotrebujeme ho mazat), len sa nebude renderovat na hlavnej stranke. Existujuci klienti maju pristup cez header (Prihlasit / Registrovat sa).
+---
+
+## Technický postup implementácie
+
+1. **MyTrainingsPage** - import a pridanie `ProposedTrainingsSection` alebo inline bloku s navrhnutými tréningami + confirm/reject tlačidlá
+2. **useBookings.ts** - pridať `'awaiting_confirmation'` do `.in('status', ...)` kontroly na riadku 22
+3. **useClientBookings.ts** - nahradiť hardcodované percentá dotazom na `app_settings`
+4. **useAssignTraining.ts** - zmeniť `is_available: true` na `is_available: false`
+5. **useAdminBookings.ts** - pridať invalidáciu `weekly-slots`, `month-slots` do `approveBooking`, `rejectBooking`, `cancelBooking`
+6. **useProposedTrainings.ts** - pridať filtre `.gte`/`.lte` na `start_time` v kolíznej kontrole
+

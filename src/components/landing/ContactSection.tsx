@@ -1,10 +1,5 @@
 import { useState, forwardRef } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
 const fadeInUp = {
@@ -33,9 +28,8 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
       return;
     }
     setSending(true);
-    // Simulate send – replace with actual edge function later
     await new Promise(r => setTimeout(r, 1000));
-    toast.success('Správa odoslaná! Ozvem sa vám čo najskôr. 💙');
+    toast.success('Správa odoslaná! Ozvem sa vám čo najskôr.');
     setName('');
     setEmail('');
     setMessage('');
@@ -43,81 +37,69 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
   };
 
   return (
-    <section ref={ref} className="px-5 py-8">
+    <section ref={ref} className="px-6 py-16">
       <motion.div
-        className="mx-auto max-w-sm space-y-5"
+        className="mx-auto max-w-md space-y-8"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-50px" }}
         variants={staggerContainer}
       >
-        <motion.h2 className="text-2xl font-bold text-foreground" variants={fadeInUp}>
+        <motion.h2 className="text-2xl font-bold text-foreground tracking-tight" variants={fadeInUp}>
           Spojme sa
         </motion.h2>
 
         <motion.a
           href="tel:+421000000000"
-          className="ios-card p-4 flex items-center gap-4 card-hover block"
+          className="block text-xl font-semibold text-foreground hover:text-muted-foreground transition-colors"
           variants={fadeInUp}
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-            <Phone className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-foreground">Zavolajte mi</p>
-            <p className="text-xs text-muted-foreground">+421 000 000 000</p>
-          </div>
+          +421 000 000 000
         </motion.a>
 
         <motion.form
-          className="ios-card p-6 space-y-4"
+          className="space-y-6"
           variants={fadeInUp}
           onSubmit={handleSubmit}
         >
-          <div className="space-y-2">
-            <Label htmlFor="contact-name" className="text-sm font-medium text-foreground">Meno</Label>
-            <Input
-              id="contact-name"
+          <div>
+            <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Vaše meno"
-              className="rounded-xl"
+              placeholder="Meno"
               maxLength={100}
+              className="w-full bg-transparent border-b border-border pb-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-foreground transition-colors"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="contact-email" className="text-sm font-medium text-foreground">Email</Label>
-            <Input
-              id="contact-email"
+          <div>
+            <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="vas@email.com"
-              className="rounded-xl"
+              placeholder="Email"
               maxLength={255}
+              className="w-full bg-transparent border-b border-border pb-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-foreground transition-colors"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="contact-message" className="text-sm font-medium text-foreground">Správa</Label>
-            <Textarea
-              id="contact-message"
+          <div>
+            <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Napíšte mi, čo vás zaujíma..."
-              className="rounded-xl min-h-[100px]"
+              placeholder="Správa"
               maxLength={1000}
+              rows={3}
+              className="w-full bg-transparent border-b border-border pb-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-foreground transition-colors resize-none"
             />
           </div>
-          <Button
+          <button
             type="submit"
             disabled={sending}
-            className="w-full rounded-2xl h-12 bg-primary text-primary-foreground hover:bg-primary/90 ios-press"
+            className="inline-flex items-center justify-center rounded-full bg-foreground text-background font-semibold text-base px-7 py-4 hover:scale-[1.02] active:scale-[0.98] transition-transform disabled:opacity-50"
           >
-            <Send className="mr-2 h-4 w-4" />
             {sending ? 'Odosielam...' : 'Odoslať správu'}
-          </Button>
-          <p className="text-xs text-muted-foreground/70 text-center">
-            Ozvem sa vám čo najskôr. 💙
+          </button>
+          <p className="text-sm text-muted-foreground">
+            Ozvem sa vám čo najskôr.
           </p>
         </motion.form>
       </motion.div>

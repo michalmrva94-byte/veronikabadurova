@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/lib/constants';
-import { UserCheck } from 'lucide-react';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -11,29 +9,32 @@ const fadeInUp = {
 
 export default function DualPathSection() {
   return (
-    <section className="px-5 py-6">
+    <section className="px-6 py-8">
       <motion.div
-        className="mx-auto max-w-sm"
+        className="mx-auto max-w-md"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-50px" }}
         variants={fadeInUp}
       >
-        <div className="ios-card p-5 flex items-center gap-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-            <UserCheck className="h-4 w-4 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">Ste už môj klient?</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Spravujte si tréningy online.</p>
-          </div>
-          <div className="flex gap-2 shrink-0">
-            <Button asChild variant="outline" size="sm" className="rounded-xl text-xs ios-press">
-              <Link to={ROUTES.LOGIN}>Prihlásiť sa</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm" className="rounded-xl text-xs ios-press">
-              <Link to={ROUTES.REGISTER}>Registrovať sa</Link>
-            </Button>
+        <div className="border border-border rounded-2xl p-6 text-center space-y-4">
+          <p className="text-sm font-semibold text-foreground">Ste už môj klient?</p>
+          <p className="text-sm text-muted-foreground">
+            Spravujte si tréningy online.
+          </p>
+          <div className="flex justify-center gap-3">
+            <Link
+              to={ROUTES.LOGIN}
+              className="rounded-full border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              Prihlásiť sa
+            </Link>
+            <Link
+              to={ROUTES.REGISTER}
+              className="rounded-full border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              Registrovať sa
+            </Link>
           </div>
         </div>
       </motion.div>

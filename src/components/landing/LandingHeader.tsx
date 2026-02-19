@@ -4,29 +4,29 @@ import veronikaPhoto from '@/assets/veronika-photo.png';
 
 export default function LandingHeader() {
   return (
-    <header className="sticky top-0 z-50 glass-strong border-b border-border/30 safe-top">
-      <div className="mx-auto max-w-2xl flex items-center justify-between px-5 py-3">
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-top">
+      <div className="mx-auto max-w-2xl flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-3">
           <img
             src={veronikaPhoto}
             alt="Veronika"
-            className="h-10 w-10 rounded-full object-cover ring-2 ring-primary/20"
+            className="h-9 w-9 rounded-full object-cover"
           />
           <div>
-            <p className="text-sm font-semibold text-foreground leading-tight">Veronika</p>
-            <p className="text-xs text-muted-foreground">Swim Coach</p>
+            <p className="text-sm font-semibold text-foreground leading-tight tracking-tight">Veronika</p>
+            <p className="text-[11px] text-muted-foreground tracking-wide uppercase">Swim Coach</p>
           </div>
         </div>
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-5">
           <Link
             to={ROUTES.LOGIN}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Prihlásiť sa
           </Link>
           <Link
             to={ROUTES.REGISTER}
-            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            className="text-sm font-medium text-foreground hover:text-foreground/70 transition-colors"
           >
             Registrovať sa
           </Link>

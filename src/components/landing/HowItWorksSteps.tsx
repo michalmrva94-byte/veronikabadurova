@@ -9,43 +9,46 @@ const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 }
+    transition: { staggerChildren: 0.12 }
   }
 };
 
 const steps = [
   { number: '1', title: 'Ozvete sa mi', description: 'Napíšte mi správu alebo zavolajte.' },
   { number: '2', title: 'Preberieme možnosti', description: 'Zistíme, čo potrebujete a dohodneme kapacitu.' },
-  { number: '3', title: 'Dostanete prístup', description: 'Ak si sadneme, dostanete prístup do systému na rezervácie.' },
+  { number: '3', title: 'Začneme tréning', description: 'Ak si sadneme, získate prístup do rezervačného systému.' },
 ];
 
 export default function HowItWorksSteps() {
   return (
-    <section className="px-5 py-8">
+    <section className="px-6 py-16">
       <motion.div
-        className="mx-auto max-w-sm space-y-4"
+        className="mx-auto max-w-md space-y-8"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-50px" }}
         variants={staggerContainer}
       >
-        <motion.h2 className="text-2xl font-bold text-foreground" variants={fadeInUp}>
+        <motion.h2 className="text-2xl font-bold text-foreground tracking-tight" variants={fadeInUp}>
           Ako to prebieha
         </motion.h2>
 
-        <div className="space-y-3">
-          {steps.map((step) => (
+        <div className="space-y-6">
+          {steps.map((step, i) => (
             <motion.div
               key={step.number}
-              className="flex items-start gap-3"
+              className="flex gap-5"
               variants={fadeInUp}
             >
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs">
-                {step.number}
+              <div className="flex flex-col items-center">
+                <span className="text-3xl font-bold text-foreground leading-none">{step.number}</span>
+                {i < steps.length - 1 && (
+                  <div className="w-px flex-1 bg-border mt-2" />
+                )}
               </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{step.title}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{step.description}</p>
+              <div className="pb-6">
+                <h3 className="text-base font-semibold text-foreground">{step.title}</h3>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{step.description}</p>
               </div>
             </motion.div>
           ))}

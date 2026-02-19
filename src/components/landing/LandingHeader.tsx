@@ -10,28 +10,28 @@ export default function LandingHeader() {
           <img
             src={veronikaPhoto}
             alt="Veronika"
-            className="h-10 w-10 rounded-full object-cover ring-2 ring-primary/20"
-          />
+            className="h-10 w-10 rounded-full object-cover ring-2 ring-primary/20" />
+
           <div>
             <p className="text-sm font-semibold text-foreground leading-tight">Veronika</p>
-            <p className="text-xs text-muted-foreground">Swim Coach</p>
+            <p className="text-xs text-muted-foreground">Trénerka Plávania</p>
           </div>
         </div>
         <nav className="flex items-center gap-4">
           <Link
             to={ROUTES.LOGIN}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+
             Prihlásiť sa
           </Link>
           <Link
             to={ROUTES.REGISTER}
-            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-          >
+            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+
             Registrovať sa
           </Link>
         </nav>
       </div>
-    </header>
-  );
+    </header>);
+
 }

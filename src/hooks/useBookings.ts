@@ -5,13 +5,14 @@ interface CreateBookingParams {
   slot_id: string;
   client_id: string;
   price: number;
+  is_last_minute?: boolean;
 }
 
 export function useBookings() {
   const queryClient = useQueryClient();
 
   const createBooking = useMutation({
-    mutationFn: async ({ slot_id, client_id, price }: CreateBookingParams) => {
+    mutationFn: async ({ slot_id, client_id, price, is_last_minute }: CreateBookingParams) => {
       // Najprv skontrolovať, či slot nie je už rezervovaný
       const { data: existingBooking, error: checkError } = await supabase
         .from('bookings')
@@ -33,6 +34,7 @@ export function useBookings() {
           client_id,
           price,
           status: 'pending',
+          is_last_minute: is_last_minute || false,
         })
         .select()
         .single();

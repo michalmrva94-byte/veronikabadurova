@@ -62,6 +62,18 @@ export default function LastMinutePage() {
     queryClient.invalidateQueries({ queryKey: ['client-notifications'] });
   };
 
+  const parsePriceFromMessage = (message: string): number => {
+    // Match "za XX.XX€" pattern (last occurrence = final price)
+    const matches = message.match(/za\s+(\d+[.,]\d{2})€/g);
+    if (matches && matches.length > 0) {
+      const lastMatch = matches[0]; // first "za X€" is the discounted price
+      const priceStr = lastMatch.replace(/za\s+/, '').replace('€', '').replace(',', '.');
+      const parsed = parseFloat(priceStr);
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+    return DEFAULT_TRAINING_PRICE;
+  };
+
   const handleBookLastMinute = async () => {
     if (!confirmOffer?.related_slot_id || !profile?.id) {
       toast.error('Tento termín sa nedá rezervovať priamo. Skúste cez kalendár.');
@@ -69,12 +81,15 @@ export default function LastMinutePage() {
       return;
     }
 
+    const offerPrice = parsePriceFromMessage(confirmOffer.message);
+
     setIsBooking(true);
     try {
       await createBooking.mutateAsync({
         slot_id: confirmOffer.related_slot_id,
         client_id: profile.id,
-        price: DEFAULT_TRAINING_PRICE,
+        price: offerPrice,
+        is_last_minute: true,
       });
 
       // Označiť notifikáciu ako prečítanú

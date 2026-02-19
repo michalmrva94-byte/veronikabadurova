@@ -1,6 +1,8 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { ROUTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { 
@@ -30,6 +32,22 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   const location = useLocation();
   const { signOut, profile } = useAuth();
 
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['client-notifications-unread', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', profile.id)
+        .eq('is_read', false);
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: !!profile?.id,
+    refetchInterval: 30000,
+  });
+
   const navItems = profile?.last_minute_notifications
     ? [...baseNavItems.slice(0, 3), { icon: Zap, label: 'Last-minute', path: ROUTES.LAST_MINUTE }, baseNavItems[3]]
     : baseNavItems;
@@ -53,8 +71,13 @@ export function ClientLayout({ children }: ClientLayoutProps) {
           
           <div className="flex items-center gap-2">
             <Link to={ROUTES.NOTIFICATIONS}>
-              <Button variant="ghost" size="icon" className="rounded-full ios-press h-10 w-10">
+              <Button variant="ghost" size="icon" className="rounded-full ios-press h-10 w-10 relative">
                 <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </Button>
             </Link>
             <Button variant="ghost" size="icon" onClick={signOut} className="rounded-full ios-press h-10 w-10">

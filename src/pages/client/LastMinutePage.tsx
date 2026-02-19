@@ -48,7 +48,7 @@ export default function LastMinutePage() {
         .select('id, title, message, created_at, related_slot_id, is_read')
         .eq('user_id', profile.id)
         .eq('is_last_minute', true)
-        .gte('created_at', cutoff)
+        .eq('is_read', false)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as LastMinuteOffer[];

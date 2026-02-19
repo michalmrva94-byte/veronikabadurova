@@ -14,7 +14,7 @@ export default function LandingHeader() {
 
           <div>
             <p className="text-sm font-semibold text-foreground leading-tight">Veronika</p>
-            <p className="text-xs text-muted-foreground">Trénerka Plávania</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Swim Coach</p>
           </div>
         </div>
         <nav className="flex items-center gap-4">

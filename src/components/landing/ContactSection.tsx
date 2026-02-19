@@ -55,7 +55,7 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
         </motion.h2>
 
         <motion.a
-          href="tel:+421000000000"
+          href="tel:+421950369062"
           className="rounded-2xl border border-border p-4 flex items-center gap-4 block hover:bg-muted/50 transition-colors"
           variants={fadeInUp}
         >
@@ -64,7 +64,7 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">Zavolajte mi</p>
-            <p className="text-xs text-muted-foreground">+421 000 000 000</p>
+            <p className="text-xs text-muted-foreground">+421 950 369 062</p>
           </div>
         </motion.a>
 

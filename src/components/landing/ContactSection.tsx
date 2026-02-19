@@ -1,9 +1,11 @@
 import { useState, forwardRef } from 'react';
 import { motion } from 'framer-motion';
-import { Phone } from 'lucide-react';
-import { toast } from 'sonner';
+import { Phone, Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -31,8 +33,9 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
       return;
     }
     setSending(true);
+    // Simulate send – replace with actual edge function later
     await new Promise(r => setTimeout(r, 1000));
-    toast.success('Správa odoslaná! Ozvem sa vám čo najskôr.');
+    toast.success('Správa odoslaná! Ozvem sa vám čo najskôr. 💙');
     setName('');
     setEmail('');
     setMessage('');
@@ -40,79 +43,81 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
   };
 
   return (
-    <section ref={ref} className="px-6 py-16">
+    <section ref={ref} className="px-5 py-8">
       <motion.div
-        className="mx-auto max-w-md space-y-6"
+        className="mx-auto max-w-sm space-y-5"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-50px" }}
         variants={staggerContainer}
       >
-        <motion.h2 className="text-2xl font-bold text-foreground tracking-tight" variants={fadeInUp}>
+        <motion.h2 className="text-2xl font-bold text-foreground" variants={fadeInUp}>
           Spojme sa
         </motion.h2>
 
         <motion.a
           href="tel:+421000000000"
-          className="ios-card p-5 flex items-center gap-4 block"
+          className="ios-card p-4 flex items-center gap-4 card-hover block"
           variants={fadeInUp}
         >
-          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
-            <Phone className="h-5 w-5 text-accent" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+            <Phone className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-card-foreground">Zavolajte mi</p>
-            <p className="text-base font-bold text-card-foreground">+421 000 000 000</p>
+            <p className="text-sm font-semibold text-foreground">Zavolajte mi</p>
+            <p className="text-xs text-muted-foreground">+421 000 000 000</p>
           </div>
         </motion.a>
 
         <motion.form
-          className="ios-card p-6 space-y-5"
+          className="ios-card p-6 space-y-4"
           variants={fadeInUp}
           onSubmit={handleSubmit}
         >
           <div className="space-y-2">
-            <Label htmlFor="contact-name">Meno</Label>
+            <Label htmlFor="contact-name" className="text-sm font-medium text-foreground">Meno</Label>
             <Input
               id="contact-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Vaše meno"
+              className="rounded-xl"
               maxLength={100}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="contact-email">Email</Label>
+            <Label htmlFor="contact-email" className="text-sm font-medium text-foreground">Email</Label>
             <Input
               id="contact-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="vas@email.sk"
+              placeholder="vas@email.com"
+              className="rounded-xl"
               maxLength={255}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="contact-message">Správa</Label>
-            <textarea
+            <Label htmlFor="contact-message" className="text-sm font-medium text-foreground">Správa</Label>
+            <Textarea
               id="contact-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Vaša správa..."
+              placeholder="Napíšte mi, čo vás zaujíma..."
+              className="rounded-xl min-h-[100px]"
               maxLength={1000}
-              rows={3}
-              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none"
             />
           </div>
-          <button
+          <Button
             type="submit"
             disabled={sending}
-            className="inline-flex items-center justify-center rounded-full bg-foreground text-background font-semibold text-base px-7 py-4 hover:scale-[1.02] active:scale-[0.98] transition-transform disabled:opacity-50 w-full"
+            className="w-full rounded-2xl h-12 bg-primary text-primary-foreground hover:bg-primary/90 ios-press"
           >
+            <Send className="mr-2 h-4 w-4" />
             {sending ? 'Odosielam...' : 'Odoslať správu'}
-          </button>
-          <p className="text-sm text-muted-foreground text-center">
-            Ozvem sa vám čo najskôr.
+          </Button>
+          <p className="text-xs text-muted-foreground/70 text-center">
+            Ozvem sa vám čo najskôr. 💙
           </p>
         </motion.form>
       </motion.div>

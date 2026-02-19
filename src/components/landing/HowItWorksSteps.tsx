@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { MessageCircle, Handshake, KeyRound } from 'lucide-react';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -14,22 +15,37 @@ const staggerContainer = {
 };
 
 const steps = [
-  { number: '1', title: 'Ozvete sa mi', description: 'Napíšte mi správu alebo zavolajte.' },
-  { number: '2', title: 'Preberieme možnosti', description: 'Zistíme, čo potrebujete a dohodneme kapacitu.' },
-  { number: '3', title: 'Dostanete prístup do systému', description: 'Po potvrdení si budete vedieť pohodlne rezervovať tréningy online.' },
+  {
+    icon: MessageCircle,
+    number: '1',
+    title: 'Ozvete sa mi',
+    description: 'Napíšte mi správu alebo zavolajte.',
+  },
+  {
+    icon: Handshake,
+    number: '2',
+    title: 'Spoločne preberieme možnosti',
+    description: 'Zistíme, čo potrebujete a dohodneme si kapacitu.',
+  },
+  {
+    icon: KeyRound,
+    number: '3',
+    title: 'Dostanete prístup do systému',
+    description: 'Po potvrdení si budete vedieť pohodlne rezervovať tréningy online.',
+  },
 ];
 
 export default function HowItWorksSteps() {
   return (
-    <section className="px-6 py-16">
+    <section className="px-5 py-8">
       <motion.div
-        className="mx-auto max-w-md space-y-6"
+        className="mx-auto max-w-sm space-y-4"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-50px" }}
         variants={staggerContainer}
       >
-        <motion.h2 className="text-2xl font-bold text-foreground tracking-tight" variants={fadeInUp}>
+        <motion.h2 className="text-2xl font-bold text-foreground" variants={fadeInUp}>
           Ako to prebieha
         </motion.h2>
 
@@ -40,12 +56,12 @@ export default function HowItWorksSteps() {
               className="ios-card p-5 flex items-start gap-4"
               variants={fadeInUp}
             >
-              <div className="flex-shrink-0 h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
-                <span className="text-lg font-bold text-accent">{step.number}</span>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
+                {step.number}
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-card-foreground">{step.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{step.description}</p>
+                <p className="font-semibold text-foreground mb-1">{step.title}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
               </div>
             </motion.div>
           ))}

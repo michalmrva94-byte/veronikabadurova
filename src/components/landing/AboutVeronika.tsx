@@ -14,37 +14,37 @@ const staggerContainer = {
 };
 
 const stats = [
-  { value: '14 rokov', label: 'skúseností' },
-  { value: 'Certifikovaná', label: 'trénerka' },
-  { value: 'PK Pezinok', label: 'plavecký klub' },
-  { value: 'Individuálny', label: 'prístup' },
+  { label: '14 rokov', sub: 'skúseností' },
+  { label: 'Certifikovaná', sub: 'trénerka' },
+  { label: 'PK Pezinok', sub: 'plavecký klub' },
+  { label: 'Individuálny', sub: 'prístup' },
 ];
 
 export default function AboutVeronika() {
   return (
-    <section className="px-6 py-16">
+    <section className="px-5 py-8">
       <motion.div
-        className="mx-auto max-w-md space-y-6"
+        className="mx-auto max-w-sm space-y-5"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-50px" }}
         variants={staggerContainer}
       >
-        <motion.h2 className="text-2xl font-bold text-foreground tracking-tight" variants={fadeInUp}>
+        <motion.h2 className="text-2xl font-bold text-foreground" variants={fadeInUp}>
           O Veronike
         </motion.h2>
 
         <motion.div className="grid grid-cols-2 gap-3" variants={fadeInUp}>
           {stats.map((item) => (
-            <div key={item.label} className="ios-card p-5">
-              <p className="text-lg font-bold text-card-foreground">{item.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{item.label}</p>
+            <div key={item.label} className="ios-card text-center p-4">
+              <p className="font-semibold text-foreground">{item.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
             </div>
           ))}
         </motion.div>
 
         <motion.p
-          className="text-base text-muted-foreground leading-relaxed"
+          className="text-sm text-muted-foreground leading-relaxed"
           variants={fadeInUp}
         >
           Plávanie ma sprevádza celý život. Verím, že každý sa môže vo vode cítiť istejšie – bez ohľadu na vek či skúsenosti.

@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
-import veronikaPhoto from '@/assets/veronika-photo.png';
+import { MessageCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const fadeInUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 }
 };
 
@@ -10,13 +11,8 @@ const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.15 }
+    transition: { staggerChildren: 0.12 }
   }
-};
-
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.92 },
-  visible: { opacity: 1, scale: 1 }
 };
 
 interface LandingHeroProps {
@@ -25,39 +21,45 @@ interface LandingHeroProps {
 
 export default function LandingHero({ onScrollToContact }: LandingHeroProps) {
   return (
-    <section className="px-6 pt-20 pb-16">
+    <section className="px-5 pt-12 pb-8">
       <motion.div
-        className="mx-auto max-w-md text-center space-y-8"
+        className="mx-auto max-w-sm text-center space-y-5"
         initial="hidden"
         animate="visible"
         variants={staggerContainer}
       >
-        <motion.div className="relative mx-auto w-fit" variants={scaleIn}>
-          <img
-            src={veronikaPhoto}
-            alt="Veronika – trénerka plávania"
-            className="h-48 w-48 rounded-full object-cover shadow-float"
-          />
-        </motion.div>
+        <motion.h1
+          className="text-3xl font-bold text-foreground leading-tight"
+          variants={fadeInUp}
+        >
+          Individuálne tréningy plávania v Pezinku
+        </motion.h1>
 
-        <motion.div className="space-y-4" variants={fadeInUp}>
-          <h1 className="text-4xl font-bold text-foreground leading-[1.1] tracking-tight">
-            Plávanie s osobným prístupom v Pezinku
-          </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            Som Veronika a pomáham ľuďom cítiť sa vo vode istejšie.
-          </p>
-        </motion.div>
+        <motion.p
+          className="text-base text-muted-foreground leading-relaxed"
+          variants={fadeInUp}
+        >
+          Zlepši techniku, nauč sa nový štýl alebo sa priprav na skúšky – s profesionálnym a osobným vedením.
+        </motion.p>
 
-        <motion.div variants={fadeInUp} className="space-y-3">
-          <button
+        <motion.p
+          className="text-sm text-muted-foreground/80 italic"
+          variants={fadeInUp}
+        >
+          Ak vás plávanie láka, rada sa s vami spojím a preberieme možnosti. 💙
+        </motion.p>
+
+        <motion.div variants={fadeInUp} className="pt-2">
+          <Button
+            size="lg"
+            className="w-full h-14 text-base rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 ios-press"
             onClick={onScrollToContact}
-            className="inline-flex items-center justify-center rounded-full bg-foreground text-background font-semibold text-base px-7 py-4 hover:scale-[1.02] active:scale-[0.98] transition-transform"
           >
-            Chcem sa spojiť s Veronikou
-          </button>
-          <p className="text-sm text-muted-foreground">
-            Nezáväzný kontakt. Ozvem sa vám osobne.
+            <MessageCircle className="mr-2 h-5 w-5" />
+            Mám záujem o tréning
+          </Button>
+          <p className="text-xs text-muted-foreground/70 mt-2">
+            Nezáväzná správa. Ozvem sa vám osobne.
           </p>
         </motion.div>
       </motion.div>

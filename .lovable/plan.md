@@ -1,65 +1,60 @@
 
-# Návrat k iOS-inspired dizajnu z referenčných screenshotov
 
-## Prehľad
+# Last-minute sekcia v klientskom menu
 
-Vrátiť landing page komponenty do pôvodného iOS-inspired štýlu viditeľného na screenshotoch -- s ios-card kartami, zelenými ikonovými bublinami, 2x2 gridmi a štruktúrovanejším layoutom. CTA tlačidlo zostane čierne.
+## Prehlad
 
-## Zmeny v CSS (index.css)
+Pridanie 5. polozky "Last-minute" do spodneho menu klienta. Tato polozka sa zobrazi len ak ma klient v profile zapnute `last_minute_notifications`. Stranka bude sluzit ako dedicke miesto pre last-minute ponuky -- vysvetli mechaniku a zobrazi aktivne ponuky na prijatie.
 
-Vrátiť farebný systém na pôvodnú iOS zelenú tému:
-- `--background`: zmeniť z teplej off-white (`40 7% 95%`) na jemnú mint (`150 20% 96%`)
-- `--primary`: ponechať tmavé pre CTA tlačidlá (bez zmeny)
-- `--accent`: upraviť na pôvodnú teal zelenú (`160 40% 45%`) -- pre ikony a čísla
+## Struktura novej stranky `/last-minute`
 
-## Zmeny v komponentoch
+### Prazdny stav (ziadne aktivne ponuky)
+- Ikona Zap (blesk) s jemnym pozadim
+- Nadpis: "Last-minute treningy"
+- Vysvetlujuci text o mechanike: "Ak sa uvolni termin na poslednú chvilu, ponuka sa zobrazi priamo tu. Staci ju jednym klikom prijat a mam miesto na treningu."
+- Info karta s 3 bodmi: kedy sa to stava, ako rychlo reagovat, cenova vyhoda (zlava)
 
-### 1. DualPathSection.tsx -- dve karty
+### Aktivny stav (existuju ponuky)
+- Zoznam notifikacii typu `last_minute` z tabulky `notifications` ktore su `is_last_minute = true`
+- Kazda ponuka ako karta s: datum, cas, cena (ak je v sprave), cas prijatia
+- Tlacidlo "Rezervovat" ktore presmeruje na kalendar (kde klient dokaze slot zarezervovat standardnym sposobom)
+- Moznost zavriet/odmietnuť ponuku (oznaci notifikaciu ako precitanu)
 
-Vrátiť dve karty vedľa seba (na mobile pod sebou):
-- Karta 1: "Ste už môj klient?" s tlačidlami Prihlásiť sa / Registrovať sa
-- Karta 2: "Máte záujem o tréning?" s tlačidlami Zavolať / Napísať
-- Obe karty používajú `ios-card` utility class
-- Zelené "Zavolať" tlačidlo, outline "Napísať" tlačidlo
-- Ikony: Phone a MessageCircle z lucide-react
+## Zmeny v suboroch
 
-### 2. AboutVeronika.tsx -- 2x2 grid kariet
+### 1. `src/lib/constants.ts`
+- Pridat novu route: `LAST_MINUTE: '/last-minute'`
 
-Nahradiť inline text za 2x2 grid ios-card kariet:
-- "14 rokov / skúseností"
-- "Certifikovaná / trénerka"  
-- "PK Pezinok / plavecký klub"
-- "Individuálny / prístup"
+### 2. `src/components/layout/ClientLayout.tsx`
+- Pridat 5. polozku do `navItems`: ikona `Zap`, label "Last-minute", path `ROUTES.LAST_MINUTE`
+- Podmienene zobrazenie -- polozka sa zobrazi len ak `profile?.last_minute_notifications === true`
+- Import `useAuth` pre pristup k profilu
 
-Každá karta: biele pozadie, zaoblené rohy, veľký bold nadpis + menší popis.
+### 3. `src/pages/client/LastMinutePage.tsx` (novy subor)
+- Nacitanie notifikacii typu `last_minute` (neprecitanych) cez Supabase query
+- Prazdny stav s vysvetlenim mechaniky
+- Aktivny stav so zoznamom ponuk
+- Kazda ponuka obsahuje tlacidlo "Rezervovat" (link na `/kalendar`) a "Zavriet" (mark as read)
+- Pouzitie `ClientLayout` obalenia
 
-### 3. TargetGroupsSection.tsx -- 5 položiek s ikonami
+### 4. `src/App.tsx`
+- Pridat route `/last-minute` s `ProtectedRoute`
 
-Vrátiť 5 položiek (namiesto 3) s ikonovými bublinami:
-- Zlepšenie techniky plávania (Target icon)
-- Príprava na skúšky a športové výzvy (Award icon)
-- Naučenie kraulu a nových štýlov (Waves icon)
-- Prekonanie strachu z vody (Heart icon)
-- Zdravý pohyb pre deti aj dospelých (Users icon)
+### 5. `src/pages/admin/AdminBroadcastPage.tsx`
+- Uprava broadcast odosielania -- filtrovat len klientov s `last_minute_notifications = true`
+- Zobrazit pocet klientov s aktivnym last-minute odberom
 
-Každá položka: ios-card s zelenou ikonovou bublinou vľavo a textom vpravo.
+## Technicke detaily
 
-### 4. HowItWorksSteps.tsx -- karty s zelenými číslami
+### Filtrovanie v broadcast
+Aktualne sa broadcast posiela vsetkym `approvedClients`. Upravime na:
+```
+approvedClients.filter(c => c.last_minute_notifications !== false)
+```
 
-Nahradiť plain text za ios-card karty:
-- Každý krok v bielej karte so zaoblenými rohmi
-- Číslo v zelenej bubline (rounded-full, bg-accent/10, text-accent)
-- Zmeniť text kroku 3: "Dostanete prístup do systému" / "Po potvrdení si budete vedieť pohodlne rezervovať tréningy online."
+### Podmienene zobrazenie tab polozky
+V `ClientLayout` sa nacita profil cez `useAuth()` a 5. tab sa prida do pola `navItems` dynamicky len ak je `last_minute_notifications` zapnute.
 
-### 5. ContactSection.tsx -- telefónna karta + formulár v karte
+### Zobrazenie ponuk
+Query na notifikacie: `type = 'last_minute'` AND `is_read = false` AND `user_id = profileId`, zoradene podla `created_at DESC`.
 
-- Telefón: ios-card s Phone ikonou v zelenej bubline + "Zavolajte mi" nadpis + číslo
-- Formulár: ios-card s labelmi (Meno, Email, Správa) a štandardnými Input komponentmi
-- CTA tlačidlo zostáva čierne (rounded-full)
-
-## Technické detaily
-
-- Upravené súbory: `index.css`, `DualPathSection.tsx`, `AboutVeronika.tsx`, `TargetGroupsSection.tsx`, `HowItWorksSteps.tsx`, `ContactSection.tsx`
-- Použité utility classes: `ios-card`, `ios-card-elevated` z existujúceho CSS
-- Nové ikony z lucide-react: Target, Award, Waves, Heart, Users, Phone, MessageCircle
-- Žiadne nové závislosti, žiadne zmeny v databáze

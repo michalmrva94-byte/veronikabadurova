@@ -17,7 +17,7 @@ const staggerContainer = {
 const groups = [
   { icon: Target, title: 'Zlepšenie techniky', description: 'Pre tých, ktorí chcú plávať efektívnejšie a sebavedomejšie.' },
   { icon: Award, title: 'Príprava na skúšky a športové výzvy', description: 'Individuálna príprava podľa cieľov a požiadaviek.' },
-  { icon: Droplets, title: 'Naučenie kraulu', description: 'Pre začiatočníkov aj mierne pokročilých.' },
+  { icon: Droplets, title: 'Nové plavecké spôsoby', description: 'Pre začiatočníkov aj mierne pokročilých.' },
   { icon: Heart, title: 'Prekonanie strachu', description: 'Citlivý prístup pre deti aj dospelých.' },
   { icon: Users, title: 'Zdravý pohyb', description: 'Pre každého, kto chce zostať aktívny.' },
 ];

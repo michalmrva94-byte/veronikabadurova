@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Target, Award, Droplets, Heart, Users } from 'lucide-react';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -14,11 +15,11 @@ const staggerContainer = {
 };
 
 const groups = [
-  { title: 'Zlepšenie techniky', description: 'Pre tých, ktorí chcú plávať efektívnejšie a sebavedomejšie.' },
-  { title: 'Príprava na skúšky', description: 'Individuálna príprava podľa cieľov a požiadaviek.' },
-  { title: 'Naučenie kraulu', description: 'Pre začiatočníkov aj mierne pokročilých.' },
-  { title: 'Prekonanie strachu', description: 'Citlivý prístup pre deti aj dospelých.' },
-  { title: 'Zdravý pohyb', description: 'Pre každého, kto chce zostať aktívny.' },
+  { icon: Target, title: 'Zlepšenie techniky', description: 'Pre tých, ktorí chcú plávať efektívnejšie a sebavedomejšie.' },
+  { icon: Award, title: 'Príprava na skúšky', description: 'Individuálna príprava podľa cieľov a požiadaviek.' },
+  { icon: Droplets, title: 'Naučenie kraulu', description: 'Pre začiatočníkov aj mierne pokročilých.' },
+  { icon: Heart, title: 'Prekonanie strachu', description: 'Citlivý prístup pre deti aj dospelých.' },
+  { icon: Users, title: 'Zdravý pohyb', description: 'Pre každého, kto chce zostať aktívny.' },
 ];
 
 export default function TargetGroupsSection() {
@@ -39,11 +40,16 @@ export default function TargetGroupsSection() {
           {groups.map((item) => (
             <motion.div
               key={item.title}
-              className="rounded-2xl border border-border p-5"
+              className="rounded-2xl bg-muted/60 p-5 flex items-start gap-4"
               variants={fadeInUp}
             >
-              <p className="font-semibold text-foreground">{item.title}</p>
-              <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                <item.icon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">{item.title}</p>
+                <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+              </div>
             </motion.div>
           ))}
         </div>

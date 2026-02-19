@@ -40,7 +40,7 @@ export default function DualPathSection({ onScrollToContact }: DualPathSectionPr
             <h3 className="text-lg font-bold text-foreground">Ste už môj klient?</h3>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Zaregistrujte sa do systému a spravujte si tréningy pohodlne online.
+            Spravujte si tréningy pohodlne online.
           </p>
           <div className="flex gap-3">
             <Button asChild className="flex-1 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 ios-press">
@@ -61,8 +61,7 @@ export default function DualPathSection({ onScrollToContact }: DualPathSectionPr
             <h3 className="text-lg font-bold text-foreground">Máte záujem o tréning?</h3>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Každého nového klienta si vyberám individuálne, aby som vedela zachovať kvalitu tréningov.
-            Ak máte záujem, pokojne sa mi ozvite.
+            Ozvite sa mi a preberieme možnosti.
           </p>
           <div className="flex gap-3">
             <Button asChild className="flex-1 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 ios-press">

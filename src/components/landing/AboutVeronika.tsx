@@ -16,7 +16,7 @@ const staggerContainer = {
 const stats = [
   { label: '14 rokov', sub: 'skúseností' },
   { label: 'Certifikovaná', sub: 'trénerka' },
-  { label: 'PK Pezinok', sub: 'plavecký klub' },
+  { label: 'PK Pezinok', sub: 'trénerka v klube' },
   { label: 'Individuálny', sub: 'prístup' },
 ];
 

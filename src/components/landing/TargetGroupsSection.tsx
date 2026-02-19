@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Target, Award, Droplets, Heart, Users } from 'lucide-react';
+import { Target, Award, Heart } from 'lucide-react';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -15,11 +15,9 @@ const staggerContainer = {
 };
 
 const groups = [
-  { icon: Target, text: 'Zlepšenie techniky plávania' },
-  { icon: Award, text: 'Príprava na skúšky a športové výzvy' },
-  { icon: Droplets, text: 'Naučenie kraulu a nových štýlov' },
+  { icon: Target, text: 'Zlepšenie techniky' },
+  { icon: Award, text: 'Príprava na skúšky' },
   { icon: Heart, text: 'Prekonanie strachu z vody' },
-  { icon: Users, text: 'Zdravý pohyb pre deti aj dospelých' },
 ];
 
 export default function TargetGroupsSection() {
@@ -36,15 +34,15 @@ export default function TargetGroupsSection() {
           Pre koho je tréning
         </motion.h2>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {groups.map((item) => (
             <motion.div
               key={item.text}
-              className="ios-card p-4 flex items-center gap-4"
+              className="flex items-center gap-3 py-1"
               variants={fadeInUp}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-                <item.icon className="h-5 w-5 text-primary" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <item.icon className="h-4 w-4 text-primary" />
               </div>
               <p className="text-sm font-medium text-foreground">{item.text}</p>
             </motion.div>

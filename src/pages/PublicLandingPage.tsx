@@ -95,7 +95,7 @@ export default function PublicLandingPage() {
       >
         <LandingHeader />
         <LandingHero onScrollToContact={scrollToContact} />
-        <DualPathSection onScrollToContact={scrollToContact} />
+        <DualPathSection />
         <AboutVeronika />
         <TargetGroupsSection />
         <HowItWorksSteps />

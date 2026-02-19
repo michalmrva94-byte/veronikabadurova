@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { MessageCircle, Handshake, KeyRound } from 'lucide-react';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -10,29 +9,14 @@ const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.12 }
+    transition: { staggerChildren: 0.1 }
   }
 };
 
 const steps = [
-  {
-    icon: MessageCircle,
-    number: '1',
-    title: 'Ozvete sa mi',
-    description: 'Napíšte mi správu alebo zavolajte.',
-  },
-  {
-    icon: Handshake,
-    number: '2',
-    title: 'Spoločne preberieme možnosti',
-    description: 'Zistíme, čo potrebujete a dohodneme si kapacitu.',
-  },
-  {
-    icon: KeyRound,
-    number: '3',
-    title: 'Dostanete prístup do systému',
-    description: 'Po potvrdení si budete vedieť pohodlne rezervovať tréningy online.',
-  },
+  { number: '1', title: 'Ozvete sa mi', description: 'Napíšte mi správu alebo zavolajte.' },
+  { number: '2', title: 'Preberieme možnosti', description: 'Zistíme, čo potrebujete a dohodneme kapacitu.' },
+  { number: '3', title: 'Dostanete prístup', description: 'Ak si sadneme, dostanete prístup do systému na rezervácie.' },
 ];
 
 export default function HowItWorksSteps() {
@@ -53,15 +37,15 @@ export default function HowItWorksSteps() {
           {steps.map((step) => (
             <motion.div
               key={step.number}
-              className="ios-card p-5 flex items-start gap-4"
+              className="flex items-start gap-3"
               variants={fadeInUp}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs">
                 {step.number}
               </div>
               <div>
-                <p className="font-semibold text-foreground mb-1">{step.title}</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                <p className="text-sm font-semibold text-foreground">{step.title}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{step.description}</p>
               </div>
             </motion.div>
           ))}

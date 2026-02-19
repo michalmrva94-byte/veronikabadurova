@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Clock, Award, User } from 'lucide-react';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -13,11 +14,10 @@ const staggerContainer = {
   }
 };
 
-const stats = [
-  { label: '14 rokov', sub: 'skúseností' },
-  { label: 'Certifikovaná', sub: 'trénerka' },
-  { label: 'PK Pezinok', sub: 'plavecký klub' },
-  { label: 'Individuálny', sub: 'prístup' },
+const highlights = [
+  { icon: Clock, text: '14 rokov skúseností' },
+  { icon: Award, text: 'Certifikovaná trénerka' },
+  { icon: User, text: 'Individuálny prístup' },
 ];
 
 export default function AboutVeronika() {
@@ -34,11 +34,11 @@ export default function AboutVeronika() {
           O Veronike
         </motion.h2>
 
-        <motion.div className="grid grid-cols-2 gap-3" variants={fadeInUp}>
-          {stats.map((item) => (
-            <div key={item.label} className="ios-card text-center p-4">
-              <p className="font-semibold text-foreground">{item.label}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{item.sub}</p>
+        <motion.div className="space-y-2.5" variants={fadeInUp}>
+          {highlights.map((item) => (
+            <div key={item.text} className="flex items-center gap-3">
+              <item.icon className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-sm font-medium text-foreground">{item.text}</p>
             </div>
           ))}
         </motion.div>

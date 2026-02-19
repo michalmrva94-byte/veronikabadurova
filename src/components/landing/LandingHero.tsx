@@ -48,23 +48,25 @@ export default function LandingHero({ onScrollToContact }: LandingHeroProps) {
           className="text-3xl font-bold text-foreground leading-tight"
           variants={fadeInUp}
         >
-          Plávanie s osobným prístupom v Pezinku
+          Ahoj, som Veronika.
+          <br />
+          Osobná trénerka plávania v&nbsp;Pezinku.
         </motion.h1>
 
         <motion.p
           className="text-lg text-muted-foreground leading-relaxed"
           variants={fadeInUp}
         >
-          Som Veronika a pomáham ľuďom cítiť sa vo vode istejšie.
+          Pomáham deťom aj dospelým zlepšiť techniku, prekonať strach a&nbsp;cítiť sa vo vode sebavedomo.
         </motion.p>
 
         <motion.div variants={fadeInUp} className="pt-2">
           <Button
             size="lg"
-            className="w-full h-14 text-base rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 ios-press"
+            className="w-full h-14 text-base rounded-2xl bg-foreground text-background hover:bg-foreground/90 ios-press"
             onClick={onScrollToContact}
           >
-            Mám záujem o osobné tréningy
+            Dohodnúť tréning
           </Button>
           <p className="text-sm text-muted-foreground/70 mt-3">
             Nezáväzný kontakt. Ozvem sa vám osobne.

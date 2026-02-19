@@ -171,7 +171,7 @@ export default function ProfilePage() {
                   <Label>Last-minute tréningy</Label>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Keď sa uvoľní termín na poslednú chvíľu, dáme vám vedieť. Kto prvý, ten pláva! 🏊‍♀️
+                  Ak sa uvoľní miesto na poslednú chvíľu, pošlem vám ponuku ako prvým — často so zvýhodnenou cenou 🏊‍♀️
                 </p>
               </div>
               <Switch

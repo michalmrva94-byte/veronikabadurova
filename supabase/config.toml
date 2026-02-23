@@ -1,4 +1,7 @@
 project_id = "yyusjqaehwvqmbzivwsv"
 
-[functions.check-proposed-deadlines]
-verify_jwt = false
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.check-proposed-deadlines]
+    verify_jwt = false

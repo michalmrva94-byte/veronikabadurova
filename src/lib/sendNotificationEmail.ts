@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 interface SendNotificationEmailParams {
-  type: 'confirmation' | 'reminder' | 'last_minute' | 'proposal';
+  type: 'confirmation' | 'reminder' | 'last_minute' | 'proposal' | 'cancellation';
   to: string;
   clientName: string;
   trainingDate?: string;
@@ -10,6 +10,9 @@ interface SendNotificationEmailParams {
   message?: string;
   slotId?: string;
   trainingCount?: number;
+  reason?: string;
+  cancelledBy?: 'admin' | 'client';
+  cancellationFee?: string;
 }
 
 export async function sendNotificationEmail(params: SendNotificationEmailParams) {

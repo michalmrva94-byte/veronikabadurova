@@ -193,6 +193,20 @@ export function useAdminBookings() {
 
       if (notifError) console.error('Notification error:', notifError);
 
+      // Send cancellation email if enabled
+      if (booking.client?.email_notifications && booking.client?.email) {
+        const slotStart = new Date(booking.slot.start_time);
+        sendNotificationEmail({
+          type: 'cancellation',
+          to: booking.client.email,
+          clientName: booking.client.full_name,
+          trainingDate: slotStart.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' }),
+          trainingTime: slotStart.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
+          reason: reason || 'Zrušené administrátorom',
+          cancelledBy: 'admin',
+        });
+      }
+
       return booking;
     },
     onSuccess: () => {

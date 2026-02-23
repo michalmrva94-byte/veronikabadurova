@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Booking, TrainingSlot } from '@/types/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { differenceInHours } from 'date-fns';
+import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
 
 export type BookingWithSlot = Booking & { slot: TrainingSlot };
 
@@ -103,6 +104,21 @@ export function useClientBookings() {
         if (feeError) {
           console.error('Failed to process cancellation fee:', feeError);
         }
+      }
+
+      // Send cancellation email to admins is handled via in-app notif
+      // Send email to client themselves as confirmation of cancellation
+      if (profile.email) {
+        const slotStart = new Date(slot.start_time);
+        sendNotificationEmail({
+          type: 'cancellation',
+          to: profile.email,
+          clientName: profile.full_name,
+          trainingDate: slotStart.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' }),
+          trainingTime: slotStart.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
+          cancelledBy: 'client',
+          cancellationFee: cancellationFee > 0 ? `${cancellationFee.toFixed(2)}€` : undefined,
+        });
       }
 
       return { cancellationFee };

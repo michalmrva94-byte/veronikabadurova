@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { DEFAULT_TRAINING_PRICE } from '@/lib/constants';
+import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
 import { addHours, setHours, setMinutes, addDays, startOfWeek, getDay } from 'date-fns';
 
 export interface DayTimeSelection {
@@ -195,6 +196,25 @@ export function useProposedTrainings() {
           message: `Veronika vám navrhla ${created} ${created === 1 ? 'tréning' : created < 5 ? 'tréningy' : 'tréningov'}. Potvrďte ich, prosím, do 24 hodín.`,
           type: 'proposal',
         });
+
+        // Send email if enabled
+        const { data: clientProfile } = await supabase
+          .from('profiles')
+          .select('full_name, email, email_notifications')
+          .eq('id', clientId)
+          .single();
+
+        if (clientProfile?.email_notifications && clientProfile.email) {
+          const firstDate = validDates[0];
+          sendNotificationEmail({
+            type: 'proposal',
+            to: clientProfile.email,
+            clientName: clientProfile.full_name,
+            trainingDate: firstDate.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' }),
+            trainingTime: firstDate.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
+            trainingCount: created,
+          });
+        }
       }
 
       return {

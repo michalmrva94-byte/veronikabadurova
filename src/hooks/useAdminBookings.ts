@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Booking, TrainingSlot, Profile } from '@/types/database';
+import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
 
 export type AdminBookingWithDetails = Booking & {
   slot: TrainingSlot;
@@ -77,6 +78,18 @@ export function useAdminBookings() {
         });
 
       if (notifError) console.error('Notification error:', notifError);
+
+      // Send confirmation email if enabled
+      if (booking.client?.email_notifications && booking.client?.email) {
+        const slotStart = new Date(booking.slot.start_time);
+        sendNotificationEmail({
+          type: 'confirmation',
+          to: booking.client.email,
+          clientName: booking.client.full_name,
+          trainingDate: slotStart.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' }),
+          trainingTime: slotStart.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
+        });
+      }
 
       return booking;
     },

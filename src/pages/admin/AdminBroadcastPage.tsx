@@ -19,6 +19,7 @@ import { useClients } from '@/hooks/useClients';
 import { useAdminBookings, AdminBookingWithDetails } from '@/hooks/useAdminBookings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
 
 function CancelledTrainingCard({
   booking,
@@ -208,6 +209,20 @@ export default function AdminBroadcastPage() {
 
       const { error } = await supabase.from('notifications').insert(notifications);
       if (error) throw error;
+
+      // Send emails to clients with email notifications enabled
+      for (const client of lastMinuteClients) {
+        if (client.email_notifications) {
+          sendNotificationEmail({
+            type: 'last_minute',
+            to: client.email,
+            clientName: client.full_name,
+            title,
+            message,
+            slotId: broadcastSlotId || undefined,
+          });
+        }
+      }
 
       toast.success(`Broadcast odoslaný ${lastMinuteClients.length} klientom!`);
       setTitle('');

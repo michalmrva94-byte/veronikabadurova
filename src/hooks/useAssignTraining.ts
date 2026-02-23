@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
 
 interface AssignTrainingParams {
   start_time: string;
@@ -61,6 +62,24 @@ export function useAssignTraining() {
 
       if (notifError) {
         console.error('Failed to create notification:', notifError);
+      }
+
+      // Send email notification if enabled
+      const { data: clientProfile } = await supabase
+        .from('profiles')
+        .select('full_name, email, email_notifications')
+        .eq('id', client_id)
+        .single();
+
+      if (clientProfile?.email_notifications && clientProfile.email) {
+        const slotStart = new Date(start_time);
+        sendNotificationEmail({
+          type: 'proposal',
+          to: clientProfile.email,
+          clientName: clientProfile.full_name,
+          trainingDate: slotStart.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' }),
+          trainingTime: slotStart.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
+        });
       }
 
       return { slot, booking };

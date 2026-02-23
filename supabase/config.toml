@@ -5,3 +5,7 @@ project_id = "yyusjqaehwvqmbzivwsv"
     verify_jwt = false
   [functions.check-proposed-deadlines]
     verify_jwt = false
+  [functions.send-notification-email]
+    verify_jwt = false
+  [functions.send-training-reminders]
+    verify_jwt = false

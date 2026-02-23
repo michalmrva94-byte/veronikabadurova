@@ -6,6 +6,7 @@ import { ConfirmationEmail } from "../_shared/notification-templates/confirmatio
 import { ReminderEmail } from "../_shared/notification-templates/reminder.tsx";
 import { LastMinuteEmail } from "../_shared/notification-templates/last-minute.tsx";
 import { ProposalEmail } from "../_shared/notification-templates/proposal.tsx";
+import { CancellationEmail } from "../_shared/notification-templates/cancellation.tsx";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
 
@@ -19,17 +20,18 @@ const APP_URL = "https://veronikabadurova.lovable.app";
 const FROM = "Veronika Swim <noreply@veronikaswim.sk>";
 
 interface EmailRequest {
-  type: "confirmation" | "reminder" | "last_minute" | "proposal";
+  type: "confirmation" | "reminder" | "last_minute" | "proposal" | "cancellation";
   to: string;
   clientName: string;
   trainingDate?: string;
   trainingTime?: string;
-  // last_minute specific
   title?: string;
   message?: string;
   slotId?: string;
-  // proposal specific
   trainingCount?: number;
+  reason?: string;
+  cancelledBy?: "admin" | "client";
+  cancellationFee?: string;
 }
 
 serve(async (req: Request) => {
@@ -94,6 +96,21 @@ serve(async (req: Request) => {
             trainingDate: payload.trainingDate || "",
             trainingTime: payload.trainingTime || "",
             trainingCount: payload.trainingCount,
+            appUrl: APP_URL,
+          })
+        );
+        break;
+
+      case "cancellation":
+        subject = "Tréning zrušený — Veronika Swim";
+        html = await renderAsync(
+          React.createElement(CancellationEmail, {
+            clientName,
+            trainingDate: payload.trainingDate || "",
+            trainingTime: payload.trainingTime || "",
+            reason: payload.reason,
+            cancelledBy: payload.cancelledBy || "admin",
+            cancellationFee: payload.cancellationFee,
             appUrl: APP_URL,
           })
         );

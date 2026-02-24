@@ -1,66 +1,32 @@
 
 
-## Plan: Batch-insert training slots and bookings in proposeFixedTrainings
+## Plan: Odosielanie kontaktného formulára emailom na veronika.duro@gmail.com
 
-### What changes
-Refactor the `proposeFixedTrainings` mutation (lines 147-189) to replace the sequential for-loop with two batch inserts.
+### Prehľad
+Kontaktný formulár na landing page aktuálne len simuluje odoslanie. Vytvorím edge function, ktorá cez Resend odošle email s obsahom formulára na veronika.duro@gmail.com, a prepojím ju s formulárom.
 
-### Single file: `src/hooks/useProposedTrainings.ts`
+### Zmeny
 
-**Replace lines 147-189** (the `let created` through end of for-loop) with:
+#### 1. Nová edge function: `supabase/functions/send-contact-form/index.ts`
+- Prijme JSON body: `{ name, email, message }`
+- Validuje vstupy (max dĺžky, povinné polia, email formát)
+- Odošle email cez Resend na `veronika.duro@gmail.com` z `Veronika Swim <noreply@veronikaswim.sk>`
+- Subject: `Nová správa z webu od {name}`
+- HTML body: meno, email odosielateľa, text správy
+- Reply-To header nastavený na email odosielateľa (aby Veronika mohla priamo odpovedať)
+- CORS headers, OPTIONS handler
+- `RESEND_API_KEY` secret je už nakonfigurovaný
 
-```typescript
-const deadline = addHours(new Date(), 24).toISOString();
+#### 2. `supabase/config.toml`
+- Pridať `[functions.send-contact-form]` s `verify_jwt = false` (verejný formulár, neprihlásení užívatelia)
 
-// 1. Build all slot objects
-const slotObjects = validDates.map((date) => ({
-  start_time: date.toISOString(),
-  end_time: addHours(date, 1).toISOString(),
-  is_available: false,
-  is_recurring: false,
-}));
+#### 3. `src/components/landing/ContactSection.tsx`
+- Nahradiť `await new Promise(r => setTimeout(r, 1000))` skutočným volaním `supabase.functions.invoke('send-contact-form', { body: { name, email, message } })`
+- Pridať error handling: ak edge function vráti chybu, zobraziť `toast.error`
+- Import `supabase` z `@/integrations/supabase/client`
 
-if (slotObjects.length === 0) {
-  return { created: 0, skipped: conflicts.length, conflicts: skipConflicts ? conflicts : [] };
-}
-
-// 2. Batch-insert all training slots
-const { data: slots, error: slotsError } = await supabase
-  .from('training_slots')
-  .insert(slotObjects)
-  .select();
-
-if (slotsError || !slots) {
-  throw new Error('Nepodarilo sa vytvoriť tréningové sloty');
-}
-
-// 3. Build booking objects from returned slot IDs
-const bookingObjects = slots.map((slot) => ({
-  client_id: clientId,
-  slot_id: slot.id,
-  status: 'awaiting_confirmation' as const,
-  price: DEFAULT_TRAINING_PRICE,
-  confirmation_deadline: deadline,
-  proposed_by: profile.id,
-}));
-
-// 4. Batch-insert all bookings
-const { data: bookings, error: bookingsError } = await supabase
-  .from('bookings')
-  .insert(bookingObjects)
-  .select();
-
-if (bookingsError) {
-  throw new Error('Nepodarilo sa vytvoriť rezervácie');
-}
-
-const created = bookings?.length ?? 0;
-```
-
-Everything else (conflict checking, notification insert, email send, other mutations) stays unchanged.
-
-### Why this is safe
-- Supabase `.insert(array)` is atomic per call — either all rows insert or none do
-- The `status: 'awaiting_confirmation' as const` satisfies the TypeScript enum type
-- Error handling now throws instead of silently continuing, which is appropriate for batch operations (partial failures in a batch are unlikely — they'd be schema/RLS issues)
+### Bezpečnosť
+- Vstupná validácia na klientovi (už existuje) aj na serveri (edge function)
+- Rate limiting nie je v scope, ale maxLength na poliach chráni pred zneužitím
+- Žiadne DB zmeny, žiadne RLS implikácie
 

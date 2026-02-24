@@ -46,9 +46,11 @@ export function useSlotsForYear(year: number) {
 
         existing.totalCount++;
 
-        const b = slot.bookings;
-        const hasActiveBooking = b && ['booked', 'pending', 'awaiting_confirmation'].includes(b.status);
-        const isCompleted = b && b.status === 'completed';
+        const bookingsArr = Array.isArray(slot.bookings) ? slot.bookings : (slot.bookings ? [slot.bookings] : []);
+        const activeBooking = bookingsArr.find((b: any) => ['booked', 'pending', 'awaiting_confirmation'].includes(b.status));
+        const completedBooking = bookingsArr.find((b: any) => b.status === 'completed');
+        const hasActiveBooking = !!activeBooking;
+        const isCompleted = !!completedBooking;
 
         if (isCompleted) {
           existing.completedCount++;

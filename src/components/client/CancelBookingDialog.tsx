@@ -11,6 +11,9 @@ import { Calendar, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { Booking, TrainingSlot } from '@/types/database';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface CancelBookingDialogProps {
   booking: (Booking & { slot: TrainingSlot }) | null;
@@ -20,18 +23,6 @@ interface CancelBookingDialogProps {
   isLoading: boolean;
 }
 
-function getCancellationFee(slotStartTime: string, price: number): { percentage: number; fee: number } {
-  const hoursUntilTraining = differenceInHours(new Date(slotStartTime), new Date());
-  
-  if (hoursUntilTraining > 48) {
-    return { percentage: 0, fee: 0 };
-  } else if (hoursUntilTraining >= 24) {
-    return { percentage: 50, fee: price * 0.5 };
-  } else {
-    return { percentage: 80, fee: price * 0.8 };
-  }
-}
-
 export function CancelBookingDialog({
   booking,
   isOpen,
@@ -39,13 +30,45 @@ export function CancelBookingDialog({
   onConfirm,
   isLoading,
 }: CancelBookingDialogProps) {
+  const { data: feeSettings, isLoading: isLoadingFees } = useQuery({
+    queryKey: ['cancel-fee-settings'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('key, value')
+        .in('key', ['cancel_fee_24h', 'cancel_fee_48h']);
+      const map: Record<string, number> = {};
+      (data || []).forEach((s: any) => { map[s.key] = parseFloat(s.value) || 0; });
+      return { fee24h: map['cancel_fee_24h'] ?? 80, fee48h: map['cancel_fee_48h'] ?? 50 };
+    },
+    enabled: isOpen,
+    staleTime: 60_000,
+  });
+
   if (!booking?.slot) return null;
 
   const startTime = format(new Date(booking.slot.start_time), 'HH:mm');
   const endTime = format(new Date(booking.slot.end_time), 'HH:mm');
   const dateFormatted = format(new Date(booking.slot.start_time), 'EEEE, d. MMMM yyyy', { locale: sk });
-  
-  const { percentage, fee } = getCancellationFee(booking.slot.start_time, booking.price);
+
+  const fee24h = feeSettings?.fee24h ?? 80;
+  const fee48h = feeSettings?.fee48h ?? 50;
+
+  const hoursUntilTraining = differenceInHours(new Date(booking.slot.start_time), new Date());
+  let percentage: number;
+  let fee: number;
+
+  if (hoursUntilTraining > 48) {
+    percentage = 0;
+    fee = 0;
+  } else if (hoursUntilTraining >= 24) {
+    percentage = fee48h;
+    fee = booking.price * (fee48h / 100);
+  } else {
+    percentage = fee24h;
+    fee = booking.price * (fee24h / 100);
+  }
+
   const hasFee = fee > 0;
 
   return (
@@ -77,7 +100,15 @@ export function CancelBookingDialog({
           </div>
 
           {/* Cancellation fee warning */}
-          {hasFee ? (
+          {isLoadingFees ? (
+            <div className="flex gap-3 p-3 rounded-lg border border-muted bg-muted/30">
+              <Skeleton className="h-5 w-5 flex-shrink-0 mt-0.5 rounded" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            </div>
+          ) : hasFee ? (
             <div className="flex gap-3 p-3 rounded-lg border border-destructive/30 bg-destructive/5">
               <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
               <div className="text-sm">
@@ -113,7 +144,7 @@ export function CancelBookingDialog({
           <Button
             variant="destructive"
             onClick={onConfirm}
-            disabled={isLoading}
+            disabled={isLoading || isLoadingFees}
             className="w-full sm:w-auto"
           >
             {isLoading ? (

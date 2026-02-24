@@ -144,49 +144,51 @@ export function useProposedTrainings() {
         ? dates.filter((d) => !conflictDates.has(d.toISOString()))
         : dates;
 
-      let created = 0;
       const deadline = addHours(new Date(), 24).toISOString();
 
-      for (const date of validDates) {
-        const startTime = date.toISOString();
-        const endTime = addHours(date, 1).toISOString();
+      // 1. Build all slot objects
+      const slotObjects = validDates.map((date) => ({
+        start_time: date.toISOString(),
+        end_time: addHours(date, 1).toISOString(),
+        is_available: false,
+        is_recurring: false,
+      }));
 
-        // Create training slot
-        const { data: slot, error: slotError } = await supabase
-          .from('training_slots')
-          .insert({
-            start_time: startTime,
-            end_time: endTime,
-            is_available: false,
-            is_recurring: false,
-          })
-          .select()
-          .single();
-
-        if (slotError) {
-          console.error('Failed to create slot:', slotError);
-          continue;
-        }
-
-        // Create booking
-        const { error: bookingError } = await supabase
-          .from('bookings')
-          .insert({
-            client_id: clientId,
-            slot_id: slot.id,
-            status: 'awaiting_confirmation',
-            price: DEFAULT_TRAINING_PRICE,
-            confirmation_deadline: deadline,
-            proposed_by: profile.id,
-          });
-
-        if (bookingError) {
-          console.error('Failed to create booking:', bookingError);
-          continue;
-        }
-
-        created++;
+      if (slotObjects.length === 0) {
+        return { created: 0, skipped: conflicts.length, conflicts: skipConflicts ? conflicts : [] };
       }
+
+      // 2. Batch-insert all training slots
+      const { data: slots, error: slotsError } = await supabase
+        .from('training_slots')
+        .insert(slotObjects)
+        .select();
+
+      if (slotsError || !slots) {
+        throw new Error('Nepodarilo sa vytvoriť tréningové sloty');
+      }
+
+      // 3. Build booking objects from returned slot IDs
+      const bookingObjects = slots.map((slot) => ({
+        client_id: clientId,
+        slot_id: slot.id,
+        status: 'awaiting_confirmation' as const,
+        price: DEFAULT_TRAINING_PRICE,
+        confirmation_deadline: deadline,
+        proposed_by: profile.id,
+      }));
+
+      // 4. Batch-insert all bookings
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .insert(bookingObjects)
+        .select();
+
+      if (bookingsError) {
+        throw new Error('Nepodarilo sa vytvoriť rezervácie');
+      }
+
+      const created = bookings?.length ?? 0;
 
       // Send notification to client
       if (created > 0) {

@@ -111,10 +111,10 @@ export default function AdminCalendarPage() {
     }
   };
 
-  const handleSlotCancel = async (bookingId: string, reason?: string) => {
+  const handleSlotCancel = async (bookingId: string, reason?: string, feePercentage?: number) => {
     setIsProcessing(true);
     try {
-      await cancelBooking.mutateAsync({ bookingId, reason });
+      await cancelBooking.mutateAsync({ bookingId, reason, feePercentage });
       toast.success('Tréning zrušený');
     } catch (e: any) {
       toast.error(e.message || 'Chyba');

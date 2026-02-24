@@ -150,7 +150,7 @@ export function useAdminBookings() {
   });
 
   const cancelBooking = useMutation({
-    mutationFn: async ({ bookingId, reason }: { bookingId: string; reason?: string }) => {
+    mutationFn: async ({ bookingId, reason, feePercentage }: { bookingId: string; reason?: string; feePercentage?: number }) => {
       // Získať booking
       const { data: booking, error: fetchError } = await supabase
         .from('bookings')
@@ -160,6 +160,21 @@ export function useAdminBookings() {
 
       if (fetchError) throw fetchError;
 
+      // Apply cancellation fee if percentage > 0
+      const pct = feePercentage ?? 0;
+      const fee = pct > 0 ? booking.price * (pct / 100) : 0;
+
+      if (fee > 0) {
+        const { error: chargeError } = await supabase.rpc('apply_charge', {
+          p_client_id: booking.client_id,
+          p_booking_id: bookingId,
+          p_charge_type: 'cancellation' as const,
+          p_charge: fee,
+          p_note: `Storno poplatok (${pct}%)`,
+        });
+        if (chargeError) throw chargeError;
+      }
+
       // Aktualizovať booking na 'cancelled'
       const { error: updateError } = await supabase
         .from('bookings')
@@ -167,6 +182,7 @@ export function useAdminBookings() {
           status: 'cancelled',
           cancellation_reason: reason || 'Zrušené administrátorom',
           cancelled_at: new Date().toISOString(),
+          cancellation_fee: fee,
         })
         .eq('id', bookingId);
 
@@ -186,7 +202,9 @@ export function useAdminBookings() {
         .insert({
           user_id: booking.client_id,
           title: 'Tréning zrušený',
-          message: reason || 'Rezervácia bola zrušená. Ak máte otázky, ozvite sa.',
+          message: fee > 0
+            ? `Rezervácia bola zrušená. Storno poplatok: ${fee.toFixed(2)}€ (${pct}%).`
+            : (reason || 'Rezervácia bola zrušená. Ak máte otázky, ozvite sa.'),
           type: 'booking_cancelled',
           related_slot_id: booking.slot_id,
         });

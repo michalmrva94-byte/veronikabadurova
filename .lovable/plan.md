@@ -1,61 +1,66 @@
 
 
-## Plan: Add cancellation fee support to admin cancelBooking
+## Plan: Batch-insert training slots and bookings in proposeFixedTrainings
 
-### Changes across 4 files
+### What changes
+Refactor the `proposeFixedTrainings` mutation (lines 147-189) to replace the sequential for-loop with two batch inserts.
 
-#### 1. `src/hooks/useAdminBookings.ts`
-- Add optional `feePercentage` (default `0`) to the `cancelBooking` mutation input type: `{ bookingId: string; reason?: string; feePercentage?: number }`
-- When `feePercentage > 0`, calculate `fee = booking.price * (feePercentage / 100)` and:
-  - Call `apply_charge` RPC with `p_client_id`, `p_booking_id`, `p_charge_type: 'cancellation'`, `p_charge: fee`, `p_note` including the percentage
-  - Set `cancellation_fee: fee` on the booking update
-  - Include the fee amount in the notification message
-- When `feePercentage === 0` (default), behavior stays exactly as today — no charge, no `cancellation_fee`
+### Single file: `src/hooks/useProposedTrainings.ts`
 
-#### 2. `src/components/admin/ConfirmedBookingCard.tsx`
-- Update `onCancel` prop type to `(bookingId: string, reason?: string, feePercentage?: number) => void`
-- Replace the simple cancel AlertDialog with one that includes a fee percentage selector (radio group with 0%, 50%, 80%, 100% options, default 0%)
-- Show a calculated fee preview: `booking.price * selectedPercentage / 100` €
-- Pass the selected percentage through `onCancel`
+**Replace lines 147-189** (the `let created` through end of for-loop) with:
 
-#### 3. `src/components/admin/SlotDetailDialog.tsx`
-- Update `onCancel` prop type to match: `(bookingId: string, reason?: string, feePercentage?: number) => void`
-- Replace the inline cancel button with an AlertDialog containing the same fee percentage selector (radio group: 0%, 50%, 80%, 100%)
-- Show fee preview and pass percentage through `onCancel`
-
-#### 4. `src/pages/admin/AdminDashboardPage.tsx` and `src/pages/admin/AdminCalendarPage.tsx`
-- Update `handleCancel` / `handleSlotCancel` to accept and forward `feePercentage`:
-  - `handleCancel(bookingId, reason, feePercentage)` → `cancelBooking.mutateAsync({ bookingId, reason, feePercentage })`
-
-### Technical detail
-
-**Hook mutation change** (useAdminBookings.ts, inside `cancelBooking.mutationFn`):
 ```typescript
-// After fetching booking, before updating status:
-const feePercentage = params.feePercentage ?? 0;
-const fee = feePercentage > 0 ? booking.price * (feePercentage / 100) : 0;
+const deadline = addHours(new Date(), 24).toISOString();
 
-if (fee > 0) {
-  const { error: chargeError } = await supabase.rpc('apply_charge', {
-    p_client_id: booking.client_id,
-    p_booking_id: bookingId,
-    p_charge_type: 'cancellation',
-    p_charge: fee,
-    p_note: `Storno poplatok (${feePercentage}%)`,
-  });
-  if (chargeError) throw chargeError;
+// 1. Build all slot objects
+const slotObjects = validDates.map((date) => ({
+  start_time: date.toISOString(),
+  end_time: addHours(date, 1).toISOString(),
+  is_available: false,
+  is_recurring: false,
+}));
+
+if (slotObjects.length === 0) {
+  return { created: 0, skipped: conflicts.length, conflicts: skipConflicts ? conflicts : [] };
 }
 
-// Then in the booking update, add: cancellation_fee: fee
+// 2. Batch-insert all training slots
+const { data: slots, error: slotsError } = await supabase
+  .from('training_slots')
+  .insert(slotObjects)
+  .select();
+
+if (slotsError || !slots) {
+  throw new Error('Nepodarilo sa vytvoriť tréningové sloty');
+}
+
+// 3. Build booking objects from returned slot IDs
+const bookingObjects = slots.map((slot) => ({
+  client_id: clientId,
+  slot_id: slot.id,
+  status: 'awaiting_confirmation' as const,
+  price: DEFAULT_TRAINING_PRICE,
+  confirmation_deadline: deadline,
+  proposed_by: profile.id,
+}));
+
+// 4. Batch-insert all bookings
+const { data: bookings, error: bookingsError } = await supabase
+  .from('bookings')
+  .insert(bookingObjects)
+  .select();
+
+if (bookingsError) {
+  throw new Error('Nepodarilo sa vytvoriť rezervácie');
+}
+
+const created = bookings?.length ?? 0;
 ```
 
-**UI selector** (RadioGroup with 4 options in the cancel AlertDialog):
-```
-○ 0% – Bez poplatku (0 €)
-○ 50% – 12.50 €
-○ 80% – 20.00 €
-○ 100% – 25.00 €
-```
+Everything else (conflict checking, notification insert, email send, other mutations) stays unchanged.
 
-No changes to `rejectBooking`. No changes to any other files.
+### Why this is safe
+- Supabase `.insert(array)` is atomic per call — either all rows insert or none do
+- The `status: 'awaiting_confirmation' as const` satisfies the TypeScript enum type
+- Error handling now throws instead of silently continuing, which is appropriate for batch operations (partial failures in a batch are unlikely — they'd be schema/RLS issues)
 

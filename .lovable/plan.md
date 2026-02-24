@@ -1,44 +1,61 @@
 
 
-## Plan: Dynamic cancellation fee display in CancelBookingDialog
+## Plan: Add cancellation fee support to admin cancelBooking
 
-### Problem
-The dialog shows fees based on hardcoded constants (0%, 50%, 80%) but the actual charge uses dynamic values from `app_settings`. If an admin changes the percentages, the user sees a wrong preview.
+### Changes across 4 files
 
-### Changes — single file: `src/components/client/CancelBookingDialog.tsx`
+#### 1. `src/hooks/useAdminBookings.ts`
+- Add optional `feePercentage` (default `0`) to the `cancelBooking` mutation input type: `{ bookingId: string; reason?: string; feePercentage?: number }`
+- When `feePercentage > 0`, calculate `fee = booking.price * (feePercentage / 100)` and:
+  - Call `apply_charge` RPC with `p_client_id`, `p_booking_id`, `p_charge_type: 'cancellation'`, `p_charge: fee`, `p_note` including the percentage
+  - Set `cancellation_fee: fee` on the booking update
+  - Include the fee amount in the notification message
+- When `feePercentage === 0` (default), behavior stays exactly as today — no charge, no `cancellation_fee`
 
-1. **Add a query** to fetch `cancel_fee_24h` and `cancel_fee_48h` from `app_settings` when the dialog is open (using `useQuery` with `enabled: isOpen`).
+#### 2. `src/components/admin/ConfirmedBookingCard.tsx`
+- Update `onCancel` prop type to `(bookingId: string, reason?: string, feePercentage?: number) => void`
+- Replace the simple cancel AlertDialog with one that includes a fee percentage selector (radio group with 0%, 50%, 80%, 100% options, default 0%)
+- Show a calculated fee preview: `booking.price * selectedPercentage / 100` €
+- Pass the selected percentage through `onCancel`
 
-2. **Replace `getCancellationFee`** logic to use the fetched percentages instead of hardcoded 50/80 values. Fallback to the current hardcoded values if the fetch fails.
+#### 3. `src/components/admin/SlotDetailDialog.tsx`
+- Update `onCancel` prop type to match: `(bookingId: string, reason?: string, feePercentage?: number) => void`
+- Replace the inline cancel button with an AlertDialog containing the same fee percentage selector (radio group: 0%, 50%, 80%, 100%)
+- Show fee preview and pass percentage through `onCancel`
 
-3. **Loading state**: While the query is loading, show a `Skeleton` placeholder (from `@/components/ui/skeleton`) in place of the fee amount text. The rest of the dialog UI (date, time, buttons) remains visible immediately.
+#### 4. `src/pages/admin/AdminDashboardPage.tsx` and `src/pages/admin/AdminCalendarPage.tsx`
+- Update `handleCancel` / `handleSlotCancel` to accept and forward `feePercentage`:
+  - `handleCancel(bookingId, reason, feePercentage)` → `cancelBooking.mutateAsync({ bookingId, reason, feePercentage })`
 
 ### Technical detail
 
+**Hook mutation change** (useAdminBookings.ts, inside `cancelBooking.mutationFn`):
 ```typescript
-// Inside the component, before the return:
-const { data: feeSettings, isLoading: isLoadingFees } = useQuery({
-  queryKey: ['cancel-fee-settings'],
-  queryFn: async () => {
-    const { data } = await supabase
-      .from('app_settings')
-      .select('key, value')
-      .in('key', ['cancel_fee_24h', 'cancel_fee_48h']);
-    const map: Record<string, number> = {};
-    (data || []).forEach((s: any) => { map[s.key] = parseFloat(s.value) || 0; });
-    return { fee24h: map['cancel_fee_24h'] ?? 80, fee48h: map['cancel_fee_48h'] ?? 50 };
-  },
-  enabled: isOpen,
-  staleTime: 60_000,
-});
+// After fetching booking, before updating status:
+const feePercentage = params.feePercentage ?? 0;
+const fee = feePercentage > 0 ? booking.price * (feePercentage / 100) : 0;
 
-// Fee calculation using dynamic values:
-const fee24h = feeSettings?.fee24h ?? 80;
-const fee48h = feeSettings?.fee48h ?? 50;
-// Then apply same time-based logic with these values
+if (fee > 0) {
+  const { error: chargeError } = await supabase.rpc('apply_charge', {
+    p_client_id: booking.client_id,
+    p_booking_id: bookingId,
+    p_charge_type: 'cancellation',
+    p_charge: fee,
+    p_note: `Storno poplatok (${feePercentage}%)`,
+  });
+  if (chargeError) throw chargeError;
+}
+
+// Then in the booking update, add: cancellation_fee: fee
 ```
 
-The confirm button will be disabled while fees are loading to prevent confirming with unknown fee.
+**UI selector** (RadioGroup with 4 options in the cancel AlertDialog):
+```
+○ 0% – Bez poplatku (0 €)
+○ 50% – 12.50 €
+○ 80% – 20.00 €
+○ 100% – 25.00 €
+```
 
-No other files are changed.
+No changes to `rejectBooking`. No changes to any other files.
 

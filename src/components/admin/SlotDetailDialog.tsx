@@ -20,9 +20,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { Clock, User, Euro, CheckCircle, XCircle, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { BOOKING_STATUS_LABELS, CLIENT_TYPE_LABELS } from '@/lib/constants';
 import { BookingStatus } from '@/types/database';
+import { useState } from 'react';
 
 interface SlotDetailDialogProps {
   slot: SlotWithBooking | null;
@@ -30,7 +33,7 @@ interface SlotDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onComplete?: (bookingId: string, clientId: string, price: number, slotId: string) => void;
   onNoShow?: (bookingId: string, clientId: string, price: number, slotId: string) => void;
-  onCancel?: (bookingId: string, reason?: string) => void;
+  onCancel?: (bookingId: string, reason?: string, feePercentage?: number) => void;
   onApprove?: (bookingId: string) => void;
   onReject?: (bookingId: string) => void;
   onDelete?: (slotId: string) => void;
@@ -59,6 +62,8 @@ export function SlotDetailDialog({
   onDelete,
   isProcessing,
 }: SlotDetailDialogProps) {
+  const [cancelFeePercent, setCancelFeePercent] = useState('0');
+
   if (!slot) return null;
 
   const startTime = new Date(slot.start_time);
@@ -170,18 +175,63 @@ export function SlotDetailDialog({
                   </AlertDialogContent>
                 </AlertDialog>
 
-                <Button
-                  variant="outline"
-                  className="w-full gap-2 text-destructive"
-                  disabled={isProcessing}
-                  onClick={() => {
-                    onCancel?.(booking.id, 'Zrušené trénerom');
-                    onOpenChange(false);
-                  }}
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  Zrušiť tréning
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 text-destructive"
+                      disabled={isProcessing}
+                    >
+                      <AlertTriangle className="h-4 w-4" />
+                      Zrušiť tréning
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Zrušiť tréning?</AlertDialogTitle>
+                      <AlertDialogDescription asChild>
+                        <div className="space-y-3">
+                          <p>
+                            Naozaj chcete zrušiť tréning s klientom{' '}
+                            <strong>{booking.client?.full_name}</strong>?
+                          </p>
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-foreground">Storno poplatok:</p>
+                            <RadioGroup value={cancelFeePercent} onValueChange={setCancelFeePercent} className="space-y-1.5">
+                              {[
+                                { value: '0', label: 'Bez poplatku', amount: 0 },
+                                { value: '50', label: '50%', amount: (booking as any)?.price * 0.5 },
+                                { value: '80', label: '80%', amount: (booking as any)?.price * 0.8 },
+                                { value: '100', label: '100%', amount: (booking as any)?.price },
+                              ].map((opt) => (
+                                <div key={opt.value} className="flex items-center gap-2">
+                                  <RadioGroupItem value={opt.value} id={`fee-slot-${opt.value}`} />
+                                  <Label htmlFor={`fee-slot-${opt.value}`} className="text-sm cursor-pointer">
+                                    {opt.label} {opt.amount > 0 ? `– ${opt.amount?.toFixed(2)} €` : '(0 €)'}
+                                  </Label>
+                                </div>
+                              ))}
+                            </RadioGroup>
+                          </div>
+                          <p className="text-xs text-muted-foreground">Klient bude o zrušení informovaný notifikáciou.</p>
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setCancelFeePercent('0')}>Späť</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => {
+                          onCancel?.(booking.id, 'Zrušené trénerom', parseInt(cancelFeePercent));
+                          setCancelFeePercent('0');
+                          onOpenChange(false);
+                        }}
+                      >
+                        Zrušiť tréning
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </>
             )}
 

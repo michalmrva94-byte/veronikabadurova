@@ -97,11 +97,11 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleCancel = async (bookingId: string, reason?: string) => {
+  const handleCancel = async (bookingId: string, reason?: string, feePercentage?: number) => {
     setProcessingId(bookingId);
     setProcessingAction('cancel');
     try {
-      await cancelBooking.mutateAsync({ bookingId, reason });
+      await cancelBooking.mutateAsync({ bookingId, reason, feePercentage });
       toast.success('Tréning zrušený');
     } catch (error: any) {
       toast.error(error.message || 'Nepodarilo sa zrušiť tréning');

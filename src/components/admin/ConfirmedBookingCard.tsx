@@ -18,10 +18,12 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useState } from 'react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 interface ConfirmedBookingCardProps {
   booking: AdminBookingWithDetails;
-  onCancel: (bookingId: string, reason?: string) => void;
+  onCancel: (bookingId: string, reason?: string, feePercentage?: number) => void;
   onComplete?: (bookingId: string, clientId: string, price: number, slotId: string) => void;
   onNoShow?: (bookingId: string, clientId: string, price: number, slotId: string) => void;
   isCancelling?: boolean;
@@ -39,6 +41,7 @@ export function ConfirmedBookingCard({
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isCompleteOpen, setIsCompleteOpen] = useState(false);
   const [isNoShowOpen, setIsNoShowOpen] = useState(false);
+  const [cancelFeePercent, setCancelFeePercent] = useState('0');
   const startTime = new Date(booking.slot.start_time);
   const endTime = new Date(booking.slot.end_time);
   const isProcessing = isCancelling || isCompleting;
@@ -72,9 +75,17 @@ export function ConfirmedBookingCard({
   };
 
   const handleCancel = () => {
-    onCancel(booking.id, 'Zrušené trénerom');
+    onCancel(booking.id, 'Zrušené trénerom', parseInt(cancelFeePercent));
     setIsCancelOpen(false);
+    setCancelFeePercent('0');
   };
+
+  const feeOptions = [
+    { value: '0', label: 'Bez poplatku', amount: 0 },
+    { value: '50', label: '50%', amount: booking.price * 0.5 },
+    { value: '80', label: '80%', amount: booking.price * 0.8 },
+    { value: '100', label: '100%', amount: booking.price },
+  ];
 
   const handleComplete = () => {
     onComplete?.(booking.id, booking.client.id, booking.price, booking.slot.id);
@@ -149,16 +160,32 @@ export function ConfirmedBookingCard({
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Zrušiť tréning?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Naozaj chcete zrušiť tréning s klientom{' '}
-                  <strong>{booking.client.full_name}</strong> dňa{' '}
-                  {format(startTime, "d. MMMM 'o' HH:mm", { locale: sk })}?
-                  <br /><br />
-                  Klient bude o zrušení informovaný notifikáciou.
+                <AlertDialogDescription asChild>
+                  <div className="space-y-3">
+                    <p>
+                      Naozaj chcete zrušiť tréning s klientom{' '}
+                      <strong>{booking.client.full_name}</strong> dňa{' '}
+                      {format(startTime, "d. MMMM 'o' HH:mm", { locale: sk })}?
+                    </p>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-foreground">Storno poplatok:</p>
+                      <RadioGroup value={cancelFeePercent} onValueChange={setCancelFeePercent} className="space-y-1.5">
+                        {feeOptions.map((opt) => (
+                          <div key={opt.value} className="flex items-center gap-2">
+                            <RadioGroupItem value={opt.value} id={`fee-card-${booking.id}-${opt.value}`} />
+                            <Label htmlFor={`fee-card-${booking.id}-${opt.value}`} className="text-sm cursor-pointer">
+                              {opt.label} {opt.amount > 0 ? `– ${opt.amount.toFixed(2)} €` : '(0 €)'}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Klient bude o zrušení informovaný notifikáciou.</p>
+                  </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Späť</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => setCancelFeePercent('0')}>Späť</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleCancel}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

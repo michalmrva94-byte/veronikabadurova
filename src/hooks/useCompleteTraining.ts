@@ -66,10 +66,20 @@ export function useCompleteTraining() {
     mutationFn: async ({ bookingId, clientId, price }: NoShowParams) => {
       if (!adminProfile?.id) throw new Error('Admin nie je prihlásený');
 
+      // Fetch no-show fee percentage from settings
+      const { data: settings } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'cancel_fee_noshow')
+        .single();
+
+      const noShowPercentage = settings ? parseFloat(settings.value) || 100 : 100;
+      const noShowFee = price * (noShowPercentage / 100);
+
       // 1. Update booking
       const { error: bookingError } = await supabase
         .from('bookings')
-        .update({ status: 'no_show', cancellation_fee: price })
+        .update({ status: 'no_show', cancellation_fee: noShowFee })
         .eq('id', bookingId);
       if (bookingError) throw bookingError;
 
@@ -78,8 +88,8 @@ export function useCompleteTraining() {
         p_client_id: clientId,
         p_booking_id: bookingId,
         p_charge_type: 'no_show',
-        p_charge: price,
-        p_note: 'Neúčasť na tréningu (100% poplatok)',
+        p_charge: noShowFee,
+        p_note: `Neúčasť na tréningu (${noShowPercentage}% poplatok)`,
       });
       if (chargeError) throw chargeError;
 
@@ -87,7 +97,7 @@ export function useCompleteTraining() {
       await supabase.from('notifications').insert({
         user_id: clientId,
         title: 'Neúčasť na tréningu',
-        message: `Tréning nebol absolvovaný. Podľa podmienok sa účtuje ${price} €.`,
+        message: `Tréning nebol absolvovaný. Podľa podmienok sa účtuje ${noShowFee.toFixed(2)} €.`,
         type: 'no_show',
       });
     },

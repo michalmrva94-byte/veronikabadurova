@@ -1,35 +1,44 @@
 
 
-## Plan: Dynamic no-show fee percentage from app_settings
+## Plan: Dynamic cancellation fee display in CancelBookingDialog
 
-### What changes
-In `src/hooks/useCompleteTraining.ts`, the `markNoShow` mutation will be updated to:
+### Problem
+The dialog shows fees based on hardcoded constants (0%, 50%, 80%) but the actual charge uses dynamic values from `app_settings`. If an admin changes the percentages, the user sees a wrong preview.
 
-1. **Fetch the no-show fee percentage** from `app_settings` table using key `cancel_fee_noshow` (matching the existing settings pattern from `AdminSettingsPage`)
-2. **Calculate the actual fee**: `price * (percentage / 100)`, defaulting to 100% if the setting is missing
-3. **Use the calculated fee** in the booking update (`cancellation_fee`) and `apply_charge` RPC call (`p_charge`), and in the notification message
+### Changes — single file: `src/components/client/CancelBookingDialog.tsx`
 
-### Technical details
+1. **Add a query** to fetch `cancel_fee_24h` and `cancel_fee_48h` from `app_settings` when the dialog is open (using `useQuery` with `enabled: isOpen`).
 
-In the `markNoShow` `mutationFn`, before the booking update (line 70), insert a fetch to `app_settings`:
+2. **Replace `getCancellationFee`** logic to use the fetched percentages instead of hardcoded 50/80 values. Fallback to the current hardcoded values if the fetch fails.
+
+3. **Loading state**: While the query is loading, show a `Skeleton` placeholder (from `@/components/ui/skeleton`) in place of the fee amount text. The rest of the dialog UI (date, time, buttons) remains visible immediately.
+
+### Technical detail
 
 ```typescript
-// Fetch no-show fee percentage from settings
-const { data: settings } = await supabase
-  .from('app_settings')
-  .select('value')
-  .eq('key', 'cancel_fee_noshow')
-  .single();
+// Inside the component, before the return:
+const { data: feeSettings, isLoading: isLoadingFees } = useQuery({
+  queryKey: ['cancel-fee-settings'],
+  queryFn: async () => {
+    const { data } = await supabase
+      .from('app_settings')
+      .select('key, value')
+      .in('key', ['cancel_fee_24h', 'cancel_fee_48h']);
+    const map: Record<string, number> = {};
+    (data || []).forEach((s: any) => { map[s.key] = parseFloat(s.value) || 0; });
+    return { fee24h: map['cancel_fee_24h'] ?? 80, fee48h: map['cancel_fee_48h'] ?? 50 };
+  },
+  enabled: isOpen,
+  staleTime: 60_000,
+});
 
-const noShowPercentage = settings ? parseFloat(settings.value) || 100 : 100;
-const noShowFee = price * (noShowPercentage / 100);
+// Fee calculation using dynamic values:
+const fee24h = feeSettings?.fee24h ?? 80;
+const fee48h = feeSettings?.fee48h ?? 50;
+// Then apply same time-based logic with these values
 ```
 
-Then replace all references to `price` in the rest of `markNoShow` with `noShowFee`:
-- Line 72: `cancellation_fee: noShowFee`
-- Line 81: `p_charge: noShowFee`
-- Line 82: `p_note: \`Neúčasť na tréningu (${noShowPercentage}% poplatok)\``
-- Line 90: `message: \`Tréning nebol absolvovaný. Podľa podmienok sa účtuje ${noShowFee.toFixed(2)} €.\``
+The confirm button will be disabled while fees are loading to prevent confirming with unknown fee.
 
-No other changes to the file.
+No other files are changed.
 

@@ -1,6 +1,7 @@
 import { useState, forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Send } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,12 +34,22 @@ const ContactSection = forwardRef<HTMLElement>((_, ref) => {
       return;
     }
     setSending(true);
-    await new Promise(r => setTimeout(r, 1000));
-    toast.success('Správa odoslaná! Ozvem sa vám čo najskôr.');
-    setName('');
-    setEmail('');
-    setMessage('');
-    setSending(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-contact-form', {
+        body: { name: name.trim(), email: email.trim(), message: message.trim() },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success('Správa odoslaná! Ozvem sa vám čo najskôr.');
+      setName('');
+      setEmail('');
+      setMessage('');
+    } catch (err: any) {
+      console.error('Contact form error:', err);
+      toast.error('Nepodarilo sa odoslať správu. Skúste to znova.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (

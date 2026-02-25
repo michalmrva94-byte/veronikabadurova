@@ -1,29 +1,45 @@
 
 
-## Analýza problému
+## Plan: Reset databázy pre produkčné používanie
 
-Keď klient odmietne navrhnutý tréning, kód v `rejectProposedTraining` (riadok 348-352) nastaví `is_available: true` na danom slote. To spôsobí, že slot sa zobrazí v klientskom kalendári ako voľný termín — čo je nežiaduce, pretože bol vytvorený výhradne pre konkrétneho klienta.
+### Aktuálny stav
 
-Rovnaký problém je aj v `check-proposed-deadlines` edge funkcii (riadok 51-54) — keď deadline vyprší, slot sa tiež nastaví na `is_available: true`.
+**Profily (5):**
+- Veronika Baďurová — admin (PONECHAŤ)
+- Marianna Pliešovská — reálny klient (PONECHAŤ)
+- alica — reálny klient (PONECHAŤ)
+- Michal Mrva — testovací účet (ODSTRÁNIŤ)
+- Miško — testovací účet (ODSTRÁNIŤ)
 
-### Požadované správanie
+**Bookings (5):**
+- alica: booked 25.2. 17:00 (PONECHAŤ)
+- Marianna: awaiting_confirmation 26.2. 06:15 (PONECHAŤ)
+- Miško: 3 bookings — booked, 2x cancelled (ODSTRÁNIŤ)
 
-Odmietnutý/expirovaný navrhnutý tréning by mal slot **zmazať** (nie uvoľniť), pretože:
-- Slot bol vytvorený špeciálne pre návrh konkrétnemu klientovi
-- Admin ho nechce automaticky ponúkať ostatným
-- Ak by admin chcel termín ponúknuť znova, vytvorí nový slot manuálne
+**Notifikácie (25):** Väčšina sú testovacie notifikácie pre Veroniku z testovacieho obdobia. Ponechať len tie pre reálnych klientov (alica: 1, Marianna: 1).
 
-## Plán opráv
+**Sloty (25):** Staré sloty z testovania pred dneškom, ktoré nemajú reálne bookings, budú odstránené. Budúce voľné sloty a sloty s reálnymi bookings zostanú.
 
-### 1. `src/hooks/useProposedTrainings.ts` — rejectProposedTraining
+**Transakcie:** 0 — čisté.
+**Referral rewards:** 0 — čisté.
 
-Nahradiť `update({ is_available: true })` za `delete()` na danom slote. Aktualizovať notifikáciu adminovi — zmeniť text z "Termín bol uvoľnený" na "Termín bol odstránený z kalendára".
+### Postup čistenia (v poradí kvôli foreign keys)
 
-### 2. `supabase/functions/check-proposed-deadlines/index.ts` — expirácia
+1. **Zmazať bookings testovacích klientov** (Miško — 3 bookings)
+2. **Zmazať notifikácie testovacích klientov** (Miško: 1, Michal Mrva: 1)
+3. **Zmazať testovacie notifikácie admina** (23 starých notifikácií pre Veroniku)
+4. **Zmazať staré sloty** bez aktívnych bookings (pred dneškom + sloty Miška)
+5. **Zmazať testovacích klientov** cez edge funkciu `delete-client` (Michal Mrva, Miško) — táto funkcia vymaže profil, roly aj auth účet
 
-Rovnako nahradiť `update({ is_available: true })` za `delete()`. Aktualizovať text notifikácie z "Termín bol uvoľnený" na "Termín bol odstránený z kalendára".
+### Výsledok po čistení
 
-### Zmenené súbory
-- `src/hooks/useProposedTrainings.ts` — delete slotu namiesto uvoľnenia pri odmietnutí
-- `supabase/functions/check-proposed-deadlines/index.ts` — delete slotu namiesto uvoľnenia pri expirácii
+- 3 profily: Veronika (admin), Marianna, alica
+- 2 aktívne bookings: alica (dnes), Marianna (zajtra)
+- 2 notifikácie: po jednej pre každého reálneho klienta
+- Len relevantné budúce sloty v kalendári
+- Dashboard bude ukazovať čerstvé, reálne dáta
+
+### Implementácia
+
+Toto je čisto dátová operácia — žiadne zmeny v kóde. Vykonám DELETE príkazy cez databázu v správnom poradí a potom zavolám edge funkciu na odstránenie testovacích auth účtov.
 

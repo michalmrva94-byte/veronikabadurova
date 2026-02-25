@@ -1,36 +1,41 @@
 
 
-## Analysis
+## Plan: Admin – manuálne odstránenie profilu klienta (2-krokový flow)
 
-The issue: When the admin navigates months using the calendar arrows, nothing updates until they click a specific day. The `useSlotsForMonth` hook is keyed on `selectedDate`, and the `Calendar` component's `onSelect` only fires on day click — not on month navigation.
+Snímka obrazovky slúži ako referencia pre umiestnenie funkcie v zozname klientov.
 
-The `Calendar` component (react-day-picker v8) supports an `onMonthChange` callback that fires when the user navigates between months.
+### Ako to bude fungovať
 
-Currently in `AdminCalendarPage`:
-- `selectedDate` drives both the day detail list (`useTrainingSlots(selectedDate)`) and the month slot highlights (`useSlotsForMonth(selectedDate || new Date())`)
-- When the user clicks month arrows, react-day-picker changes its internal displayed month, but `selectedDate` stays the same → month highlights and day detail don't update
+1. **Krok 1 – Tlačidlo "Odstrániť klienta"** na stránke detailu klienta (`AdminClientDetailPage`). Admin klikne na červené tlačidlo dole na stránke.
+2. **Krok 2 – Potvrdenie cez AlertDialog** s textom "Naozaj chcete natrvalo odstrániť tohto klienta? Táto akcia je nevratná." Admin musí potvrdiť akciu.
 
-## Plan
+Po potvrdení sa vykoná:
+- Zmazanie všetkých záznamov klienta z tabuliek: `notifications`, `transactions`, `bookings`, `referral_rewards`, `profiles`, `user_roles`
+- Zmazanie auth používateľa cez edge function (Supabase Admin API – `auth.admin.deleteUser`)
+- Presmerovanie späť na zoznam klientov s toast notifikáciou
 
-### Single file change: `src/pages/admin/AdminCalendarPage.tsx`
+### Technické zmeny
 
-**Add `onMonthChange` handler to the `Calendar` component** (around line 175):
+#### 1. Nová edge function: `supabase/functions/delete-client/index.ts`
+- Prijme `{ clientId: string }` (profile ID)
+- Overí, že volajúci je admin (cez JWT + `has_role`)
+- Získa `user_id` z profilu
+- Zmaže v poradí: `notifications`, `transactions`, `bookings`, `referral_rewards`, `profiles`, `user_roles` (WHERE user_id / client_id)
+- Zavolá `supabase.auth.admin.deleteUser(user_id)` na zmazanie auth záznamu
+- Vráti `{ success: true }`
 
-```tsx
-onMonthChange={(month: Date) => {
-  const today = new Date();
-  // If today is in the navigated month, select today; otherwise select 1st of that month
-  if (today.getFullYear() === month.getFullYear() && today.getMonth() === month.getMonth()) {
-    setSelectedDate(today);
-  } else {
-    setSelectedDate(new Date(month.getFullYear(), month.getMonth(), 1));
-  }
-}}
-```
+#### 2. Úprava: `src/pages/admin/AdminClientDetailPage.tsx`
+- Pridať import `AlertDialog` komponentov a `Trash2` ikonu
+- Pridať state: `deleteDialogOpen`
+- Pridať `handleDeleteClient` funkciu – volá edge function `delete-client`, po úspechu invaliduje queries a naviguje na `/admin/klienti`
+- Pridať AlertDialog s 2-krokovým potvrdením (tlačidlo → dialog → potvrdenie)
+- Červené tlačidlo "Odstrániť klienta" umiestnené na konci stránky
 
-This single addition ensures:
-1. `selectedDate` updates on month navigation → `useTrainingSlots(selectedDate)` refetches day detail
-2. `useSlotsForMonth(selectedDate || new Date())` refetches month highlights (new month key)
-3. Day click (`onSelect`) still works as before, overriding `selectedDate`
-4. No other files need changes
+#### 3. Žiadne DB migrácie
+- Všetky tabuľky už majú admin ALL/DELETE politiky alebo cascade vzťahy. Edge function použije service role key, takže RLS nie je blocker.
+
+### Bezpečnostné aspekty
+- Edge function overuje admin rolu na serveri
+- Použije `SUPABASE_SERVICE_ROLE_KEY` pre auth admin operácie
+- Klient nemôže zavolať túto funkciu – JWT validácia + role check
 

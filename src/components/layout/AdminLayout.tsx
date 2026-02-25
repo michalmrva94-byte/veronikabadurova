@@ -70,7 +70,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </header>
 
       {/* Main content with iOS padding */}
-      <main className="container flex-1 px-4 py-4 pb-24">
+      <main className="container flex-1 px-4 py-4 pb-32">
         {children}
       </main>
 

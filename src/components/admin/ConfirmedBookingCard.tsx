@@ -47,7 +47,7 @@ export function ConfirmedBookingCard({
   const isProcessing = isCancelling || isCompleting;
 
   const handleAddToCalendar = () => {
-    const title = `Tréning – ${booking.client.full_name}`;
+    const title = `Tréning – ${booking.client?.full_name || 'Klient'}`;
     const start = format(startTime, "yyyyMMdd'T'HHmmss");
     const end = format(endTime, "yyyyMMdd'T'HHmmss");
     const description = `Cena: ${booking.price}€`;
@@ -88,12 +88,12 @@ export function ConfirmedBookingCard({
   ];
 
   const handleComplete = () => {
-    onComplete?.(booking.id, booking.client.id, booking.price, booking.slot.id);
+    onComplete?.(booking.id, booking.client?.id || '', booking.price, booking.slot.id);
     setIsCompleteOpen(false);
   };
 
   const handleNoShow = () => {
-    onNoShow?.(booking.id, booking.client.id, booking.price, booking.slot.id);
+    onNoShow?.(booking.id, booking.client?.id || '', booking.price, booking.slot.id);
     setIsNoShowOpen(false);
   };
 
@@ -105,10 +105,10 @@ export function ConfirmedBookingCard({
             {/* Client name + type badge */}
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-primary" />
-              <span className="font-semibold">{booking.client.full_name}</span>
-              {booking.client.client_type && (
+              <span className="font-semibold">{booking.client?.full_name || 'Neznámy klient'}</span>
+              {booking.client?.client_type && (
                 <Badge variant="secondary" className="text-[10px]">
-                  {CLIENT_TYPE_LABELS[booking.client.client_type]}
+                  {CLIENT_TYPE_LABELS[booking.client?.client_type as keyof typeof CLIENT_TYPE_LABELS]}
                 </Badge>
               )}
             </div>
@@ -164,7 +164,7 @@ export function ConfirmedBookingCard({
                   <div className="space-y-3">
                     <p>
                       Naozaj chcete zrušiť tréning s klientom{' '}
-                      <strong>{booking.client.full_name}</strong> dňa{' '}
+                      <strong>{booking.client?.full_name || 'Neznámy klient'}</strong> dňa{' '}
                       {format(startTime, "d. MMMM 'o' HH:mm", { locale: sk })}?
                     </p>
                     <div className="space-y-2">

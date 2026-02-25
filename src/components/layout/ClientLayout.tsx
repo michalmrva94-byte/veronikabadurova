@@ -15,6 +15,8 @@ import {
   Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useSWUpdatePrompt } from '@/hooks/useSWUpdatePrompt';
 import veronikaPhoto from '@/assets/veronika-photo.png';
 
 interface ClientLayoutProps {
@@ -52,7 +54,10 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     ? [...baseNavItems.slice(0, 3), { icon: Zap, label: 'Last-minute', path: ROUTES.LAST_MINUTE }, baseNavItems[3]]
     : baseNavItems;
 
+  useSWUpdatePrompt();
+
   return (
+    <PullToRefresh>
     <div className="flex min-h-screen flex-col bg-background">
       {/* Minimal Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/30 safe-top">
@@ -131,5 +136,6 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         </div>
       </nav>
     </div>
+    </PullToRefresh>
   );
 }

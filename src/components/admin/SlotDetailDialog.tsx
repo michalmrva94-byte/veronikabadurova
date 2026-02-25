@@ -91,6 +91,13 @@ export function SlotDetailDialog({
             {format(startTime, 'HH:mm')} – {format(endTime, 'HH:mm')}
           </div>
 
+          {slot.notes && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-sm">
+              <span>📍</span>
+              <span>{slot.notes}</span>
+            </div>
+          )}
+
           {/* Client info */}
           {booking?.client && (
             <div className="ios-card p-4 space-y-2">

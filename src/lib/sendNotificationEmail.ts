@@ -17,6 +17,23 @@ interface SendNotificationEmailParams {
 
 export async function sendNotificationEmail(params: SendNotificationEmailParams) {
   try {
+    // Check if this email type is enabled
+    const { data: toggleRow } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'email_toggles')
+      .maybeSingle();
+
+    if (toggleRow) {
+      try {
+        const toggles = JSON.parse(toggleRow.value);
+        if (toggles[params.type] === false) {
+          console.log(`Email type "${params.type}" is disabled, skipping.`);
+          return;
+        }
+      } catch {}
+    }
+
     const { error } = await supabase.functions.invoke('send-notification-email', {
       body: params,
     });

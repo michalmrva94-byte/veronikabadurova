@@ -1,38 +1,36 @@
 
 
-## Bug Analysis
+## Analysis
 
-The root cause is in `CreateTrainingDialog`. It initializes internal state with `useState<Date>(selectedDate)` (line 62 of the dialog). React's `useState` only uses the initial value on first mount — subsequent prop changes are ignored. So when you click a new date, `dialogDate` updates but the dialog's internal `trainingDate` stays stale.
+The issue: When the admin navigates months using the calendar arrows, nothing updates until they click a specific day. The `useSlotsForMonth` hook is keyed on `selectedDate`, and the `Calendar` component's `onSelect` only fires on day click — not on month navigation.
 
-**Secondary issue**: The `resetForm` function resets `trainingDate` back to `selectedDate`, but this runs on close — by then the prop may have already changed or not.
+The `Calendar` component (react-day-picker v8) supports an `onMonthChange` callback that fires when the user navigates between months.
 
-## Fix Plan
+Currently in `AdminCalendarPage`:
+- `selectedDate` drives both the day detail list (`useTrainingSlots(selectedDate)`) and the month slot highlights (`useSlotsForMonth(selectedDate || new Date())`)
+- When the user clicks month arrows, react-day-picker changes its internal displayed month, but `selectedDate` stays the same → month highlights and day detail don't update
 
-### 1. `CreateTrainingDialog` — sync internal state with prop
+## Plan
 
-Add a `useEffect` that updates `trainingDate` whenever the `selectedDate` prop changes:
+### Single file change: `src/pages/admin/AdminCalendarPage.tsx`
 
-```ts
-useEffect(() => {
-  setTrainingDate(selectedDate);
-}, [selectedDate]);
+**Add `onMonthChange` handler to the `Calendar` component** (around line 175):
+
+```tsx
+onMonthChange={(month: Date) => {
+  const today = new Date();
+  // If today is in the navigated month, select today; otherwise select 1st of that month
+  if (today.getFullYear() === month.getFullYear() && today.getMonth() === month.getMonth()) {
+    setSelectedDate(today);
+  } else {
+    setSelectedDate(new Date(month.getFullYear(), month.getMonth(), 1));
+  }
+}}
 ```
 
-Also update `resetForm` to use the current prop value (it already does via closure, but the effect ensures open-time sync).
-
-### 2. `AdminCalendarPage` — ensure `openCreateDialog` sets date before opening
-
-The current flow (`setDialogDate` → `setIsCreateDialogOpen`) is correct, but we should also ensure the month view `onSelect` and `openCreateDialog` are tightly coupled. The existing code at line 80-83 already does this correctly, so no change needed there.
-
-### 3. Date normalization (timezone safety)
-
-The `Calendar` `onSelect` can return a date with local midnight. When the `CreateTrainingDialog` combines this date with a time string via `setHours`/`setMinutes`, it produces a local datetime which is then converted to ISO (UTC) via `.toISOString()`. This is correct behavior — local time in UI, UTC in DB. No change needed here.
-
-### Summary of changes
-
-- **One file modified**: `src/components/admin/CreateTrainingDialog.tsx`
-  - Add `useEffect` import
-  - Add effect to sync `trainingDate` with `selectedDate` prop
-
-This is a minimal, targeted fix for the stale-state bug.
+This single addition ensures:
+1. `selectedDate` updates on month navigation → `useTrainingSlots(selectedDate)` refetches day detail
+2. `useSlotsForMonth(selectedDate || new Date())` refetches month highlights (new month key)
+3. Day click (`onSelect`) still works as before, overriding `selectedDate`
+4. No other files need changes
 

@@ -68,6 +68,9 @@ export function BookingCard({ booking, onCancel, showCancelButton = false }: Boo
                 <Clock className="h-3.5 w-3.5" />
                 {startFormatted} - {endFormatted}
               </p>
+              {booking.slot?.notes && (
+                <p className="text-xs text-muted-foreground">📍 {booking.slot.notes}</p>
+              )}
               <div className="mt-1.5 flex items-center gap-2">
                 <Badge variant={statusVariant} className="text-xs">
                   {BOOKING_STATUS_LABELS[booking.status || 'booked']}

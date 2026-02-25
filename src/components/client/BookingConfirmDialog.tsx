@@ -62,6 +62,14 @@ export function BookingConfirmDialog({
             </div>
           </div>
 
+          {/* Notes */}
+          {slot.notes && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+              <Info className="h-5 w-5 text-primary flex-shrink-0" />
+              <p className="text-sm text-foreground">{slot.notes}</p>
+            </div>
+          )}
+
           {/* Price */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
             <span className="text-muted-foreground">Cena tréningu</span>

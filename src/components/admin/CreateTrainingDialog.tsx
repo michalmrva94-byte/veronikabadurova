@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format, setHours, setMinutes } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -59,6 +59,10 @@ export function CreateTrainingDialog({
   const [selectedClient, setSelectedClient] = useState<string>(NO_CLIENT_VALUE);
   const [price, setPrice] = useState(DEFAULT_TRAINING_PRICE.toString());
   const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    setTrainingDate(selectedDate);
+  }, [selectedDate]);
 
   const hasClient = selectedClient !== NO_CLIENT_VALUE;
 

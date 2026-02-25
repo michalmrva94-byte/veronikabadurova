@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Loader2, Save, Landmark, ShieldAlert } from 'lucide-react';
+import { CreditCard, Loader2, Save, Landmark, ShieldAlert, Mail } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 interface CancellationFees {
   more_than_48h: number;
@@ -22,12 +23,37 @@ const DEFAULT_FEES: CancellationFees = {
   no_show: 100,
 };
 
+interface EmailToggles {
+  confirmation: boolean;
+  reminder: boolean;
+  last_minute: boolean;
+  proposal: boolean;
+  cancellation: boolean;
+}
+
+const DEFAULT_EMAIL_TOGGLES: EmailToggles = {
+  confirmation: true,
+  reminder: true,
+  last_minute: true,
+  proposal: true,
+  cancellation: true,
+};
+
+const EMAIL_TOGGLE_ITEMS: { key: keyof EmailToggles; label: string; description: string }[] = [
+  { key: 'confirmation', label: 'Potvrdenie tréningu', description: 'Keď admin potvrdí rezerváciu' },
+  { key: 'reminder', label: 'Pripomienka tréningu', description: '24h pred tréningom' },
+  { key: 'last_minute', label: 'Last-minute ponuka', description: 'Pri zrušení / voľnom termíne' },
+  { key: 'proposal', label: 'Návrh tréningu', description: 'Keď admin navrhne termín klientovi' },
+  { key: 'cancellation', label: 'Oznámenie o zrušení', description: 'Pri stornovaní tréningu' },
+];
+
 export default function AdminSettingsPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [trainingPrice, setTrainingPrice] = useState('25.00');
   const [iban, setIban] = useState('');
   const [fees, setFees] = useState<CancellationFees>(DEFAULT_FEES);
+  const [emailToggles, setEmailToggles] = useState<EmailToggles>(DEFAULT_EMAIL_TOGGLES);
 
   useEffect(() => {
     fetchSettings();
@@ -38,18 +64,24 @@ export default function AdminSettingsPage() {
       const { data, error } = await supabase
         .from('app_settings')
         .select('*')
-        .in('key', ['training_price', 'iban', 'cancellation_fees']);
+        .in('key', ['training_price', 'iban', 'cancellation_fees', 'email_toggles']);
 
       if (error) throw error;
       if (data) {
         const priceRow = data.find(r => r.key === 'training_price');
         const ibanRow = data.find(r => r.key === 'iban');
         const feesRow = data.find(r => r.key === 'cancellation_fees');
+        const emailRow = data.find(r => r.key === 'email_toggles');
         if (priceRow) setTrainingPrice(priceRow.value);
         if (ibanRow) setIban(ibanRow.value);
         if (feesRow) {
           try {
             setFees({ ...DEFAULT_FEES, ...JSON.parse(feesRow.value) });
+          } catch {}
+        }
+        if (emailRow) {
+          try {
+            setEmailToggles({ ...DEFAULT_EMAIL_TOGGLES, ...JSON.parse(emailRow.value) });
           } catch {}
         }
       }
@@ -76,6 +108,11 @@ export default function AdminSettingsPage() {
         .from('app_settings')
         .upsert({ key: 'cancellation_fees', value: JSON.stringify(fees), description: 'Storno poplatky v %' }, { onConflict: 'key' });
       if (feesError) throw feesError;
+
+      const { error: emailError } = await supabase
+        .from('app_settings')
+        .upsert({ key: 'email_toggles', value: JSON.stringify(emailToggles), description: 'Zapnutie/vypnutie automatických emailov' }, { onConflict: 'key' });
+      if (emailError) throw emailError;
 
       toast({
         title: 'Uložené',
@@ -203,7 +240,34 @@ export default function AdminSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Save button */}
+        {/* Email toggles */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Mail className="h-5 w-5" />
+              Automatické emaily
+            </CardTitle>
+            <CardDescription>Zapnite/vypnite jednotlivé typy automatických emailov</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {EMAIL_TOGGLE_ITEMS.map(({ key, label, description }) => (
+              <div key={key} className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{label}</p>
+                  <p className="text-xs text-muted-foreground">{description}</p>
+                </div>
+                <Switch
+                  checked={emailToggles[key]}
+                  onCheckedChange={(checked) =>
+                    setEmailToggles(prev => ({ ...prev, [key]: checked }))
+                  }
+                  disabled={isLoading}
+                />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
         <Button onClick={handleSave} className="w-full" disabled={isLoading}>
           {isLoading ? (
             <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Ukladám...</>

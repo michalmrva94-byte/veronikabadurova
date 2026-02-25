@@ -2,24 +2,31 @@
 
 ## Analýza problému
 
-Na snímke obrazovky vidím, že tlačidlo "Uložiť nastavenia" na stránke Admin Nastavenia je orezané spodným tab barom. AdminLayout má `pb-24` na `<main>`, čo by malo stačiť, ale tlačidlo je úplne na konci obsahu a v standalone PWA režime je nav bar vyšší kvôli `safe-bottom` paddingu.
+Mazanie slotu zlyhá s DB chybou:
 
-Problém: `pb-24` (6rem = 96px) nestačí, keď sa pripočíta výška tab baru (h-20 = 80px) + safe-area-inset-bottom (cca 34px na iPhone).
+```text
+update or delete on table "training_slots" violates foreign key constraint
+"notifications_related_slot_id_fkey" on table "notifications"
+```
+
+Tabuľka `notifications` má FK `related_slot_id -> training_slots(id)` **bez** `ON DELETE CASCADE`. Keď existujú notifikácie viazané na daný slot, databáza odmietne jeho zmazanie.
 
 ## Riešenie
 
-Jednoduchá zmena – zvýšiť spodný padding hlavného obsahu v `AdminLayout.tsx` z `pb-24` na `pb-32`, čím sa zabezpečí dostatok priestoru pre scroll aj na zariadeniach so safe-area.
+Zmeniť FK constraint `notifications_related_slot_id_fkey` na `ON DELETE SET NULL`. Pri zmazaní slotu sa `related_slot_id` v notifikáciách nastaví na `NULL` namiesto blokovania operácie. Notifikácie zostanú zachované (historické záznamy), len stratia väzbu na zmazaný slot.
 
-### Zmena v `src/components/layout/AdminLayout.tsx`
+### Databázová migrácia
 
-Zmeniť:
-```
-<main className="container flex-1 px-4 py-4 pb-24">
-```
-Na:
-```
-<main className="container flex-1 px-4 py-4 pb-32">
+```sql
+ALTER TABLE public.notifications
+  DROP CONSTRAINT notifications_related_slot_id_fkey;
+
+ALTER TABLE public.notifications
+  ADD CONSTRAINT notifications_related_slot_id_fkey
+  FOREIGN KEY (related_slot_id)
+  REFERENCES public.training_slots(id)
+  ON DELETE SET NULL;
 ```
 
-Toto pridá extra 32px (z 96px na 128px), čo pokryje tab bar + safe area na všetkých iOS zariadeniach.
+Žiadne zmeny v kóde nie sú potrebné - `handleDeleteSlot` v `AdminCalendarPage.tsx` a `deleteSlot` v `useTrainingSlots.ts` sú implementované správne.
 

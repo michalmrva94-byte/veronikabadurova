@@ -229,6 +229,9 @@ export function useProposedTrainings() {
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['client-bookings-admin'] });
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['year-slots'] });
     },
   });
 
@@ -307,6 +310,9 @@ export function useProposedTrainings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['year-slots'] });
     },
   });
 
@@ -372,6 +378,9 @@ export function useProposedTrainings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['year-slots'] });
     },
   });
 
@@ -393,6 +402,9 @@ export function useProposedTrainings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['year-slots'] });
     },
   });
 

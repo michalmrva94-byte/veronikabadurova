@@ -97,7 +97,7 @@ export function useSlotsForMonth(month: Date) {
         // bookings is an array from Supabase
         const bookingsArr = Array.isArray(slot.bookings) ? slot.bookings : (slot.bookings ? [slot.bookings] : []);
         const hasActiveBooking = bookingsArr.some((b: any) => 
-          b.status === 'booked' || b.status === 'pending' || b.status === 'awaiting_confirmation' || b.status === 'completed'
+          b.status === 'booked' || b.status === 'pending' || b.status === 'awaiting_confirmation' || b.status === 'completed' || b.status === 'proposed'
         );
         
         if (hasActiveBooking) {

@@ -17,7 +17,7 @@ import { CreateTrainingDialog } from '@/components/admin/CreateTrainingDialog';
 import { WeeklyCalendarGrid } from '@/components/admin/WeeklyCalendarGrid';
 import { YearCalendarGrid } from '@/components/admin/YearCalendarGrid';
 import { SlotDetailDialog } from '@/components/admin/SlotDetailDialog';
-import { SlotCard } from '@/components/admin/SlotCard';
+// SlotCard no longer used in month view - using unified interactive slots
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -32,8 +32,11 @@ export default function AdminCalendarPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   
-  const { slots, isLoading, createSlot, deleteSlot } = useTrainingSlots(selectedDate);
+  const { createSlot, deleteSlot } = useTrainingSlots(selectedDate);
   const { data: weeklySlots, isLoading: weeklyLoading } = useWeeklySlots(weekStart);
+  // Use weekly slots hook for the selected day in month view (same data source as week view)
+  const selectedDayWeekStart = selectedDate ? startOfWeek(selectedDate, { weekStartsOn: 1 }) : startOfWeek(new Date(), { weekStartsOn: 1 });
+  const { data: selectedDaySlots, isLoading: selectedDayLoading } = useWeeklySlots(selectedDayWeekStart);
   const { data: monthSlots } = useSlotsForMonth(selectedDate || new Date());
   const { data: yearSlots, isLoading: yearLoading } = useSlotsForYear(selectedYear);
   const { data: clients = [] } = useClients();
@@ -274,22 +277,65 @@ export default function AdminCalendarPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
+                {selectedDayLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
-                ) : slots.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-6 text-center">
-                    <Clock className="mb-3 h-10 w-10 text-muted-foreground/40" />
-                    <p className="text-sm text-muted-foreground">Žiadne termíny na tento deň</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {slots.map((slot) => (
-                      <SlotCard key={slot.id} slot={slot} onDelete={handleDeleteSlot} isDeleting={deleteSlot.isPending} />
-                    ))}
-                  </div>
-                )}
+                ) : (() => {
+                  // Filter slots for the selected day from the weekly data
+                  const daySlotsFiltered = (selectedDaySlots || []).filter(s => {
+                    if (!selectedDate) return false;
+                    const slotDate = new Date(s.start_time);
+                    return slotDate.toDateString() === selectedDate.toDateString();
+                  });
+                  return daySlotsFiltered.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-6 text-center">
+                      <Clock className="mb-3 h-10 w-10 text-muted-foreground/40" />
+                      <p className="text-sm text-muted-foreground">Žiadne termíny na tento deň</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {daySlotsFiltered.map((slot) => (
+                        <div
+                          key={slot.id}
+                          className="ios-card p-4 cursor-pointer hover:bg-accent/50 transition-colors"
+                          onClick={() => handleSlotClick(slot)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-primary" />
+                              <span className="font-semibold">
+                                {format(new Date(slot.start_time), 'HH:mm')} - {format(new Date(slot.end_time), 'HH:mm')}
+                              </span>
+                            </div>
+                            {slot.booking ? (
+                              <span className={cn(
+                                "text-xs font-medium px-2 py-1 rounded-full",
+                                slot.booking.status === 'booked' && "bg-primary/10 text-primary",
+                                slot.booking.status === 'pending' && "bg-warning/10 text-warning",
+                                slot.booking.status === 'awaiting_confirmation' && "bg-warning/10 text-warning",
+                                slot.booking.status === 'completed' && "bg-success/10 text-success",
+                                slot.booking.status === 'no_show' && "bg-destructive/10 text-destructive",
+                              )}>
+                                {slot.booking.client?.full_name || 'Klient'}
+                                {' · '}
+                                {slot.booking.status === 'booked' ? 'Rezervované' :
+                                 slot.booking.status === 'pending' ? 'Čaká na schválenie' :
+                                 slot.booking.status === 'awaiting_confirmation' ? 'Čaká na potvrdenie' :
+                                 slot.booking.status === 'completed' ? 'Dokončené' :
+                                 slot.booking.status === 'no_show' ? 'Neúčasť' : slot.booking.status}
+                              </span>
+                            ) : (
+                              <span className="text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">
+                                Voľný
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>

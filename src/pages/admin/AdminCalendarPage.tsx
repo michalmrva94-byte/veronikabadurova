@@ -225,6 +225,14 @@ export default function AdminCalendarPage() {
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
+                  onMonthChange={(month: Date) => {
+                    const today = new Date();
+                    if (today.getFullYear() === month.getFullYear() && today.getMonth() === month.getMonth()) {
+                      setSelectedDate(today);
+                    } else {
+                      setSelectedDate(new Date(month.getFullYear(), month.getMonth(), 1));
+                    }
+                  }}
                   locale={sk}
                   className="rounded-md"
                   modifiers={modifiers}

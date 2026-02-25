@@ -1,68 +1,44 @@
 
 
-## Plán: Ovládanie automatických emailov v admin nastaveniach
+## Analýza a plán opráv
 
-### Prehľad
-Pridať novú kartu do stránky Nastavenia so Switch prepínačmi pre každý typ automatického emailu. Admin bude môcť individuálne zapnúť/vypnúť:
+### Problém 1: Odmietnutý tréning sa stále zobrazuje ako rezervovaný
 
-1. **Potvrdenie tréningu** (confirmation)
-2. **Pripomienka tréningu** (reminder)
-3. **Last-minute ponuka** (last_minute)
-4. **Návrh tréningu** (proposal)
-5. **Oznámenie o zrušení** (cancellation)
+**Príčina:** Keď klient odmietne navrhnutý tréning, hook `rejectProposedTraining` správne nastaví `is_available: true` a status bookingu na `cancelled`. Avšak v `onSuccess` invaliduje iba query kľúče `['client-bookings']` a `['training-slots']`. **Neinvaliduje** kľúče `['weekly-slots']`, `['month-slots']` ani `['year-slots']`, takže admin kalendár zobrazuje zastaralé dáta.
 
-### Technický plán
+**Rovnaký problém** má aj `confirmProposedTraining` a `confirmAllProposed` — chýba invalidácia kalendárových query.
 
-**1. Databáza — `app_settings`**
-Uložiť nový záznam s kľúčom `email_toggles` obsahujúcim JSON objekt:
-```json
-{
-  "confirmation": true,
-  "reminder": true,
-  "last_minute": true,
-  "proposal": true,
-  "cancellation": true
-}
+### Problém 2: Nesúlad medzi týždenným a mesačným kalendárom
+
+**Príčiny:**
+- **Rôzne dátové zdroje:** Týždenný pohľad používa `useWeeklySlots` (plné booking dáta so statusmi), mesačný detail používa `useTrainingSlots` cez `SlotCard`, ktorý zobrazuje iba `is_available` príznak — žiaden status bookingu, žiadne meno klienta.
+- **Rôzna logika filtrovania statusov:** `useSlotsForMonth` nepočíta `proposed` status ako aktívny booking, zatiaľ čo `useWeeklySlots` áno. To spôsobuje rozdielne farebné indikátory.
+- **Mesačný detail je primitívny:** `SlotCard` zobrazuje iba „Voľný" / „Rezervovaný" bez možnosti kliknúť na detail. Týždenný pohľad umožňuje kliknúť na slot a otvoriť `SlotDetailDialog`.
+
+### Plán opráv
+
+**1. Pridať chýbajúce invalidácie v `useProposedTrainings.ts`**
+
+Do `onSuccess` callbackov pre `rejectProposedTraining`, `confirmProposedTraining` a `confirmAllProposed` pridať:
 ```
-Všetky typy budú predvolene zapnuté. Žiadna migrácia schémy nie je potrebná — tabuľka `app_settings` už existuje, stačí upsert dát.
-
-**2. UI — `AdminSettingsPage.tsx`**
-- Pridať nový stav `emailToggles` s defaultnými hodnotami (všetky `true`)
-- Načítať z DB pri `fetchSettings` spolu s ostatnými nastaveniami
-- Nová karta s ikonou `Mail` a 5 riadkami, každý so Switch prepínačom
-- Každý riadok bude mať názov emailu a krátky popis kedy sa odosiela
-- Uloženie cez existujúcu funkciu `handleSave` pridaním upsert pre `email_toggles`
-
-**3. Logika odosielania — `sendNotificationEmail.ts`**
-- Pred odoslaním emailu funkcia načíta `email_toggles` z `app_settings`
-- Ak je daný typ vypnutý, email sa neodošle (silent skip)
-- Toto zabezpečí centrálnu kontrolu bez nutnosti meniť každý hook zvlášť
-
-### UI náhľad karty
-
-```text
-┌─────────────────────────────────────────┐
-│ ✉ Automatické emaily                    │
-│ Zapnite/vypnite jednotlivé typy emailov │
-├─────────────────────────────────────────┤
-│ Potvrdenie tréningu          [====ON]   │
-│ Keď admin potvrdí rezerváciu             │
-│                                          │
-│ Pripomienka tréningu         [====ON]   │
-│ 24h pred tréningom                       │
-│                                          │
-│ Last-minute ponuka           [====ON]   │
-│ Pri zrušení / voľnom termíne            │
-│                                          │
-│ Návrh tréningu               [====ON]   │
-│ Keď admin navrhne termín klientovi      │
-│                                          │
-│ Oznámenie o zrušení          [====ON]   │
-│ Pri stornovaní tréningu                  │
-└─────────────────────────────────────────┘
+queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+queryClient.invalidateQueries({ queryKey: ['year-slots'] });
 ```
+
+**2. Zjednotiť mesačný detail s týždenným pohľadom v `AdminCalendarPage.tsx`**
+
+Nahradiť primitívny `SlotCard` v mesačnom pohľade za rovnaký formát ako v týždennom. Konkrétne:
+- Použiť `useWeeklySlots` dáta (alebo dedikovaný daily hook) pre vybraný deň namiesto `useTrainingSlots`
+- Zobraziť sloty s rovnakými farebnými kódmi a statusmi ako v týždennom pohľade
+- Umožniť kliknutie na slot s otvorením `SlotDetailDialog` (rovnako ako v týždennom)
+
+**3. Zjednotiť logiku statusov v `useSlotsForMonth`**
+
+Pridať `proposed` do zoznamu aktívnych statusov v `useSlotsForMonth`, aby mesačný kalendár aj ročný prehľad korektne zobrazovali navrhnuté tréningy ako obsadené.
 
 ### Zmenené súbory
-- `src/pages/admin/AdminSettingsPage.tsx` — nová karta + stav + ukladanie
-- `src/lib/sendNotificationEmail.ts` — kontrola toggle pred odoslaním
+- `src/hooks/useProposedTrainings.ts` — pridanie invalidácií calendar queries
+- `src/hooks/useWeeklySlots.ts` — pridanie `proposed` do aktívnych statusov v `useSlotsForMonth`
+- `src/pages/admin/AdminCalendarPage.tsx` — nahradenie `SlotCard` za interaktívne sloty s booking detailmi v mesačnom pohľade
 

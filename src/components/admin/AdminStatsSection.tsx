@@ -2,6 +2,7 @@ import { AdminDashboardStats } from '@/hooks/useAdminDashboardStats';
 import { Loader2, ChevronDown, TrendingUp, BarChart3, Target, Wallet } from 'lucide-react';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useState } from 'react';
 
 interface AdminStatsSectionProps {
@@ -131,17 +132,17 @@ export function AdminStatsSection({ stats, isLoading }: AdminStatsSectionProps) 
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="h-5 w-5 text-primary" />
               <h3 className="text-sm font-semibold">Hodnota klientov (CLV)</h3>
-              <Tooltip>
-                <TooltipTrigger>
-                  <span className="text-[10px] text-muted-foreground border border-border rounded-full px-1.5 py-0.5 cursor-help">?</span>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[250px]">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" className="text-[10px] text-muted-foreground border border-border rounded-full px-1.5 py-0.5 cursor-help">?</button>
+                </PopoverTrigger>
+                <PopoverContent side="top" className="max-w-[250px] p-3 z-50">
                   <p className="text-xs">
                     CLV = priemerná dĺžka spolupráce × priemerný mesačný príjem na klienta.
                     Orientačný ukazovateľ dlhodobej hodnoty klientov.
                   </p>
-                </TooltipContent>
-              </Tooltip>
+                </PopoverContent>
+              </Popover>
             </div>
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

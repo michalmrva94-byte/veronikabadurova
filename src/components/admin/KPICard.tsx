@@ -1,6 +1,7 @@
 import { Loader2, Info, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export interface KPISubValue {
   label: string;
@@ -78,16 +79,16 @@ export function KPICard({ icon, title, mainValue, mainColor = 'primary', subValu
             {icon}
             <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{title}</span>
             {tooltip && (
-              <Tooltip>
-                <TooltipTrigger asChild>
+              <Popover>
+                <PopoverTrigger asChild>
                   <button type="button" className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
                     <Info className="h-3.5 w-3.5" />
                   </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[220px]">
+                </PopoverTrigger>
+                <PopoverContent side="bottom" className="max-w-[220px] p-3 z-50">
                   <p className="text-xs leading-relaxed">{tooltip}</p>
-                </TooltipContent>
-              </Tooltip>
+                </PopoverContent>
+              </Popover>
             )}
           </div>
           {badge && (

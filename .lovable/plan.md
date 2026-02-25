@@ -2,31 +2,28 @@
 
 ## Analýza problému
 
-Mazanie slotu zlyhá s DB chybou:
+`ScrollArea` v `AdminNotificationBell` má `max-h-[60vh] sm:max-h-[400px]`, ale `ScrollArea` z Radix vyžaduje **explicitnú výšku** (nie len `max-h`) na to, aby scroll fungoval. Keď obsah presahuje `max-h`, kontajner sa jednoducho orezáva bez možnosti scrollovania.
 
-```text
-update or delete on table "training_slots" violates foreign key constraint
-"notifications_related_slot_id_fkey" on table "notifications"
-```
-
-Tabuľka `notifications` má FK `related_slot_id -> training_slots(id)` **bez** `ON DELETE CASCADE`. Keď existujú notifikácie viazané na daný slot, databáza odmietne jeho zmazanie.
+Rovnaký problém neexistuje na klientskej stránke `NotificationsPage`, pretože tá nepoužíva `ScrollArea` v popoveri – je to celá stránka so štandardným scrollom.
 
 ## Riešenie
 
-Zmeniť FK constraint `notifications_related_slot_id_fkey` na `ON DELETE SET NULL`. Pri zmazaní slotu sa `related_slot_id` v notifikáciách nastaví na `NULL` namiesto blokovania operácie. Notifikácie zostanú zachované (historické záznamy), len stratia väzbu na zmazaný slot.
+### Zmena v `src/components/admin/AdminNotificationBell.tsx`
 
-### Databázová migrácia
+Nahradiť `ScrollArea` za jednoduchý `div` s `overflow-y-auto` a `overscroll-behavior-contain` (zabráni propagácii scrollu na pozadie). `ScrollArea` z Radix v popoveroch na mobile nefunguje spoľahlivo.
 
-```sql
-ALTER TABLE public.notifications
-  DROP CONSTRAINT notifications_related_slot_id_fkey;
-
-ALTER TABLE public.notifications
-  ADD CONSTRAINT notifications_related_slot_id_fkey
-  FOREIGN KEY (related_slot_id)
-  REFERENCES public.training_slots(id)
-  ON DELETE SET NULL;
+Riadok 79 – zmeniť:
+```tsx
+<ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
+```
+Na:
+```tsx
+<div className="max-h-[60vh] sm:max-h-[400px] overflow-y-auto overscroll-contain">
 ```
 
-Žiadne zmeny v kóde nie sú potrebné - `handleDeleteSlot` v `AdminCalendarPage.tsx` a `deleteSlot` v `useTrainingSlots.ts` sú implementované správne.
+A zodpovedajúci uzatvárací tag `</ScrollArea>` (riadok 109) zmeniť na `</div>`.
+
+Odstrániť nepoužitý import `ScrollArea`.
+
+Jedna zmena, jeden súbor, žiadne ďalšie závislosti.
 

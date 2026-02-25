@@ -99,23 +99,27 @@ export function WeeklyAvailableSlots({
               </div>
               <div className="flex flex-wrap gap-2">
                 {daySlots.map((slot) => (
-                  <Button
-                    key={slot.id}
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onSlotClick(slot);
-                    }}
-                    className={cn(
-                      'h-10 px-4 rounded-xl border-success/30 bg-success/5 hover:bg-success/10 hover:border-success transition-all ios-press',
-                      'text-success font-medium'
+                  <div key={slot.id} className="flex flex-col items-center gap-0.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onSlotClick(slot);
+                      }}
+                      className={cn(
+                        'h-10 px-4 rounded-xl border-success/30 bg-success/5 hover:bg-success/10 hover:border-success transition-all ios-press',
+                        'text-success font-medium'
+                      )}
+                    >
+                      <Clock className="h-4 w-4 mr-1.5" />
+                      {format(new Date(slot.start_time), 'HH:mm')}
+                    </Button>
+                    {slot.notes && (
+                      <span className="text-[10px] text-muted-foreground max-w-[100px] truncate">📍 {slot.notes}</span>
                     )}
-                  >
-                    <Clock className="h-4 w-4 mr-1.5" />
-                    {format(new Date(slot.start_time), 'HH:mm')}
-                  </Button>
+                  </div>
                 ))}
               </div>
             </div>

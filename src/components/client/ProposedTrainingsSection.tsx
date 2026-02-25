@@ -193,6 +193,9 @@ export function ProposedTrainingsSection({ proposedBookings }: Props) {
                       {format(new Date(booking.slot.start_time), 'HH:mm')} –{' '}
                       {format(new Date(booking.slot.end_time), 'HH:mm')}
                     </p>
+                    {booking.slot.notes && (
+                      <p className="text-xs text-muted-foreground">📍 {booking.slot.notes}</p>
+                    )}
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${badge.className}`}>
                         {badge.label}

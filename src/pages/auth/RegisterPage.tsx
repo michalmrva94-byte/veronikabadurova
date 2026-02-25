@@ -61,7 +61,10 @@ export default function RegisterPage() {
     );
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Chyba registrácie', description: error.message });
+      const description = error.message?.includes('rate limit')
+        ? 'Príliš veľa pokusov o registráciu. Skúste to znova o hodinu.'
+        : error.message;
+      toast({ variant: 'destructive', title: 'Chyba registrácie', description });
       setIsLoading(false);
       return;
     }

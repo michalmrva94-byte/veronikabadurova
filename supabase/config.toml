@@ -9,3 +9,5 @@ project_id = "yyusjqaehwvqmbzivwsv"
     verify_jwt = false
   [functions.send-training-reminders]
     verify_jwt = false
+  [functions.delete-client]
+    verify_jwt = false

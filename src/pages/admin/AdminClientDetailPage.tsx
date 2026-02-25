@@ -9,7 +9,7 @@ import { format, subWeeks, differenceInMonths } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import {
   ArrowLeft, User, Mail, Phone, CreditCard, Calendar, Target,
-  CalendarDays, Loader2, TrendingUp, AlertTriangle, Info
+  CalendarDays, Loader2, TrendingUp, AlertTriangle, Info, Trash2
 } from 'lucide-react';
 import { CLIENT_TYPE_LABELS, BOOKING_STATUS_LABELS, ROUTES } from '@/lib/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,12 +18,18 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ClientType, BookingStatus } from '@/types/database';
 import { ProposeFixedTrainingsDialog } from '@/components/admin/ProposeFixedTrainingsDialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 
 export default function AdminClientDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [proposeDialogOpen, setProposeDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data: client, isLoading } = useQuery({
     queryKey: ['client-detail', id],
@@ -102,6 +108,30 @@ export default function AdminClientDetailPage() {
   };
 
   const weeklyFrequency = recentBookings.length / 4;
+
+  const handleDeleteClient = async () => {
+    setIsDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Nie ste prihlásený');
+        return;
+      }
+      const res = await supabase.functions.invoke('delete-client', {
+        body: { clientId: id },
+      });
+      if (res.error) throw res.error;
+      toast.success('Klient bol úspešne odstránený');
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      navigate(ROUTES.ADMIN.CLIENTS);
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Nepodarilo sa odstrániť klienta');
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
 
   // Computed stats
   const completedCount = allClientBookings.filter(b => b.status === 'completed').length;
@@ -303,6 +333,44 @@ export default function AdminClientDetailPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Delete client */}
+        <div className="pt-4 border-t">
+          <Button
+            variant="destructive"
+            className="w-full gap-2"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+            Odstrániť klienta
+          </Button>
+        </div>
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Odstrániť klienta</AlertDialogTitle>
+              <AlertDialogDescription>
+                Naozaj chcete natrvalo odstrániť klienta <strong>{client.full_name}</strong>? 
+                Táto akcia je nevratná – všetky tréningy, transakcie a údaje budú zmazané.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Zrušiť</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteClient}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />Odstraňujem...</>
+                ) : (
+                  'Natrvalo odstrániť'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );

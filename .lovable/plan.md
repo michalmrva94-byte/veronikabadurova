@@ -1,44 +1,29 @@
 
 
-## Analýza a plán opráv
+## Analýza problému
 
-### Problém 1: Odmietnutý tréning sa stále zobrazuje ako rezervovaný
+Keď klient odmietne navrhnutý tréning, kód v `rejectProposedTraining` (riadok 348-352) nastaví `is_available: true` na danom slote. To spôsobí, že slot sa zobrazí v klientskom kalendári ako voľný termín — čo je nežiaduce, pretože bol vytvorený výhradne pre konkrétneho klienta.
 
-**Príčina:** Keď klient odmietne navrhnutý tréning, hook `rejectProposedTraining` správne nastaví `is_available: true` a status bookingu na `cancelled`. Avšak v `onSuccess` invaliduje iba query kľúče `['client-bookings']` a `['training-slots']`. **Neinvaliduje** kľúče `['weekly-slots']`, `['month-slots']` ani `['year-slots']`, takže admin kalendár zobrazuje zastaralé dáta.
+Rovnaký problém je aj v `check-proposed-deadlines` edge funkcii (riadok 51-54) — keď deadline vyprší, slot sa tiež nastaví na `is_available: true`.
 
-**Rovnaký problém** má aj `confirmProposedTraining` a `confirmAllProposed` — chýba invalidácia kalendárových query.
+### Požadované správanie
 
-### Problém 2: Nesúlad medzi týždenným a mesačným kalendárom
+Odmietnutý/expirovaný navrhnutý tréning by mal slot **zmazať** (nie uvoľniť), pretože:
+- Slot bol vytvorený špeciálne pre návrh konkrétnemu klientovi
+- Admin ho nechce automaticky ponúkať ostatným
+- Ak by admin chcel termín ponúknuť znova, vytvorí nový slot manuálne
 
-**Príčiny:**
-- **Rôzne dátové zdroje:** Týždenný pohľad používa `useWeeklySlots` (plné booking dáta so statusmi), mesačný detail používa `useTrainingSlots` cez `SlotCard`, ktorý zobrazuje iba `is_available` príznak — žiaden status bookingu, žiadne meno klienta.
-- **Rôzna logika filtrovania statusov:** `useSlotsForMonth` nepočíta `proposed` status ako aktívny booking, zatiaľ čo `useWeeklySlots` áno. To spôsobuje rozdielne farebné indikátory.
-- **Mesačný detail je primitívny:** `SlotCard` zobrazuje iba „Voľný" / „Rezervovaný" bez možnosti kliknúť na detail. Týždenný pohľad umožňuje kliknúť na slot a otvoriť `SlotDetailDialog`.
+## Plán opráv
 
-### Plán opráv
+### 1. `src/hooks/useProposedTrainings.ts` — rejectProposedTraining
 
-**1. Pridať chýbajúce invalidácie v `useProposedTrainings.ts`**
+Nahradiť `update({ is_available: true })` za `delete()` na danom slote. Aktualizovať notifikáciu adminovi — zmeniť text z "Termín bol uvoľnený" na "Termín bol odstránený z kalendára".
 
-Do `onSuccess` callbackov pre `rejectProposedTraining`, `confirmProposedTraining` a `confirmAllProposed` pridať:
-```
-queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
-queryClient.invalidateQueries({ queryKey: ['month-slots'] });
-queryClient.invalidateQueries({ queryKey: ['year-slots'] });
-```
+### 2. `supabase/functions/check-proposed-deadlines/index.ts` — expirácia
 
-**2. Zjednotiť mesačný detail s týždenným pohľadom v `AdminCalendarPage.tsx`**
-
-Nahradiť primitívny `SlotCard` v mesačnom pohľade za rovnaký formát ako v týždennom. Konkrétne:
-- Použiť `useWeeklySlots` dáta (alebo dedikovaný daily hook) pre vybraný deň namiesto `useTrainingSlots`
-- Zobraziť sloty s rovnakými farebnými kódmi a statusmi ako v týždennom pohľade
-- Umožniť kliknutie na slot s otvorením `SlotDetailDialog` (rovnako ako v týždennom)
-
-**3. Zjednotiť logiku statusov v `useSlotsForMonth`**
-
-Pridať `proposed` do zoznamu aktívnych statusov v `useSlotsForMonth`, aby mesačný kalendár aj ročný prehľad korektne zobrazovali navrhnuté tréningy ako obsadené.
+Rovnako nahradiť `update({ is_available: true })` za `delete()`. Aktualizovať text notifikácie z "Termín bol uvoľnený" na "Termín bol odstránený z kalendára".
 
 ### Zmenené súbory
-- `src/hooks/useProposedTrainings.ts` — pridanie invalidácií calendar queries
-- `src/hooks/useWeeklySlots.ts` — pridanie `proposed` do aktívnych statusov v `useSlotsForMonth`
-- `src/pages/admin/AdminCalendarPage.tsx` — nahradenie `SlotCard` za interaktívne sloty s booking detailmi v mesačnom pohľade
+- `src/hooks/useProposedTrainings.ts` — delete slotu namiesto uvoľnenia pri odmietnutí
+- `supabase/functions/check-proposed-deadlines/index.ts` — delete slotu namiesto uvoľnenia pri expirácii
 

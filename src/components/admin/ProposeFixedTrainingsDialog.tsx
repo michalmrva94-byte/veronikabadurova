@@ -169,6 +169,7 @@ export function ProposeFixedTrainingsDialog({ open, onOpenChange, clientId, clie
               <SelectContent>
                 <SelectItem value="1">Najbližší 1 týždeň</SelectItem>
                 <SelectItem value="2">Najbližšie 2 týždne</SelectItem>
+                <SelectItem value="4">Najbližšie 4 týždne (mesiac)</SelectItem>
               </SelectContent>
             </Select>
           </div>

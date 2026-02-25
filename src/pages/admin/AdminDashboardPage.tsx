@@ -419,7 +419,7 @@ function UnconfirmedBookingRow({ booking, onApprove, onReject, isProcessing }: {
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 space-y-1">
           <div className="flex items-center gap-2">
-            <span className="font-semibold">{booking.client.full_name}</span>
+            <span className="font-semibold">{booking.client?.full_name || 'Neznámy klient'}</span>
             <Badge variant="secondary" className="text-[10px]">
               {BOOKING_STATUS_LABELS[booking.status as keyof typeof BOOKING_STATUS_LABELS]}
             </Badge>

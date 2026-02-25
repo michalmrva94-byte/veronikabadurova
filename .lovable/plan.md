@@ -1,41 +1,64 @@
 
 
-## Plan: Admin – manuálne odstránenie profilu klienta (2-krokový flow)
+## Analýza problému
 
-Snímka obrazovky slúži ako referencia pre umiestnenie funkcie v zozname klientov.
+PWA nainštalovaná na plochu mobilu používa Service Worker s `registerType: "autoUpdate"`. Hoci toto nastavenie teoreticky automaticky aktivuje nový SW na pozadí, v praxi:
 
-### Ako to bude fungovať
+1. **Standalone mód nemá adresný riadok** – používateľ nemôže stlačiť refresh
+2. **iOS Safari drží cache agresívne** – nový SW sa nemusí aktivovať, kým sa app úplne nezavrie a znova neotvorí
+3. **Žiadny vizuálny spôsob** ako vynútiť refresh obsahu
 
-1. **Krok 1 – Tlačidlo "Odstrániť klienta"** na stránke detailu klienta (`AdminClientDetailPage`). Admin klikne na červené tlačidlo dole na stránke.
-2. **Krok 2 – Potvrdenie cez AlertDialog** s textom "Naozaj chcete natrvalo odstrániť tohto klienta? Táto akcia je nevratná." Admin musí potvrdiť akciu.
+Riešenie: **Pull-to-refresh gesto** + **automatická detekcia novej verzie s toast notifikáciou**.
 
-Po potvrdení sa vykoná:
-- Zmazanie všetkých záznamov klienta z tabuliek: `notifications`, `transactions`, `bookings`, `referral_rewards`, `profiles`, `user_roles`
-- Zmazanie auth používateľa cez edge function (Supabase Admin API – `auth.admin.deleteUser`)
-- Presmerovanie späť na zoznam klientov s toast notifikáciou
+---
 
-### Technické zmeny
+## Plán
 
-#### 1. Nová edge function: `supabase/functions/delete-client/index.ts`
-- Prijme `{ clientId: string }` (profile ID)
-- Overí, že volajúci je admin (cez JWT + `has_role`)
-- Získa `user_id` z profilu
-- Zmaže v poradí: `notifications`, `transactions`, `bookings`, `referral_rewards`, `profiles`, `user_roles` (WHERE user_id / client_id)
-- Zavolá `supabase.auth.admin.deleteUser(user_id)` na zmazanie auth záznamu
-- Vráti `{ success: true }`
+### 1. Nový komponent: `src/components/PullToRefresh.tsx`
 
-#### 2. Úprava: `src/pages/admin/AdminClientDetailPage.tsx`
-- Pridať import `AlertDialog` komponentov a `Trash2` ikonu
-- Pridať state: `deleteDialogOpen`
-- Pridať `handleDeleteClient` funkciu – volá edge function `delete-client`, po úspechu invaliduje queries a naviguje na `/admin/klienti`
-- Pridať AlertDialog s 2-krokovým potvrdením (tlačidlo → dialog → potvrdenie)
-- Červené tlačidlo "Odstrániť klienta" umiestnené na konci stránky
+Jednoduchý pull-to-refresh wrapper pomocou touch eventov (`touchstart`, `touchmove`, `touchend`):
+- Sleduje ťahanie prstom nadol, keď je `scrollTop === 0`
+- Po dostatočnom potiahnutí (>80px) zavolá `window.location.reload()`
+- Zobrazí vizuálny indikátor (spinner + šípka) počas ťahania
+- Používa framer-motion pre plynulú animáciu
 
-#### 3. Žiadne DB migrácie
-- Všetky tabuľky už majú admin ALL/DELETE politiky alebo cascade vzťahy. Edge function použije service role key, takže RLS nie je blocker.
+### 2. Nový hook: `src/hooks/useSWUpdatePrompt.ts`
 
-### Bezpečnostné aspekty
-- Edge function overuje admin rolu na serveri
-- Použije `SUPABASE_SERVICE_ROLE_KEY` pre auth admin operácie
-- Klient nemôže zavolať túto funkciu – JWT validácia + role check
+Detekuje, keď je k dispozícii nová verzia service workeru:
+- Počúva `controllerchange` event na `navigator.serviceWorker`
+- Periodicky kontroluje registráciu SW (každých 60 sekúnd)
+- Keď nájde `waiting` SW, zobrazí toast: "Nová verzia je dostupná" s tlačidlom "Aktualizovať"
+- Kliknutie na "Aktualizovať" pošle `SKIP_WAITING` message workeru a reloadne stránku
+
+### 3. Integrácia do layoutov
+
+**`src/components/layout/ClientLayout.tsx`**:
+- Obalí `children` komponentom `<PullToRefresh>`
+- Pridá `useSWUpdatePrompt()` hook
+
+**`src/components/layout/AdminLayout.tsx`**:
+- Rovnaká integrácia
+
+### 4. Aktualizácia `vite.config.ts`
+
+Pridať do VitePWA konfigurácie:
+```typescript
+workbox: {
+  // existujúce nastavenia...
+  skipWaiting: false,  // necháme na manuálne potvrdenie
+  clientsClaim: true,
+  navigateFallbackDenylist: [/^\/~oauth/],
+}
+```
+
+Tým zabezpečíme, že nový SW čaká na potvrdenie (toast) a potom prevezme kontrolu.
+
+---
+
+## Čo bude fungovať
+
+- **Pull-to-refresh**: Na akomkoľvek mieste v app potiahne prstom nadol → stránka sa reloadne → načíta sa najnovšia verzia
+- **Auto-update toast**: Keď je nová verzia nasadená, používateľ dostane toast notifikáciu s možnosťou okamžite aktualizovať
+- **Funguje v standalone PWA aj v bežnom prehliadači**
+- **Žiadne zmeny v DB ani edge functions**
 

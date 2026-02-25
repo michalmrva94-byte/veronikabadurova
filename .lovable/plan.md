@@ -2,63 +2,24 @@
 
 ## Analýza problému
 
-PWA nainštalovaná na plochu mobilu používa Service Worker s `registerType: "autoUpdate"`. Hoci toto nastavenie teoreticky automaticky aktivuje nový SW na pozadí, v praxi:
+Na snímke obrazovky vidím, že tlačidlo "Uložiť nastavenia" na stránke Admin Nastavenia je orezané spodným tab barom. AdminLayout má `pb-24` na `<main>`, čo by malo stačiť, ale tlačidlo je úplne na konci obsahu a v standalone PWA režime je nav bar vyšší kvôli `safe-bottom` paddingu.
 
-1. **Standalone mód nemá adresný riadok** – používateľ nemôže stlačiť refresh
-2. **iOS Safari drží cache agresívne** – nový SW sa nemusí aktivovať, kým sa app úplne nezavrie a znova neotvorí
-3. **Žiadny vizuálny spôsob** ako vynútiť refresh obsahu
+Problém: `pb-24` (6rem = 96px) nestačí, keď sa pripočíta výška tab baru (h-20 = 80px) + safe-area-inset-bottom (cca 34px na iPhone).
 
-Riešenie: **Pull-to-refresh gesto** + **automatická detekcia novej verzie s toast notifikáciou**.
+## Riešenie
 
----
+Jednoduchá zmena – zvýšiť spodný padding hlavného obsahu v `AdminLayout.tsx` z `pb-24` na `pb-32`, čím sa zabezpečí dostatok priestoru pre scroll aj na zariadeniach so safe-area.
 
-## Plán
+### Zmena v `src/components/layout/AdminLayout.tsx`
 
-### 1. Nový komponent: `src/components/PullToRefresh.tsx`
-
-Jednoduchý pull-to-refresh wrapper pomocou touch eventov (`touchstart`, `touchmove`, `touchend`):
-- Sleduje ťahanie prstom nadol, keď je `scrollTop === 0`
-- Po dostatočnom potiahnutí (>80px) zavolá `window.location.reload()`
-- Zobrazí vizuálny indikátor (spinner + šípka) počas ťahania
-- Používa framer-motion pre plynulú animáciu
-
-### 2. Nový hook: `src/hooks/useSWUpdatePrompt.ts`
-
-Detekuje, keď je k dispozícii nová verzia service workeru:
-- Počúva `controllerchange` event na `navigator.serviceWorker`
-- Periodicky kontroluje registráciu SW (každých 60 sekúnd)
-- Keď nájde `waiting` SW, zobrazí toast: "Nová verzia je dostupná" s tlačidlom "Aktualizovať"
-- Kliknutie na "Aktualizovať" pošle `SKIP_WAITING` message workeru a reloadne stránku
-
-### 3. Integrácia do layoutov
-
-**`src/components/layout/ClientLayout.tsx`**:
-- Obalí `children` komponentom `<PullToRefresh>`
-- Pridá `useSWUpdatePrompt()` hook
-
-**`src/components/layout/AdminLayout.tsx`**:
-- Rovnaká integrácia
-
-### 4. Aktualizácia `vite.config.ts`
-
-Pridať do VitePWA konfigurácie:
-```typescript
-workbox: {
-  // existujúce nastavenia...
-  skipWaiting: false,  // necháme na manuálne potvrdenie
-  clientsClaim: true,
-  navigateFallbackDenylist: [/^\/~oauth/],
-}
+Zmeniť:
+```
+<main className="container flex-1 px-4 py-4 pb-24">
+```
+Na:
+```
+<main className="container flex-1 px-4 py-4 pb-32">
 ```
 
-Tým zabezpečíme, že nový SW čaká na potvrdenie (toast) a potom prevezme kontrolu.
-
----
-
-## Čo bude fungovať
-
-- **Pull-to-refresh**: Na akomkoľvek mieste v app potiahne prstom nadol → stránka sa reloadne → načíta sa najnovšia verzia
-- **Auto-update toast**: Keď je nová verzia nasadená, používateľ dostane toast notifikáciu s možnosťou okamžite aktualizovať
-- **Funguje v standalone PWA aj v bežnom prehliadači**
-- **Žiadne zmeny v DB ani edge functions**
+Toto pridá extra 32px (z 96px na 128px), čo pokryje tab bar + safe area na všetkých iOS zariadeniach.
 

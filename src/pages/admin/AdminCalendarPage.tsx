@@ -26,7 +26,6 @@ export default function AdminCalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [dialogDate, setDialogDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<'week' | 'month' | 'year'>('week');
   const [selectedSlot, setSelectedSlot] = useState<SlotWithBooking | null>(null);
   const [isSlotDetailOpen, setIsSlotDetailOpen] = useState(false);
@@ -78,7 +77,7 @@ export default function AdminCalendarPage() {
   };
 
   const openCreateDialog = (date: Date) => {
-    setDialogDate(date);
+    setSelectedDate(date);
     setIsCreateDialogOpen(true);
   };
 
@@ -319,9 +318,10 @@ export default function AdminCalendarPage() {
       </div>
 
       <CreateTrainingDialog
+        key={isCreateDialogOpen ? (selectedDate?.getTime() ?? 0) : 'closed'}
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        selectedDate={dialogDate}
+        selectedDate={selectedDate || new Date()}
         clients={clients}
         onCreateSlot={handleAddSlot}
         onAssignTraining={handleAssignTraining}

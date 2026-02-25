@@ -1,29 +1,16 @@
 
 
-## Analýza problému
+## Plán: Rozšírenie rozsahu na 4 týždne
 
-`ScrollArea` v `AdminNotificationBell` má `max-h-[60vh] sm:max-h-[400px]`, ale `ScrollArea` z Radix vyžaduje **explicitnú výšku** (nie len `max-h`) na to, aby scroll fungoval. Keď obsah presahuje `max-h`, kontajner sa jednoducho orezáva bez možnosti scrollovania.
+### Zmena v `src/components/admin/ProposeFixedTrainingsDialog.tsx`
 
-Rovnaký problém neexistuje na klientskej stránke `NotificationsPage`, pretože tá nepoužíva `ScrollArea` v popoveri – je to celá stránka so štandardným scrollom.
+Riadky 168-170 – pridať jednu položku:
 
-## Riešenie
-
-### Zmena v `src/components/admin/AdminNotificationBell.tsx`
-
-Nahradiť `ScrollArea` za jednoduchý `div` s `overflow-y-auto` a `overscroll-behavior-contain` (zabráni propagácii scrollu na pozadie). `ScrollArea` z Radix v popoveroch na mobile nefunguje spoľahlivo.
-
-Riadok 79 – zmeniť:
 ```tsx
-<ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
-```
-Na:
-```tsx
-<div className="max-h-[60vh] sm:max-h-[400px] overflow-y-auto overscroll-contain">
+<SelectItem value="1">Najbližší 1 týždeň</SelectItem>
+<SelectItem value="2">Najbližšie 2 týždne</SelectItem>
+<SelectItem value="4">Najbližšie 4 týždne (mesiac)</SelectItem>
 ```
 
-A zodpovedajúci uzatvárací tag `</ScrollArea>` (riadok 109) zmeniť na `</div>`.
-
-Odstrániť nepoužitý import `ScrollArea`.
-
-Jedna zmena, jeden súbor, žiadne ďalšie závislosti.
+Žiadne ďalšie zmeny nie sú potrebné – hook už dynamicky generuje dátumy podľa `weeksAhead`.
 

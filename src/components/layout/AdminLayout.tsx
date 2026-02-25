@@ -16,6 +16,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AdminNotificationBell } from '@/components/admin/AdminNotificationBell';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useSWUpdatePrompt } from '@/hooks/useSWUpdatePrompt';
 import veronikaPhoto from '@/assets/veronika-photo.png';
 
 interface AdminLayoutProps {
@@ -34,7 +36,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const { signOut } = useAuth();
 
+  useSWUpdatePrompt();
+
   return (
+    <PullToRefresh>
     <div className="flex min-h-screen flex-col bg-background">
       {/* iOS-style Header with glassmorphism */}
       <header className="sticky top-0 z-50 glass safe-top">
@@ -105,5 +110,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </nav>
     </div>
+    </PullToRefresh>
   );
 }

@@ -1,45 +1,45 @@
 
 
-## Plan: Reset databázy pre produkčné používanie
+## Plan: PWA konfigurácia s novými ikonami
 
-### Aktuálny stav
+### Prehľad
 
-**Profily (5):**
-- Veronika Baďurová — admin (PONECHAŤ)
-- Marianna Pliešovská — reálny klient (PONECHAŤ)
-- alica — reálny klient (PONECHAŤ)
-- Michal Mrva — testovací účet (ODSTRÁNIŤ)
-- Miško — testovací účet (ODSTRÁNIŤ)
+Nahradenie existujúcej PWA konfigurácie novými ikonami, aktualizácia farieb na `#3DAB97`, odstránenie starého `manifest.json` a rozšírenie PullToRefresh o hard-reload threshold.
 
-**Bookings (5):**
-- alica: booked 25.2. 17:00 (PONECHAŤ)
-- Marianna: awaiting_confirmation 26.2. 06:15 (PONECHAŤ)
-- Miško: 3 bookings — booked, 2x cancelled (ODSTRÁNIŤ)
+### Kroky
 
-**Notifikácie (25):** Väčšina sú testovacie notifikácie pre Veroniku z testovacieho obdobia. Ponechať len tie pre reálnych klientov (alica: 1, Marianna: 1).
+**1. Skopírovať 5 ikon do `public/`**
+- `icon-512.png`, `icon-192.png`, `apple-touch-icon.png`, `favicon.ico`, `favicon.svg`
 
-**Sloty (25):** Staré sloty z testovania pred dneškom, ktoré nemajú reálne bookings, budú odstránené. Budúce voľné sloty a sloty s reálnymi bookings zostanú.
+**2. Odstrániť `public/manifest.json`**
+- VitePWA generuje manifest automaticky, starý by kolidoval
 
-**Transakcie:** 0 — čisté.
-**Referral rewards:** 0 — čisté.
+**3. Aktualizovať `index.html`**
+- Nahradiť favicon linky: `favicon.svg` + `favicon.ico` + `apple-touch-icon.png`
+- Zmeniť `theme-color` na `#3DAB97`
+- Zmeniť `apple-mobile-web-app-status-bar-style` na `black-translucent`
+- Odstrániť `<link rel="manifest">` (VitePWA ho injektuje)
 
-### Postup čistenia (v poradí kvôli foreign keys)
+**4. Aktualizovať `vite.config.ts`**
+- `manifest: false` → plný manifest objekt s novými ikonami a farbami (`#3DAB97`)
+- Aktualizovať `includeAssets`
+- Zachovať existujúce workbox nastavenia
 
-1. **Zmazať bookings testovacích klientov** (Miško — 3 bookings)
-2. **Zmazať notifikácie testovacích klientov** (Miško: 1, Michal Mrva: 1)
-3. **Zmazať testovacie notifikácie admina** (23 starých notifikácií pre Veroniku)
-4. **Zmazať staré sloty** bez aktívnych bookings (pred dneškom + sloty Miška)
-5. **Zmazať testovacích klientov** cez edge funkciu `delete-client` (Michal Mrva, Miško) — táto funkcia vymaže profil, roly aj auth účet
+**5. Pridať SW visibility update do `App.tsx`**
+- `useEffect` s `visibilitychange` listenerom, ktorý volá `reg?.update()` pri návrate do appky
 
-### Výsledok po čistení
+**6. Rozšíriť `PullToRefresh.tsx`**
+- Nový `HARD_RELOAD_THRESHOLD = 140`, `MAX_PULL = 160`
+- Pod 140px: existujúci reload
+- Nad 140px: hard reload s textom "Aktualizovať aplikáciu"
 
-- 3 profily: Veronika (admin), Marianna, alica
-- 2 aktívne bookings: alica (dnes), Marianna (zajtra)
-- 2 notifikácie: po jednej pre každého reálneho klienta
-- Len relevantné budúce sloty v kalendári
-- Dashboard bude ukazovať čerstvé, reálne dáta
+**7. Odstrániť `src/hooks/useSWUpdatePrompt.tsx`**
+- Funkcionalita pokrytá novým visibility-change efektom v App.tsx
 
-### Implementácia
+### Technické detaily
 
-Toto je čisto dátová operácia — žiadne zmeny v kóde. Vykonám DELETE príkazy cez databázu v správnom poradí a potom zavolám edge funkciu na odstránenie testovacích auth účtov.
+Upravené súbory: `index.html`, `vite.config.ts`, `src/App.tsx`, `src/components/PullToRefresh.tsx`
+Odstránené: `public/manifest.json`, `src/hooks/useSWUpdatePrompt.tsx`
+Nové v `public/`: 5 ikon
+Bez databázových zmien.
 

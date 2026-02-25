@@ -18,11 +18,23 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "icons/*.png"],
-      manifest: false, // We use our own manifest.json
+      includeAssets: ["favicon.ico", "favicon.svg", "apple-touch-icon.png"],
+      manifest: {
+        name: "Veronikaswim",
+        short_name: "Veronikaswim",
+        theme_color: "#3DAB97",
+        background_color: "#3DAB97",
+        display: "standalone",
+        start_url: "/",
+        icons: [
+          { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        ],
+      },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit for large images
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         skipWaiting: false,
         clientsClaim: true,
         navigateFallbackDenylist: [/^\/~oauth/],
@@ -34,7 +46,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: "supabase-cache",
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+                maxAgeSeconds: 60 * 60 * 24,
               },
             },
           },

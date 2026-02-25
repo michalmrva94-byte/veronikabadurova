@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -41,102 +42,115 @@ import AdminClientDetailPage from "./pages/admin/AdminClientDetailPage";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            {/* Public routes */}
-            <Route path={ROUTES.HOME} element={<PublicLandingPage />} />
-            <Route path={ROUTES.CLIENTS_LANDING} element={<ClientsLandingPage />} />
-            <Route path={ROUTES.REFERRAL_LANDING} element={<ReferralLandingPage />} />
-            <Route path={ROUTES.CANCELLATION_POLICY} element={<CancellationPolicyPage />} />
-            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-            <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-            <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
-            <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+const App = () => {
+  // Auto-check for SW updates when app becomes visible (e.g. returning from background)
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        navigator.serviceWorker?.getRegistration().then(reg => reg?.update());
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, []);
 
-            {/* Client routes */}
-            <Route
-              path={ROUTES.DASHBOARD}
-              element={<ProtectedRoute><ClientDashboardPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.CALENDAR}
-              element={<ProtectedRoute><CalendarPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.MY_TRAININGS}
-              element={<ProtectedRoute><MyTrainingsPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.PROFILE}
-              element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.FINANCES}
-              element={<ProtectedRoute><FinancesPage /></ProtectedRoute>}
-            />
-            {/* Referral page hidden - can be re-enabled later
-            <Route
-              path={ROUTES.REFERRAL_PAGE}
-              element={<ProtectedRoute><ReferralPage /></ProtectedRoute>}
-            />
-            */}
-            <Route
-              path={ROUTES.NOTIFICATIONS}
-              element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.LAST_MINUTE}
-              element={<ProtectedRoute><LastMinutePage /></ProtectedRoute>}
-            />
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              {/* Public routes */}
+              <Route path={ROUTES.HOME} element={<PublicLandingPage />} />
+              <Route path={ROUTES.CLIENTS_LANDING} element={<ClientsLandingPage />} />
+              <Route path={ROUTES.REFERRAL_LANDING} element={<ReferralLandingPage />} />
+              <Route path={ROUTES.CANCELLATION_POLICY} element={<CancellationPolicyPage />} />
+              <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+              <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+              <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+              <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
 
-            {/* Admin routes */}
-            <Route path={ROUTES.ADMIN.LOGIN} element={<Navigate to={ROUTES.LOGIN} replace />} />
-            <Route
-              path={ROUTES.ADMIN.DASHBOARD}
-              element={<ProtectedRoute requireAdmin><AdminDashboardPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.ADMIN.CALENDAR}
-              element={<ProtectedRoute requireAdmin><AdminCalendarPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.ADMIN.CLIENTS}
-              element={<ProtectedRoute requireAdmin><AdminClientsPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.ADMIN.CLIENT_DETAIL}
-              element={<ProtectedRoute requireAdmin><AdminClientDetailPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.ADMIN.FINANCES}
-              element={<ProtectedRoute requireAdmin><AdminFinancesPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.ADMIN.FINANCE_HISTORY}
-              element={<ProtectedRoute requireAdmin><AdminFinanceHistoryPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.ADMIN.BROADCAST}
-              element={<ProtectedRoute requireAdmin><AdminBroadcastPage /></ProtectedRoute>}
-            />
-            <Route
-              path={ROUTES.ADMIN.SETTINGS}
-              element={<ProtectedRoute requireAdmin><AdminSettingsPage /></ProtectedRoute>}
-            />
+              {/* Client routes */}
+              <Route
+                path={ROUTES.DASHBOARD}
+                element={<ProtectedRoute><ClientDashboardPage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.CALENDAR}
+                element={<ProtectedRoute><CalendarPage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.MY_TRAININGS}
+                element={<ProtectedRoute><MyTrainingsPage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.PROFILE}
+                element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.FINANCES}
+                element={<ProtectedRoute><FinancesPage /></ProtectedRoute>}
+              />
+              {/* Referral page hidden - can be re-enabled later
+              <Route
+                path={ROUTES.REFERRAL_PAGE}
+                element={<ProtectedRoute><ReferralPage /></ProtectedRoute>}
+              />
+              */}
+              <Route
+                path={ROUTES.NOTIFICATIONS}
+                element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.LAST_MINUTE}
+                element={<ProtectedRoute><LastMinutePage /></ProtectedRoute>}
+              />
 
-            {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+              {/* Admin routes */}
+              <Route path={ROUTES.ADMIN.LOGIN} element={<Navigate to={ROUTES.LOGIN} replace />} />
+              <Route
+                path={ROUTES.ADMIN.DASHBOARD}
+                element={<ProtectedRoute requireAdmin><AdminDashboardPage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.ADMIN.CALENDAR}
+                element={<ProtectedRoute requireAdmin><AdminCalendarPage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.ADMIN.CLIENTS}
+                element={<ProtectedRoute requireAdmin><AdminClientsPage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.ADMIN.CLIENT_DETAIL}
+                element={<ProtectedRoute requireAdmin><AdminClientDetailPage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.ADMIN.FINANCES}
+                element={<ProtectedRoute requireAdmin><AdminFinancesPage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.ADMIN.FINANCE_HISTORY}
+                element={<ProtectedRoute requireAdmin><AdminFinanceHistoryPage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.ADMIN.BROADCAST}
+                element={<ProtectedRoute requireAdmin><AdminBroadcastPage /></ProtectedRoute>}
+              />
+              <Route
+                path={ROUTES.ADMIN.SETTINGS}
+                element={<ProtectedRoute requireAdmin><AdminSettingsPage /></ProtectedRoute>}
+              />
+
+              {/* Catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

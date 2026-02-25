@@ -7,10 +7,12 @@ interface PullToRefreshProps {
 }
 
 const THRESHOLD = 80;
-const MAX_PULL = 120;
+const HARD_RELOAD_THRESHOLD = 140;
+const MAX_PULL = 160;
 
 export function PullToRefresh({ children }: PullToRefreshProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isHardReload, setIsHardReload] = useState(false);
   const startY = useRef(0);
   const pulling = useRef(false);
   const pullDistance = useMotionValue(0);
@@ -37,15 +39,16 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
     const diff = currentY - startY.current;
 
     if (diff > 0 && isAtTop()) {
-      // Dampen the pull effect
       const dampened = Math.min(diff * 0.5, MAX_PULL);
       pullDistance.set(dampened);
+      setIsHardReload(dampened >= HARD_RELOAD_THRESHOLD);
       
       if (dampened > 10) {
         e.preventDefault();
       }
     } else {
       pullDistance.set(0);
+      setIsHardReload(false);
     }
   }, [isAtTop, isRefreshing, pullDistance]);
 
@@ -59,12 +62,12 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
       setIsRefreshing(true);
       pullDistance.set(60);
       
-      // Small delay for visual feedback, then reload
       setTimeout(() => {
         window.location.reload();
       }, 400);
     } else {
       pullDistance.set(0);
+      setIsHardReload(false);
     }
   }, [pullDistance, isRefreshing]);
 
@@ -88,12 +91,17 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
         style={{ opacity, scale, y: useTransform(pullDistance, [0, MAX_PULL], [-40, 20]) }}
         className="fixed top-0 left-0 right-0 z-[200] flex items-center justify-center pointer-events-none safe-top"
       >
-        <div className="mt-16 flex items-center justify-center w-10 h-10 rounded-full bg-background shadow-lg border border-border">
+        <div className={`mt-16 flex items-center justify-center gap-2 rounded-full bg-background shadow-lg border border-border px-4 h-10 transition-colors ${isHardReload ? 'border-primary' : ''}`}>
           <motion.div style={{ rotate }}>
             <RefreshCw 
-              className={`h-5 w-5 text-primary ${isRefreshing ? 'animate-spin' : ''}`} 
+              className={`h-5 w-5 transition-colors ${isHardReload ? 'text-primary' : 'text-muted-foreground'} ${isRefreshing ? 'animate-spin' : ''}`} 
             />
           </motion.div>
+          {isHardReload && (
+            <span className="text-xs font-medium text-primary whitespace-nowrap">
+              Aktualizovať aplikáciu
+            </span>
+          )}
         </div>
       </motion.div>
       {children}

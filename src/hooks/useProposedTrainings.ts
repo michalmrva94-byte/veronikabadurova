@@ -345,10 +345,10 @@ export function useProposedTrainings() {
 
       if (updateError) throw updateError;
 
-      // Free the slot
+      // Delete the slot (it was created specifically for this proposal)
       await supabase
         .from('training_slots')
-        .update({ is_available: true })
+        .delete()
         .eq('id', booking.slot_id);
 
       // Notify all admins about the rejection
@@ -365,7 +365,7 @@ export function useProposedTrainings() {
             adminIds.map((adminId: string) => ({
               user_id: adminId,
               title: 'Odmietnutý tréning',
-              message: `${clientName} odmietol/a navrhnutý tréning${slotDate ? ` dňa ${slotDate}` : ''}. Termín bol uvoľnený.`,
+              message: `${clientName} odmietol/a navrhnutý tréning${slotDate ? ` dňa ${slotDate}` : ''}. Termín bol odstránený z kalendára.`,
               type: 'proposal_rejected',
               related_slot_id: booking.slot_id,
             }))

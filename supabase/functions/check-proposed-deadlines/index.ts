@@ -50,13 +50,13 @@ Deno.serve(async (req) => {
 
         await supabase
           .from('training_slots')
-          .update({ is_available: true })
+          .delete()
           .eq('id', booking.slot_id)
 
         await supabase.from('notifications').insert({
           user_id: booking.client_id,
           title: 'Návrh tréningu vypršal',
-          message: 'Navrhnutý tréning nebol potvrdený včas. Termín bol uvoľnený.',
+          message: 'Navrhnutý tréning nebol potvrdený včas. Termín bol odstránený z kalendára.',
           type: 'proposal_expired',
         })
 

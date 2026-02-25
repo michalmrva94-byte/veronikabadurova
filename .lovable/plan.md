@@ -1,45 +1,34 @@
 
 
-## Plan: PWA konfigurácia s novými ikonami
+## Plan: Zobraziť poznámku tréningu klientovi
 
 ### Prehľad
-
-Nahradenie existujúcej PWA konfigurácie novými ikonami, aktualizácia farieb na `#3DAB97`, odstránenie starého `manifest.json` a rozšírenie PullToRefresh o hard-reload threshold.
+Poznámka (`notes`) z `training_slots` sa už ukladá pri vytvorení tréningu adminom. Treba ju zobraziť klientovi na dvoch miestach:
+1. V **BookingConfirmDialog** — keď klient klikne na voľný slot a chce sa prihlásiť
+2. V **ProposedTrainingsSection** — pri navrhnutých tréningoch
+3. V **BookingCard** — pri potvrdených/budúcich tréningoch
 
 ### Kroky
 
-**1. Skopírovať 5 ikon do `public/`**
-- `icon-512.png`, `icon-192.png`, `apple-touch-icon.png`, `favicon.ico`, `favicon.svg`
+**1. `BookingConfirmDialog.tsx`** — pridať zobrazenie `slot.notes`
+- Za sekciu s dátumom a časom (riadok ~63) pridať podmienený blok:
+- Ak `slot.notes` existuje, zobraziť info box s ikonou `MapPin` alebo `Info` a textom poznámky
+- Štýl: `p-3 rounded-lg bg-muted/50` konzistentný s ostatnými info boxami v dialógu
 
-**2. Odstrániť `public/manifest.json`**
-- VitePWA generuje manifest automaticky, starý by kolidoval
+**2. `ProposedTrainingsSection.tsx`** — pridať `booking.slot.notes`
+- V každom navrhnutom tréningu (riadok ~195, pod časom) pridať podmienený riadok:
+- `{booking.slot.notes && <p className="text-xs text-muted-foreground">📍 {booking.slot.notes}</p>}`
 
-**3. Aktualizovať `index.html`**
-- Nahradiť favicon linky: `favicon.svg` + `favicon.ico` + `apple-touch-icon.png`
-- Zmeniť `theme-color` na `#3DAB97`
-- Zmeniť `apple-mobile-web-app-status-bar-style` na `black-translucent`
-- Odstrániť `<link rel="manifest">` (VitePWA ho injektuje)
+**3. `BookingCard.tsx`** — pridať `booking.slot.notes`
+- Pod riadkom s časom (riadok ~70) pridať:
+- `{booking.slot.notes && <p className="text-xs text-muted-foreground">{booking.slot.notes}</p>}`
 
-**4. Aktualizovať `vite.config.ts`**
-- `manifest: false` → plný manifest objekt s novými ikonami a farbami (`#3DAB97`)
-- Aktualizovať `includeAssets`
-- Zachovať existujúce workbox nastavenia
-
-**5. Pridať SW visibility update do `App.tsx`**
-- `useEffect` s `visibilitychange` listenerom, ktorý volá `reg?.update()` pri návrate do appky
-
-**6. Rozšíriť `PullToRefresh.tsx`**
-- Nový `HARD_RELOAD_THRESHOLD = 140`, `MAX_PULL = 160`
-- Pod 140px: existujúci reload
-- Nad 140px: hard reload s textom "Aktualizovať aplikáciu"
-
-**7. Odstrániť `src/hooks/useSWUpdatePrompt.tsx`**
-- Funkcionalita pokrytá novým visibility-change efektom v App.tsx
+**4. `WeeklyAvailableSlots.tsx`** — voliteľne zobraziť poznámku pri slot buttonoch
+- Ak slot má notes, pridať tooltip alebo malý text pod tlačidlom, aby klient videl info ešte pred kliknutím
 
 ### Technické detaily
 
-Upravené súbory: `index.html`, `vite.config.ts`, `src/App.tsx`, `src/components/PullToRefresh.tsx`
-Odstránené: `public/manifest.json`, `src/hooks/useSWUpdatePrompt.tsx`
-Nové v `public/`: 5 ikon
-Bez databázových zmien.
+- Žiadne databázové zmeny — `notes` stĺpec v `training_slots` už existuje
+- Žiadne nové API volania — `notes` sa už načítava v existujúcich query (`select *`)
+- Zmeny sú čisto UI — 4 súbory: `BookingConfirmDialog.tsx`, `ProposedTrainingsSection.tsx`, `BookingCard.tsx`, `WeeklyAvailableSlots.tsx`
 

@@ -1,32 +1,38 @@
 
 
-## Plan: Odosielanie kontaktného formulára emailom na veronika.duro@gmail.com
+## Bug Analysis
 
-### Prehľad
-Kontaktný formulár na landing page aktuálne len simuluje odoslanie. Vytvorím edge function, ktorá cez Resend odošle email s obsahom formulára na veronika.duro@gmail.com, a prepojím ju s formulárom.
+The root cause is in `CreateTrainingDialog`. It initializes internal state with `useState<Date>(selectedDate)` (line 62 of the dialog). React's `useState` only uses the initial value on first mount — subsequent prop changes are ignored. So when you click a new date, `dialogDate` updates but the dialog's internal `trainingDate` stays stale.
 
-### Zmeny
+**Secondary issue**: The `resetForm` function resets `trainingDate` back to `selectedDate`, but this runs on close — by then the prop may have already changed or not.
 
-#### 1. Nová edge function: `supabase/functions/send-contact-form/index.ts`
-- Prijme JSON body: `{ name, email, message }`
-- Validuje vstupy (max dĺžky, povinné polia, email formát)
-- Odošle email cez Resend na `veronika.duro@gmail.com` z `Veronika Swim <noreply@veronikaswim.sk>`
-- Subject: `Nová správa z webu od {name}`
-- HTML body: meno, email odosielateľa, text správy
-- Reply-To header nastavený na email odosielateľa (aby Veronika mohla priamo odpovedať)
-- CORS headers, OPTIONS handler
-- `RESEND_API_KEY` secret je už nakonfigurovaný
+## Fix Plan
 
-#### 2. `supabase/config.toml`
-- Pridať `[functions.send-contact-form]` s `verify_jwt = false` (verejný formulár, neprihlásení užívatelia)
+### 1. `CreateTrainingDialog` — sync internal state with prop
 
-#### 3. `src/components/landing/ContactSection.tsx`
-- Nahradiť `await new Promise(r => setTimeout(r, 1000))` skutočným volaním `supabase.functions.invoke('send-contact-form', { body: { name, email, message } })`
-- Pridať error handling: ak edge function vráti chybu, zobraziť `toast.error`
-- Import `supabase` z `@/integrations/supabase/client`
+Add a `useEffect` that updates `trainingDate` whenever the `selectedDate` prop changes:
 
-### Bezpečnosť
-- Vstupná validácia na klientovi (už existuje) aj na serveri (edge function)
-- Rate limiting nie je v scope, ale maxLength na poliach chráni pred zneužitím
-- Žiadne DB zmeny, žiadne RLS implikácie
+```ts
+useEffect(() => {
+  setTrainingDate(selectedDate);
+}, [selectedDate]);
+```
+
+Also update `resetForm` to use the current prop value (it already does via closure, but the effect ensures open-time sync).
+
+### 2. `AdminCalendarPage` — ensure `openCreateDialog` sets date before opening
+
+The current flow (`setDialogDate` → `setIsCreateDialogOpen`) is correct, but we should also ensure the month view `onSelect` and `openCreateDialog` are tightly coupled. The existing code at line 80-83 already does this correctly, so no change needed there.
+
+### 3. Date normalization (timezone safety)
+
+The `Calendar` `onSelect` can return a date with local midnight. When the `CreateTrainingDialog` combines this date with a time string via `setHours`/`setMinutes`, it produces a local datetime which is then converted to ISO (UTC) via `.toISOString()`. This is correct behavior — local time in UI, UTC in DB. No change needed here.
+
+### Summary of changes
+
+- **One file modified**: `src/components/admin/CreateTrainingDialog.tsx`
+  - Add `useEffect` import
+  - Add effect to sync `trainingDate` with `selectedDate` prop
+
+This is a minimal, targeted fix for the stale-state bug.
 

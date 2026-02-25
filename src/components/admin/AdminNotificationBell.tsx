@@ -1,7 +1,7 @@
 import { Bell, Check, X, CalendarX2, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { useAdminNotifications } from '@/hooks/useAdminNotifications';
 import { cn } from '@/lib/utils';
 import { Notification } from '@/types/database';
@@ -76,7 +76,7 @@ export function AdminNotificationBell() {
             )}
           </div>
         </div>
-        <ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
+        <div className="max-h-[60vh] sm:max-h-[400px] overflow-y-auto overscroll-contain">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
               <Bell className="h-8 w-8 mb-2 opacity-40" />
@@ -106,7 +106,7 @@ export function AdminNotificationBell() {
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );

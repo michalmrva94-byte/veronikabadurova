@@ -84,12 +84,13 @@ const text = {
 }
 const link = { color: 'hsl(170, 50%, 45%)', textDecoration: 'underline' }
 const button = {
-  backgroundColor: 'hsl(0, 0%, 10%)',
+  backgroundColor: 'hsl(170, 50%, 45%)',
   color: '#ffffff',
   fontSize: '15px',
   fontWeight: '600' as const,
   borderRadius: '20px',
   padding: '14px 28px',
   textDecoration: 'none',
+  display: 'inline-block' as const,
 }
 const footer = { fontSize: '12px', color: 'hsl(0, 0%, 65%)', margin: '30px 0 0' }

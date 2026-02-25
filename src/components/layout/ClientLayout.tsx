@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PullToRefresh } from '@/components/PullToRefresh';
-import { useSWUpdatePrompt } from '@/hooks/useSWUpdatePrompt';
+
 import veronikaPhoto from '@/assets/veronika-photo.png';
 
 interface ClientLayoutProps {
@@ -54,7 +54,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     ? [...baseNavItems.slice(0, 3), { icon: Zap, label: 'Last-minute', path: ROUTES.LAST_MINUTE }, baseNavItems[3]]
     : baseNavItems;
 
-  useSWUpdatePrompt();
+
 
   return (
     <PullToRefresh>

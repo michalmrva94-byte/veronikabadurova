@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AdminNotificationBell } from '@/components/admin/AdminNotificationBell';
 import { PullToRefresh } from '@/components/PullToRefresh';
-import { useSWUpdatePrompt } from '@/hooks/useSWUpdatePrompt';
+
 import veronikaPhoto from '@/assets/veronika-photo.png';
 
 interface AdminLayoutProps {
@@ -36,7 +36,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const { signOut } = useAuth();
 
-  useSWUpdatePrompt();
+
 
   return (
     <PullToRefresh>

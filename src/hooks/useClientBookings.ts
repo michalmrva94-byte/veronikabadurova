@@ -83,13 +83,21 @@ export function useClientBookings() {
 
       if (updateError) throw updateError;
 
-      // Uvoľniť slot pre prípadný last-minute broadcast
-      const { error: slotError } = await supabase
-        .from('training_slots')
-        .update({ is_available: true })
-        .eq('id', booking.slot_id);
-
-      if (slotError) console.error('Slot update error:', slotError);
+      // Ak ide o navrhnutý tréning, slot úplne odstrániť
+      if (booking.status === 'awaiting_confirmation') {
+        const { error: slotError } = await supabase
+          .from('training_slots')
+          .delete()
+          .eq('id', booking.slot_id);
+        if (slotError) console.error('Slot delete error:', slotError);
+      } else {
+        // Bežný tréning — uvoľniť pre last-minute
+        const { error: slotError } = await supabase
+          .from('training_slots')
+          .update({ is_available: true })
+          .eq('id', booking.slot_id);
+        if (slotError) console.error('Slot update error:', slotError);
+      }
 
       // Spracovať storno poplatok cez apply_charge RPC
       if (cancellationFee > 0) {

@@ -323,22 +323,12 @@ export function useProposedTrainings() {
         .eq('id', booking.client_id)
         .single();
 
-      const { error: updateError } = await supabase
-        .from('bookings')
-        .update({
-          status: 'cancelled',
-          cancelled_at: new Date().toISOString(),
-          cancellation_reason: 'Odmietnuté klientom',
-        })
-        .eq('id', bookingId);
-
-      if (updateError) throw updateError;
-
-      // Delete the slot via RPC (bypasses RLS for clients)
-      await supabase.rpc('delete_proposed_slot', {
+      // Delete the slot and cancel booking atomically via RPC
+      const { error: rpcError } = await supabase.rpc('delete_proposed_slot', {
         p_slot_id: booking.slot_id,
         p_booking_id: bookingId,
       });
+      if (rpcError) throw rpcError;
 
       // Notify all admins about the rejection
       try {

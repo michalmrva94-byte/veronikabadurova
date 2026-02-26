@@ -170,18 +170,20 @@ export function useClientBookings() {
       new Date(booking.slot.start_time) > now
   );
 
-  // Minulé = cancelled, completed, no_show alebo v minulosti
+  // Minulé = cancelled, completed, no_show alebo v minulosti alebo vypršané návrhy
   const pastBookings = (bookingsQuery.data || []).filter(
     (booking) =>
       (booking.status !== 'booked' && booking.status !== 'pending' && booking.status !== 'awaiting_confirmation') ||
-      new Date(booking.slot.start_time) <= now
+      new Date(booking.slot.start_time) <= now ||
+      (booking.status === 'awaiting_confirmation' && booking.confirmation_deadline && new Date(booking.confirmation_deadline) <= now)
   );
 
-  // Navrhnuté = awaiting_confirmation, v budúcnosti
+  // Navrhnuté = awaiting_confirmation, v budúcnosti, deadline ešte nevypršal
   const proposedBookings = (bookingsQuery.data || []).filter(
     (booking) =>
       booking.status === 'awaiting_confirmation' &&
-      new Date(booking.slot.start_time) > now
+      new Date(booking.slot.start_time) > now &&
+      (!booking.confirmation_deadline || new Date(booking.confirmation_deadline) > now)
   );
 
   return {

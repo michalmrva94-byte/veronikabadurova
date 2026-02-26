@@ -248,25 +248,14 @@ export function useProposedTrainings() {
 
       if (fetchError) throw fetchError;
 
-      // Re-check for conflicts (race condition protection)
-      const slotStart = new Date(booking.slot.start_time);
-      const slotEnd = new Date(booking.slot.end_time);
+      // Overiť, že booking je stále awaiting_confirmation
+      if (booking.status !== 'awaiting_confirmation') {
+        throw new Error('Tento tréning už bol spracovaný.');
+      }
 
-      const { data: conflicting } = await supabase
-        .from('bookings')
-        .select('*, slot:training_slots(*)')
-        .neq('id', bookingId)
-        .in('status', ['booked', 'awaiting_confirmation']);
-
-      const hasConflict = (conflicting || []).some((b: any) => {
-        if (!b.slot) return false;
-        const bStart = new Date(b.slot.start_time);
-        const bEnd = new Date(b.slot.end_time);
-        return slotStart < bEnd && slotEnd > bStart;
-      });
-
-      if (hasConflict) {
-        throw new Error('Termín sa medzičasom zmenil alebo už nie je dostupný. Prosím vyber iný.');
+      // Overiť, že deadline ešte nevypršal
+      if (booking.confirmation_deadline && new Date(booking.confirmation_deadline) < new Date()) {
+        throw new Error('Termín na potvrdenie už vypršal.');
       }
 
       // Confirm booking

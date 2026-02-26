@@ -125,13 +125,25 @@ export function useAdminBookings() {
 
       if (updateError) throw updateError;
 
+      // Ak ide o navrhnutý tréning, vymazať aj slot (bol vytvorený špeciálne pre návrh)
+      if (booking.status === 'awaiting_confirmation' || booking.status === 'proposed') {
+        await supabase
+          .from('training_slots')
+          .delete()
+          .eq('id', booking.slot_id);
+      }
+
       // Vytvoriť notifikáciu pre klienta
+      const notifMessage = (booking.status === 'awaiting_confirmation' || booking.status === 'proposed')
+        ? 'Navrhnutý tréning bol stiahnutý trénerkou.'
+        : (reason || 'Tento termín, žiaľ, nie je možné potvrdiť. Skúste prosím iný.');
+
       const { error: notifError } = await supabase
         .from('notifications')
         .insert({
           user_id: booking.client_id,
-          title: 'Zmena termínu',
-          message: reason || 'Tento termín, žiaľ, nie je možné potvrdiť. Skúste prosím iný.',
+          title: (booking.status === 'awaiting_confirmation' || booking.status === 'proposed') ? 'Stiahnutý návrh' : 'Zmena termínu',
+          message: notifMessage,
           type: 'booking_rejected',
           related_slot_id: booking.slot_id,
         });

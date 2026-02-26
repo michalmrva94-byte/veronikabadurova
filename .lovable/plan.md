@@ -2,100 +2,43 @@
 
 ## Problém
 
-RPC funkcia `delete_proposed_slot` kontroluje `b.status = 'cancelled'`, ale v oboch hookoch sa booking najprv aktualizuje na `cancelled` a **potom** sa volá RPC. Problém je, že RPC tiež robí JOIN cez `profiles.user_id = auth.uid()`, čo je správne — ale status check zlyhá kvôli timing issues (RLS SELECT politiky môžu vrátiť starý stav).
-
-Riešenie: RPC bude akceptovať aj `awaiting_confirmation` status (nie len `cancelled`) a hooky nebudú robiť separátny status update pred RPC volaním pre navrhnuté tréningy.
+1. **Sirotský slot v DB**: Slot na 28.2. stále existuje, booking je `cancelled`, ale slot nebol zmazaný — starý kód v prehliadači obišiel RPC
+2. **Systémová zraniteľnosť**: `useWeeklySlots` zobrazuje VŠETKY sloty. Keď booking je `cancelled` a slot má `is_available = false`, kalendár ho zobrazí ako "Voľný" namiesto toho, aby ho skryl
 
 ## Zmeny
 
-### 1. DB migrácia — aktualizovaná RPC funkcia
+### 1. Vyčistiť sirotský slot z DB
 
-```sql
-CREATE OR REPLACE FUNCTION public.delete_proposed_slot(p_slot_id uuid, p_booking_id uuid)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-BEGIN
-  -- Overiť, že booking existuje, patrí volajúcemu, a je navrhnutý alebo už zrušený
-  IF NOT EXISTS (
-    SELECT 1 FROM bookings b
-    JOIN profiles p ON p.id = b.client_id
-    WHERE b.id = p_booking_id
-      AND b.slot_id = p_slot_id
-      AND p.user_id = auth.uid()
-      AND b.status IN ('awaiting_confirmation', 'cancelled')
-  ) THEN
-    RAISE EXCEPTION 'Neplatný booking alebo slot';
-  END IF;
+Zmazať slot `c0a68d1e-6e63-44db-ad5f-fc380d50215a` (28.2. 22:20 CET) — booking je cancelled, slot je orphan.
 
-  -- Atomicky zrušiť booking
-  UPDATE bookings 
-  SET status = 'cancelled', 
-      cancelled_at = now(),
-      updated_at = now()
-  WHERE id = p_booking_id;
+### 2. `src/hooks/useWeeklySlots.ts` — filtrovať sirotské sloty
 
-  -- Zmazať slot
-  DELETE FROM training_slots WHERE id = p_slot_id;
-END;
-$$;
-```
+V `useWeeklySlots` po transformácii dát odstrániť sloty, kde:
+- `is_available = false` (nie je voľný)
+- Nemajú žiadny aktívny booking
 
-### 2. `src/hooks/useProposedTrainings.ts` — rejectProposedTraining (riadky 326-341)
-
-Odstrániť separátny booking update (riadky 326-335) a nechať len RPC volanie s error handling:
+Toto zabezpečí, že aj keby RPC niekedy zlyhalo, sirotské sloty sa nikdy nezobrazia v kalendári.
 
 ```typescript
-      // Delete the slot and cancel booking atomically via RPC
-      const { error: rpcError } = await supabase.rpc('delete_proposed_slot', {
-        p_slot_id: booking.slot_id,
-        p_booking_id: bookingId,
-      });
-      if (rpcError) throw rpcError;
+// Po existujúcom .map() pridať .filter():
+.filter((slot: SlotWithBooking) => {
+  // Skryť sirotské sloty: is_available=false a žiadny aktívny booking
+  if (!slot.is_available && !slot.booking) return false;
+  return true;
+})
 ```
 
-### 3. `src/hooks/useClientBookings.ts` — cancelBooking (riadky 74-98)
+### 3. `useSlotsForMonth` — rovnaký filter
 
-Pre `awaiting_confirmation` bookings preskočiť separátny status update a volať priamo RPC. Pre bežné bookings ponechať existujúci flow:
-
-```typescript
-      if (booking.status === 'awaiting_confirmation') {
-        // Atomicky zrušiť booking a zmazať slot cez RPC
-        const { error: rpcError } = await supabase.rpc('delete_proposed_slot', {
-          p_slot_id: booking.slot_id,
-          p_booking_id: bookingId,
-        });
-        if (rpcError) throw rpcError;
-      } else {
-        // Bežný booking — aktualizovať status
-        const { error: updateError } = await supabase
-          .from('bookings')
-          .update({
-            status: 'cancelled',
-            cancellation_fee: cancellationFee,
-            cancelled_at: new Date().toISOString(),
-          })
-          .eq('id', bookingId);
-        if (updateError) throw updateError;
-
-        // Uvoľniť slot pre last-minute
-        const { error: slotError } = await supabase
-          .from('training_slots')
-          .update({ is_available: true })
-          .eq('id', booking.slot_id);
-        if (slotError) console.error('Slot update error:', slotError);
-      }
-```
-
-Poznámka: Storno poplatok sa pre `awaiting_confirmation` bookings nepočíta (cancellationFeePercentage je 0 keďže sú v budúcnosti), takže preskočenie apply_charge je bezpečné. Ak by sa mal apply_charge volať aj pre tieto bookings, treba ho ponechať pod podmienkou.
+Rovnakú logiku pridať aj do mesačného prehľadu — nezapočítavať sirotské sloty.
 
 ### Zhrnutie
 
 | Zmena | Popis |
 |---|---|
-| DB migrácia | RPC akceptuje `awaiting_confirmation` aj `cancelled`, atomicky updatuje booking a maže slot |
-| `useProposedTrainings.ts` | Odstránený separátny booking update, len RPC |
-| `useClientBookings.ts` | Pre navrhnuté tréningy len RPC, pre bežné pôvodný flow |
+| DB cleanup | Zmazať sirotský slot na 28.2. |
+| `useWeeklySlots` | Filtrovať sirotské sloty (obranná vrstva) |
+| `useSlotsForMonth` | Rovnaký filter pre mesačný kalendár |
+
+Kód hookov (RPC volanie) je správny — problém bol v tom, že prehliadač klienta bežal starú verziu kódu. Filter je obranná vrstva pre budúcnosť.
 

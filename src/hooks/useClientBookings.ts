@@ -71,26 +71,26 @@ export function useClientBookings() {
 
       const cancellationFee = booking.price * (cancellationFeePercentage / 100);
 
-      // Aktualizovať booking
-      const { error: updateError } = await supabase
-        .from('bookings')
-        .update({
-          status: 'cancelled',
-          cancellation_fee: cancellationFee,
-          cancelled_at: new Date().toISOString(),
-        })
-        .eq('id', bookingId);
-
-      if (updateError) throw updateError;
-
-      // Ak ide o navrhnutý tréning, slot úplne odstrániť cez RPC (obíde RLS)
       if (booking.status === 'awaiting_confirmation') {
-        await supabase.rpc('delete_proposed_slot', {
+        // Atomicky zrušiť booking a zmazať slot cez RPC
+        const { error: rpcError } = await supabase.rpc('delete_proposed_slot', {
           p_slot_id: booking.slot_id,
           p_booking_id: bookingId,
         });
+        if (rpcError) throw rpcError;
       } else {
-        // Bežný tréning — uvoľniť pre last-minute
+        // Bežný booking — aktualizovať status
+        const { error: updateError } = await supabase
+          .from('bookings')
+          .update({
+            status: 'cancelled',
+            cancellation_fee: cancellationFee,
+            cancelled_at: new Date().toISOString(),
+          })
+          .eq('id', bookingId);
+        if (updateError) throw updateError;
+
+        // Uvoľniť slot pre last-minute
         const { error: slotError } = await supabase
           .from('training_slots')
           .update({ is_available: true })

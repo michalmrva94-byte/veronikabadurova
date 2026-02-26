@@ -61,6 +61,10 @@ export function useWeeklySlots(weekStart: Date) {
             confirmation_deadline: activeBooking.confirmation_deadline,
           } : undefined,
         };
+      }).filter((slot: SlotWithBooking) => {
+        // Hide orphaned slots: is_available=false and no active booking
+        if (!slot.is_available && !slot.booking) return false;
+        return true;
       }) as SlotWithBooking[];
     },
     staleTime: 30 * 1000,
@@ -102,6 +106,9 @@ export function useSlotsForMonth(month: Date) {
         const hasActiveBooking = bookingsArr.some((b: any) => 
           b.status === 'booked' || b.status === 'pending' || b.status === 'awaiting_confirmation' || b.status === 'completed' || b.status === 'proposed'
         );
+
+        // Skip orphaned slots: is_available=false and no active booking
+        if (!slot.is_available && !hasActiveBooking) return;
         
         if (hasActiveBooking) {
           existing.hasBooked = true;

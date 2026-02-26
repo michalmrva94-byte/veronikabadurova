@@ -2,76 +2,40 @@
 
 ## Problém
 
-Ak klient nestihne potvrdiť navrhnutý tréning do deadline-u (24h), na klientskej strane sa deje nasledovné:
+Na screenshote vidno, že Marianna (07:15, 07:30) stále svieti žltou farbou s badge "Čaká" v kalendári, aj keď deadline na potvrdenie už dávno vypršal. Kalendár totiž vôbec nekontroluje `confirmation_deadline` — nemá prístup k tomuto údaju.
 
-1. **Edge Function `check-proposed-deadlines`** správne zruší booking a vymaže slot — ale beží len keď ju zavolá externý cron, takže medzi vypršaním a spracovaním môže byť medzera
-2. **Klientský hook `useClientBookings.ts`** (riadok 181–185) filtruje `proposedBookings` len podľa statusu `awaiting_confirmation` a budúceho `start_time` — **nekontroluje `confirmation_deadline`**, takže vypršané návrhy sa stále zobrazujú ako aktívne
-3. **`ProposedTrainingsSection`** síce zobrazí badge "Vypršané", ale stále ponúka tlačidlá na potvrdenie/odmietnutie
-4. Vypršané návrhy sa nezobrazujú ani v histórii (`pastBookings` vylučuje `awaiting_confirmation`)
+## Príčina
 
-Zároveň je tu stále nevyriešený problém z predchádzajúcej konverzácie: **kontrola konfliktov pri potvrdení** blokuje klientov (riadky 255–270 v `useProposedTrainings.ts`).
+1. **`useWeeklySlots.ts`** — query na bookings neobsahuje pole `confirmation_deadline`, takže UI nemá ako rozlíšiť aktívny návrh od vypršaného
+2. **`WeeklyCalendarGrid.tsx`** — funkcie `getSlotColor` a `getSlotChipColor` nemajú logiku pre expired stav; badge logika takisto nekontroluje deadline
 
 ## Riešenie
 
-### 1. `src/hooks/useClientBookings.ts` — rozdeliť vypršané od aktívnych
+### 1. `src/hooks/useWeeklySlots.ts` — pridať `confirmation_deadline` do query a interface
 
-**Riadky 180–185** — pridať kontrolu deadline-u do filtra `proposedBookings`:
+- Rozšíriť `SlotWithBooking.booking` interface o `confirmation_deadline?: string`
+- Pridať `confirmation_deadline` do SELECT query (riadok 34)
+- Pridať `confirmation_deadline` do transformácie (riadok 58)
 
+### 2. `src/components/admin/WeeklyCalendarGrid.tsx` — rozlíšiť vypršané návrhy
+
+- Upraviť `getSlotColor` a `getSlotChipColor` — ak je status `awaiting_confirmation` a `confirmation_deadline` < now, použiť červenú/rose farbu (rovnakú ako zrušené) namiesto žltej
+- Upraviť badge logiku v DesktopView (riadky 188–191) — ak je expired, zobraziť badge "Vypršané" namiesto "Čaká"
+- Rovnako v MobileView (riadky 100–101) — ak je expired, zobraziť iný indikátor
+
+Helper funkcia:
 ```typescript
-// Navrhnuté = awaiting_confirmation, v budúcnosti, deadline ešte nevypršal
-const proposedBookings = (bookingsQuery.data || []).filter(
-  (booking) =>
-    booking.status === 'awaiting_confirmation' &&
-    new Date(booking.slot.start_time) > now &&
-    (!booking.confirmation_deadline || new Date(booking.confirmation_deadline) > now)
-);
-```
-
-**Riadky 173–178** — zahrnúť vypršané návrhy do `pastBookings`:
-
-```typescript
-const pastBookings = (bookingsQuery.data || []).filter(
-  (booking) =>
-    (booking.status !== 'booked' && booking.status !== 'pending' && booking.status !== 'awaiting_confirmation') ||
-    new Date(booking.slot.start_time) <= now ||
-    // Vypršané návrhy (deadline prešiel)
-    (booking.status === 'awaiting_confirmation' && booking.confirmation_deadline && new Date(booking.confirmation_deadline) <= now)
-);
-```
-
-### 2. `src/components/client/ProposedTrainingsSection.tsx` — skryť akčné tlačidlá pre vypršané
-
-V renderovaní každého bookingu (riadky 195–218) pridať podmienku — ak je deadline vypršaný, nezobrazovať tlačidlá Potvrdiť/Odmietnuť, ale len text "Vypršané":
-
-```typescript
-const isExpired = booking.confirmation_deadline && new Date(booking.confirmation_deadline) < new Date();
-```
-
-Ak `isExpired`, namiesto tlačidiel zobraziť len badge "Vypršané" bez akčných ikon.
-
-### 3. `src/hooks/useProposedTrainings.ts` — opraviť potvrdenie
-
-**Riadky 251–270** — odstrániť celú kontrolu konfliktov (`conflicting` query + `hasConflict` logiku). Nahradiť jednoduchou validáciou:
-
-```typescript
-// Overiť, že booking je stále awaiting_confirmation
-if (booking.status !== 'awaiting_confirmation') {
-  throw new Error('Tento tréning už bol spracovaný.');
-}
-
-// Overiť, že deadline ešte nevypršal
-if (booking.confirmation_deadline && new Date(booking.confirmation_deadline) < new Date()) {
-  throw new Error('Termín na potvrdenie už vypršal.');
-}
+const isExpiredProposal = (slot: SlotWithBooking) => {
+  return slot.booking?.status === 'awaiting_confirmation' 
+    && slot.booking.confirmation_deadline 
+    && new Date(slot.booking.confirmation_deadline) < new Date();
+};
 ```
 
 ### Zhrnutie zmien
 
 | Súbor | Zmena |
 |---|---|
-| `src/hooks/useClientBookings.ts` | Filtrovať vypršané návrhy do histórie, nie do aktívnych |
-| `src/components/client/ProposedTrainingsSection.tsx` | Skryť akčné tlačidlá pri vypršanom deadline |
-| `src/hooks/useProposedTrainings.ts` | Nahradiť kontrolu konfliktov validáciou stavu a deadline-u |
-
-Žiadne databázové zmeny nie sú potrebné. Edge function `check-proposed-deadlines` bude naďalej čistiť vypršané záznamy na pozadí, ale klientská strana bude teraz správne reagovať aj pred tým, než cron prebehne.
+| `src/hooks/useWeeklySlots.ts` | Pridať `confirmation_deadline` do query a interface |
+| `src/components/admin/WeeklyCalendarGrid.tsx` | Expired návrhy zobraziť červenou s badge "Vypršané" |
 

@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/lib/constants';
-import { Calendar, Loader2, ClockIcon, Ban, Wallet, ChevronDown, ArrowRight, Flame } from 'lucide-react';
+import { Calendar, Loader2, ClockIcon, Ban, Wallet, ChevronDown, ArrowRight, Flame, CalendarPlus } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useClientBookings } from '@/hooks/useClientBookings';
 import { ProposedTrainingsSection, getStatusBadge } from '@/components/client/ProposedTrainingsSection';
@@ -117,6 +118,34 @@ function ApprovedDashboard() {
 
   const nextBooking = upcomingBookings.length > 0 ? upcomingBookings[upcomingBookings.length - 1] : null;
 
+  const handleAddToCalendar = () => {
+    if (!nextBooking) return;
+    const startTime = new Date(nextBooking.slot.start_time);
+    const endTime = new Date(nextBooking.slot.end_time);
+    const title = 'Tréning – Veronika';
+    const start = format(startTime, "yyyyMMdd'T'HHmmss");
+    const end = format(endTime, "yyyyMMdd'T'HHmmss");
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'BEGIN:VEVENT',
+      `DTSTART:${start}`,
+      `DTEND:${end}`,
+      `SUMMARY:${title}`,
+      `DESCRIPTION:Cena: ${nextBooking.price}€`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `trening-${format(startTime, 'yyyy-MM-dd-HHmm')}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Súbor kalendára stiahnutý');
+  };
+
   return (
     <ClientLayout>
       <div className="space-y-5 animate-fade-in">
@@ -162,6 +191,10 @@ function ApprovedDashboard() {
                     Moje tréningy
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>
+                </Button>
+                <Button size="sm" variant="ghost" onClick={handleAddToCalendar}>
+                  <CalendarPlus className="mr-1 h-4 w-4" />
+                  Pridať do kalendára
                 </Button>
               </div>
               {upcomingBookings.length > 1 && (

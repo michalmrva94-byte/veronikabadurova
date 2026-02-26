@@ -416,6 +416,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      delete_proposed_slot: {
+        Args: { p_booking_id: string; p_slot_id: string }
+        Returns: undefined
+      }
       generate_referral_code: { Args: never; Returns: string }
       get_admin_profile_ids: { Args: never; Returns: string[] }
       get_my_profile_id: { Args: never; Returns: string }

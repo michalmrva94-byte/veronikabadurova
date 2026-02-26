@@ -334,11 +334,11 @@ export function useProposedTrainings() {
 
       if (updateError) throw updateError;
 
-      // Delete the slot (it was created specifically for this proposal)
-      await supabase
-        .from('training_slots')
-        .delete()
-        .eq('id', booking.slot_id);
+      // Delete the slot via RPC (bypasses RLS for clients)
+      await supabase.rpc('delete_proposed_slot', {
+        p_slot_id: booking.slot_id,
+        p_booking_id: bookingId,
+      });
 
       // Notify all admins about the rejection
       try {

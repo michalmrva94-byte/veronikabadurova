@@ -2,44 +2,44 @@
 
 ## Problém
 
-Keď tréning bol v stave `awaiting_confirmation` (navrhnutý adminom), ale klient ho nestihol potvrdiť a tréning sa napriek tomu uskutočnil — admin nemá možnosť zmeniť status na "Odplávaný". V `SlotDetailDialog` sa pre stav `awaiting_confirmation` zobrazuje len tlačidlo "Stiahnuť návrh", chýba možnosť označiť ho ako dokončený alebo neúčasť.
+Keď klient zruší tréning, ktorý mu Veronika navrhla (stav `awaiting_confirmation`), slot sa nastaví na `is_available: true` a objaví sa v kalendári ako voľný pre všetkých. Rovnaký problém je aj pri admin zrušení navrhnutého tréningu.
 
-## Riešenie
+**Odmietnutie návrhu** (`rejectProposedTraining`) a **vypršanie deadline** (`check-proposed-deadlines`) už správne mažú slot — chyba je len v cancellation flowoch.
 
-### `src/components/admin/SlotDetailDialog.tsx`
+## Zmeny
 
-Rozšíriť sekciu pre `awaiting_confirmation` (riadky 273–311) o akčné tlačidlá pre admina:
+### 1. `src/hooks/useClientBookings.ts` — klientské storno
 
-**Pre vypršané návrhy** (tréning už prebehol alebo deadline vypršal):
-- **"Označiť ako odplávaný"** — zmení status na `completed`, odpočíta cenu z kreditu klienta (rovnaká logika ako pri `booked`)
-- **"Neúčasť"** — zmení status na `no_show`, účtuje poplatok za neúčasť
-- **"Stiahnuť návrh"** — zostane ako možnosť zrušiť
+Riadky 86–92: Namiesto vždy `is_available: true` — skontrolovať, či bol booking v stave `awaiting_confirmation`. Ak áno, slot **zmazať**. Ak nie (bežný potvrdený tréning), ponechať súčasné správanie (`is_available: true` pre last-minute).
 
-**Pre aktívne návrhy** (deadline ešte nevypršal):
-- Zostane súčasné správanie ("Čaká sa na odpoveď klienta" + "Stiahnuť návrh")
-
-Logika rozlíšenia:
 ```typescript
-const expired = booking.confirmation_deadline 
-  ? new Date(booking.confirmation_deadline) < new Date() 
-  : new Date(slot.start_time) < new Date();
+// Ak ide o navrhnutý tréning, slot úplne odstrániť
+if (booking.status === 'awaiting_confirmation') {
+  await supabase.from('training_slots').delete().eq('id', booking.slot_id);
+} else {
+  // Bežný tréning — uvoľniť pre last-minute
+  await supabase.from('training_slots').update({ is_available: true }).eq('id', booking.slot_id);
+}
 ```
 
-### Prepojenie s účtovaním
+### 2. `src/hooks/useAdminBookings.ts` — admin storno (cancelBooking)
 
-Hook `useCompleteTraining` (už existuje) správne:
-1. Zmení booking status na `completed` / `no_show`
-2. Zavolá RPC `apply_charge` — odpočíta z kreditu, prípadne vytvorí dlh
-3. Vytvorí notifikáciu pre klienta
-4. Invaliduje všetky relevantné query cache
+Riadky 203–209: Rovnaká logika — ak bol booking `awaiting_confirmation` alebo `proposed`, slot zmazať. Inak uvoľniť.
 
-Žiadna zmena v hookoch nie je potrebná — `completeTraining` a `markNoShow` mutácie akceptujú `bookingId`, `clientId`, `price` a `slotId`, čo je presne to, čo máme k dispozícii v dialógu.
+```typescript
+if (booking.status === 'awaiting_confirmation' || booking.status === 'proposed') {
+  await supabase.from('training_slots').delete().eq('id', booking.slot_id);
+} else {
+  await supabase.from('training_slots').update({ is_available: true }).eq('id', booking.slot_id);
+}
+```
 
 ### Zhrnutie
 
 | Súbor | Zmena |
 |---|---|
-| `src/components/admin/SlotDetailDialog.tsx` | Pridať tlačidlá "Odplávaný" a "Neúčasť" pre vypršané `awaiting_confirmation` bookings |
+| `src/hooks/useClientBookings.ts` | Navrhnuté tréningy → mazať slot namiesto uvoľnenia |
+| `src/hooks/useAdminBookings.ts` | Navrhnuté tréningy → mazať slot namiesto uvoľnenia |
 
-Žiadne databázové ani hookové zmeny nie sú potrebné.
+Žiadne DB migrácie ani nové hooky nie sú potrebné.
 

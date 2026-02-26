@@ -1,44 +1,30 @@
 
 
-## Problém
+## Zmena
 
-1. **Sirotský slot v DB**: Slot na 28.2. stále existuje, booking je `cancelled`, ale slot nebol zmazaný — starý kód v prehliadači obišiel RPC
-2. **Systémová zraniteľnosť**: `useWeeklySlots` zobrazuje VŠETKY sloty. Keď booking je `cancelled` a slot má `is_available = false`, kalendár ho zobrazí ako "Voľný" namiesto toho, aby ho skryl
+Pridať tlačidlo "Pridať do kalendára" do hero karty "Najbližší tréning" na klientskom dashboarde — vedľa existujúceho tlačidla "Moje tréningy".
 
-## Zmeny
+### Implementácia v `src/pages/client/DashboardPage.tsx`
 
-### 1. Vyčistiť sirotský slot z DB
-
-Zmazať slot `c0a68d1e-6e63-44db-ad5f-fc380d50215a` (28.2. 22:20 CET) — booking je cancelled, slot je orphan.
-
-### 2. `src/hooks/useWeeklySlots.ts` — filtrovať sirotské sloty
-
-V `useWeeklySlots` po transformácii dát odstrániť sloty, kde:
-- `is_available = false` (nie je voľný)
-- Nemajú žiadny aktívny booking
-
-Toto zabezpečí, že aj keby RPC niekedy zlyhalo, sirotské sloty sa nikdy nezobrazia v kalendári.
+1. Pridať import `CalendarPlus` z `lucide-react` (riadok 8)
+2. Pridať import `toast` z `sonner`
+3. Vytvoriť helper funkciu `handleAddToCalendar` (rovnaká logika ako v `BookingCard.tsx`) — generuje .ics súbor pre `nextBooking`
+4. Do sekcie "B) Potvrdený tréning" (riadky 159-165) pridať druhé tlačidlo:
 
 ```typescript
-// Po existujúcom .map() pridať .filter():
-.filter((slot: SlotWithBooking) => {
-  // Skryť sirotské sloty: is_available=false a žiadny aktívny booking
-  if (!slot.is_available && !slot.booking) return false;
-  return true;
-})
+<div className="mt-4 flex items-center gap-3">
+  <Button asChild size="sm" variant="outline">
+    <Link to={ROUTES.MY_TRAININGS}>
+      Moje tréningy
+      <ArrowRight className="ml-1 h-4 w-4" />
+    </Link>
+  </Button>
+  <Button size="sm" variant="ghost" onClick={handleAddToCalendar}>
+    <CalendarPlus className="mr-1 h-4 w-4" />
+    Pridať do kalendára
+  </Button>
+</div>
 ```
 
-### 3. `useSlotsForMonth` — rovnaký filter
-
-Rovnakú logiku pridať aj do mesačného prehľadu — nezapočítavať sirotské sloty.
-
-### Zhrnutie
-
-| Zmena | Popis |
-|---|---|
-| DB cleanup | Zmazať sirotský slot na 28.2. |
-| `useWeeklySlots` | Filtrovať sirotské sloty (obranná vrstva) |
-| `useSlotsForMonth` | Rovnaký filter pre mesačný kalendár |
-
-Kód hookov (RPC volanie) je správny — problém bol v tom, že prehliadač klienta bežal starú verziu kódu. Filter je obranná vrstva pre budúcnosť.
+Funkcia `handleAddToCalendar` bude definovaná v `ApprovedDashboard` komponente a vygeneruje .ics súbor s údajmi z `nextBooking`.
 

@@ -2,44 +2,77 @@
 
 ## Problém
 
-Keď klient zruší tréning, ktorý mu Veronika navrhla (stav `awaiting_confirmation`), slot sa nastaví na `is_available: true` a objaví sa v kalendári ako voľný pre všetkých. Rovnaký problém je aj pri admin zrušení navrhnutého tréningu.
+RLS na tabuľke `training_slots` povoľuje mazanie len adminom (`has_role(auth.uid(), 'admin')`). Keď klient odmietne alebo zruší navrhnutý tréning, `delete()` volanie ticho zlyhá (0 riadkov, žiadna chyba) a slot zostane viditeľný ako "Voľný".
 
-**Odmietnutie návrhu** (`rejectProposedTraining`) a **vypršanie deadline** (`check-proposed-deadlines`) už správne mažú slot — chyba je len v cancellation flowoch.
+## Riešenie
 
-## Zmeny
+Vytvoríme jednu databázovú funkciu `delete_proposed_slot` so `SECURITY DEFINER`, ktorá bezpečne zmaže slot. Hooky ju budú volať namiesto priameho `delete()`.
 
-### 1. `src/hooks/useClientBookings.ts` — klientské storno
+### 1. DB migrácia — nová funkcia
 
-Riadky 86–92: Namiesto vždy `is_available: true` — skontrolovať, či bol booking v stave `awaiting_confirmation`. Ak áno, slot **zmazať**. Ak nie (bežný potvrdený tréning), ponechať súčasné správanie (`is_available: true` pre last-minute).
+```sql
+CREATE OR REPLACE FUNCTION public.delete_proposed_slot(p_slot_id uuid, p_booking_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  -- Overíme, že booking existuje, patrí volajúcemu a bol zrušený/odmietnutý
+  IF NOT EXISTS (
+    SELECT 1 FROM bookings b
+    JOIN profiles p ON p.id = b.client_id
+    WHERE b.id = p_booking_id
+      AND b.slot_id = p_slot_id
+      AND b.status = 'cancelled'
+      AND p.user_id = auth.uid()
+  ) THEN
+    RAISE EXCEPTION 'Neplatný booking alebo slot';
+  END IF;
 
-```typescript
-// Ak ide o navrhnutý tréning, slot úplne odstrániť
-if (booking.status === 'awaiting_confirmation') {
-  await supabase.from('training_slots').delete().eq('id', booking.slot_id);
-} else {
-  // Bežný tréning — uvoľniť pre last-minute
-  await supabase.from('training_slots').update({ is_available: true }).eq('id', booking.slot_id);
-}
+  DELETE FROM training_slots WHERE id = p_slot_id;
+END;
+$$;
 ```
 
-### 2. `src/hooks/useAdminBookings.ts` — admin storno (cancelBooking)
+### 2. `src/hooks/useProposedTrainings.ts` — rejectProposedTraining (riadky 337-341)
 
-Riadky 203–209: Rovnaká logika — ak bol booking `awaiting_confirmation` alebo `proposed`, slot zmazať. Inak uvoľniť.
+Nahradiť priamy `delete()`:
 
 ```typescript
-if (booking.status === 'awaiting_confirmation' || booking.status === 'proposed') {
-  await supabase.from('training_slots').delete().eq('id', booking.slot_id);
+await supabase.rpc('delete_proposed_slot', {
+  p_slot_id: booking.slot_id,
+  p_booking_id: bookingId,
+});
+```
+
+### 3. `src/hooks/useClientBookings.ts` — cancelBooking (riadky 87-92)
+
+Nahradiť priamy `delete()`:
+
+```typescript
+if (booking.status === 'awaiting_confirmation') {
+  await supabase.rpc('delete_proposed_slot', {
+    p_slot_id: booking.slot_id,
+    p_booking_id: bookingId,
+  });
 } else {
-  await supabase.from('training_slots').update({ is_available: true }).eq('id', booking.slot_id);
+  // Bežný tréning — uvoľniť pre last-minute
+  const { error: slotError } = await supabase
+    .from('training_slots')
+    .update({ is_available: true })
+    .eq('id', booking.slot_id);
+  if (slotError) console.error('Slot update error:', slotError);
 }
 ```
 
 ### Zhrnutie
 
-| Súbor | Zmena |
+| Zmena | Popis |
 |---|---|
-| `src/hooks/useClientBookings.ts` | Navrhnuté tréningy → mazať slot namiesto uvoľnenia |
-| `src/hooks/useAdminBookings.ts` | Navrhnuté tréningy → mazať slot namiesto uvoľnenia |
+| DB migrácia | Nová RPC `delete_proposed_slot` (SECURITY DEFINER) |
+| `useProposedTrainings.ts` | Volanie RPC namiesto priameho delete |
+| `useClientBookings.ts` | Volanie RPC namiesto priameho delete |
 
-Žiadne DB migrácie ani nové hooky nie sú potrebné.
+Funkcia overuje, že booking patrí volajúcemu klientovi a bol už zrušený, takže nemôže byť zneužitá.
 

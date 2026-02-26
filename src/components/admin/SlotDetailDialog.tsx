@@ -270,10 +270,44 @@ export function SlotDetailDialog({
               </>
             )}
 
-            {(status === 'proposed' || status === 'awaiting_confirmation') && (
-              <div className="text-center text-sm text-muted-foreground py-2">
-                Čaká sa na odpoveď klienta
-              </div>
+            {(status === 'proposed' || status === 'awaiting_confirmation') && booking && (
+              <>
+                <div className="text-center text-sm text-muted-foreground py-2">
+                  Čaká sa na odpoveď klienta
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 text-destructive"
+                      disabled={isProcessing}
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Stiahnuť návrh
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Stiahnuť návrh tréningu?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Navrhnutý tréning s klientom <strong>{booking.client?.full_name}</strong> bude zrušený a klient bude informovaný notifikáciou.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Späť</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => {
+                          onReject?.(booking.id);
+                          onOpenChange(false);
+                        }}
+                      >
+                        Stiahnuť návrh
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
             )}
 
             {!hasBooking && (

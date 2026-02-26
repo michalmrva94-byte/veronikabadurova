@@ -452,6 +452,12 @@ function UnconfirmedBookingRow({ booking, onApprove, onReject, isProcessing }: {
             </Button>
           </div>
         )}
+        {booking.status === 'awaiting_confirmation' && (
+          <Button size="sm" variant="outline" className="gap-1 text-destructive" disabled={isProcessing} onClick={() => onReject(booking.id)}>
+            <XCircle className="h-3 w-3" />
+            Stiahnuť
+          </Button>
+        )}
       </div>
     </div>
   );

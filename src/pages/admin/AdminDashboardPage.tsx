@@ -65,8 +65,16 @@ export default function AdminDashboardPage() {
 
   const { completeTraining, markNoShow } = useCompleteTraining();
 
+  const now = new Date();
   const unconfirmedBookings = (bookings || []).filter(
-    (b) => b.status === 'pending' || b.status === 'proposed' || b.status === 'awaiting_confirmation'
+    (b) => {
+      if (b.status !== 'pending' && b.status !== 'proposed' && b.status !== 'awaiting_confirmation') return false;
+      // Skryť ak je tréning v minulosti
+      if (b.slot && new Date(b.slot.start_time) <= now) return false;
+      // Skryť ak deadline vypršal
+      if (b.status === 'awaiting_confirmation' && b.confirmation_deadline && new Date(b.confirmation_deadline) <= now) return false;
+      return true;
+    }
   );
 
   const handleApprove = async (bookingId: string) => {

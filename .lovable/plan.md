@@ -1,25 +1,26 @@
 
 
-## Zmena
+## Problém
 
-**Súbor:** `src/pages/client/DashboardPage.tsx`
+PWA konfigurácia má `skipWaiting: false`, čo znamená, že nový service worker **čaká** kým sa zatvoria všetky taby/okná predtým, než sa aktivuje. V standalone PWA móde na telefóne sa "tab" prakticky nikdy nezatvorí — používateľ len minimalizuje appku. Preto `window.location.reload()` z PullToRefresh stále načíta starú cachovanú verziu.
 
-Zmeniť layout tlačidiel v hero karte z `flex items-center gap-3` (horizontálne vedľa seba) na `flex flex-col gap-2` — tlačidlá sa zobrazia pod sebou na plnú šírku karty:
+## Riešenie
 
-```typescript
-<div className="mt-4 flex flex-col gap-2">
-  <Button asChild size="sm" variant="outline" className="w-full justify-center">
-    <Link to={ROUTES.MY_TRAININGS}>
-      Moje tréningy
-      <ArrowRight className="ml-1 h-4 w-4" />
-    </Link>
-  </Button>
-  <Button size="sm" variant="ghost" className="w-full justify-center" onClick={handleAddToCalendar}>
-    <CalendarPlus className="mr-1 h-4 w-4" />
-    Pridať do kalendára
-  </Button>
-</div>
+**Súbor: `vite.config.ts`** — zmeniť `skipWaiting: false` na `skipWaiting: true` (riadok 39).
+
+Toto zabezpečí, že nový service worker sa aktivuje okamžite po stiahnutí, bez čakania na zatvorenie tabov. V kombinácii s už existujúcim `clientsClaim: true` a visibility change listenerom v `App.tsx` to znamená:
+
+1. Používateľ sa vráti do appky → `visibilitychange` event spustí `reg.update()`
+2. Nový SW sa stiahne a **okamžite aktivuje** (skipWaiting: true)
+3. `clientsClaim: true` zabezpečí, že nový SW prevezme kontrolu
+4. Pull-to-refresh reload načíta nové assety z nového SW cache
+
+### Zmena
+
+```diff
+- skipWaiting: false,
++ skipWaiting: true,
 ```
 
-Tlačidlá budú vždy pod sebou, plná šírka, vycentrované — čisté a dotykovo priateľné.
+Jedna zmena, jeden riadok.
 

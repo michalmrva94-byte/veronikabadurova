@@ -346,7 +346,7 @@ export function useProposedTrainings() {
               title: 'Odmietnutý tréning',
               message: `${clientName} odmietol/a navrhnutý tréning${slotDate ? ` dňa ${slotDate}` : ''}. Termín bol odstránený z kalendára.`,
               type: 'proposal_rejected',
-              related_slot_id: booking.slot_id,
+              related_slot_id: null,
             }))
           );
         }

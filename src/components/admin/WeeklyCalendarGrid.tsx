@@ -18,9 +18,12 @@ interface WeeklyCalendarGridProps {
 }
 
 const isExpiredProposal = (slot: SlotWithBooking) => {
-  return slot.booking?.status === 'awaiting_confirmation'
-    && slot.booking.confirmation_deadline
-    && new Date(slot.booking.confirmation_deadline) < new Date();
+  if (slot.booking?.status !== 'awaiting_confirmation') return false;
+  const now = new Date();
+  // Expired if training time already passed OR deadline expired
+  if (new Date(slot.start_time) < now) return true;
+  if (slot.booking.confirmation_deadline && new Date(slot.booking.confirmation_deadline) < now) return true;
+  return false;
 };
 
 const getSlotColor = (slot: SlotWithBooking) => {

@@ -17,25 +17,31 @@ interface WeeklyCalendarGridProps {
   onSlotClick?: (slot: SlotWithBooking) => void;
 }
 
+const isExpiredProposal = (slot: SlotWithBooking) => {
+  return slot.booking?.status === 'awaiting_confirmation'
+    && slot.booking.confirmation_deadline
+    && new Date(slot.booking.confirmation_deadline) < new Date();
+};
+
 const getSlotColor = (slot: SlotWithBooking) => {
   const status = slot.booking?.status;
+  if (isExpiredProposal(slot)) return 'bg-rose-100 border-rose-500 text-rose-800 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-600';
   if (status === 'proposed') return 'bg-muted border-muted-foreground/30 text-muted-foreground';
   if (status === 'pending' || status === 'awaiting_confirmation') return 'bg-amber-100 border-amber-500 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-600';
   if (status === 'booked') return 'bg-sky-100 border-sky-500 text-sky-800 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-600';
   if (status === 'cancelled' || status === 'no_show') return 'bg-rose-100 border-rose-500 text-rose-800 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-600';
   if (status === 'completed') return 'bg-violet-100 border-violet-500 text-violet-800 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600';
-  // Available (no booking)
   return 'bg-emerald-100 border-emerald-500 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400';
 };
 
 const getSlotChipColor = (slot: SlotWithBooking) => {
   const status = slot.booking?.status;
+  if (isExpiredProposal(slot)) return 'bg-rose-100 text-rose-800 border-rose-500 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-600';
   if (status === 'proposed') return 'bg-muted text-muted-foreground border-muted-foreground/30';
   if (status === 'pending' || status === 'awaiting_confirmation') return 'bg-amber-100 text-amber-800 border-amber-500 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-600';
   if (status === 'booked') return 'bg-sky-100 text-sky-800 border-sky-500 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-600';
   if (status === 'cancelled' || status === 'no_show') return 'bg-rose-100 text-rose-800 border-rose-500 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-600';
   if (status === 'completed') return 'bg-violet-100 text-violet-800 border-violet-500 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600';
-  // Available (no booking)
   return 'bg-emerald-100 text-emerald-700 border-emerald-500 dark:bg-emerald-950/50 dark:text-emerald-400';
 };
 
@@ -97,7 +103,10 @@ function MobileView({
                         {slot.booking.client.full_name.split(' ')[0]}
                       </span>
                     )}
-                    {(slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
+                    {isExpiredProposal(slot) && (
+                      <span className="text-[9px]">⚠</span>
+                    )}
+                    {!isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
                       <span className="text-[9px]">⏳</span>
                     )}
                     {slot.booking?.status === 'completed' && (
@@ -185,7 +194,12 @@ function DesktopView({
                         </span>
                       </div>
                     )}
-                    {(slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
+                    {isExpiredProposal(slot) && (
+                      <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-rose-500 text-rose-700 dark:text-rose-400">
+                        Vypršané
+                      </Badge>
+                    )}
+                    {!isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">
                         Čaká
                       </Badge>

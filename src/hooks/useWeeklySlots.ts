@@ -8,6 +8,7 @@ export interface SlotWithBooking extends TrainingSlot {
     id: string;
     status: string;
     price?: number;
+    confirmation_deadline?: string;
     client?: {
       id: string;
       full_name: string;
@@ -34,6 +35,7 @@ export function useWeeklySlots(weekStart: Date) {
             id,
             status,
             price,
+            confirmation_deadline,
             client:profiles(id, full_name, email, client_type)
           )
         `)
@@ -52,10 +54,11 @@ export function useWeeklySlots(weekStart: Date) {
         return {
           ...slot,
           booking: activeBooking ? {
-            id: activeBooking.id,
+          id: activeBooking.id,
             status: activeBooking.status,
             client: activeBooking.client,
             price: activeBooking.price,
+            confirmation_deadline: activeBooking.confirmation_deadline,
           } : undefined,
         };
       }) as SlotWithBooking[];

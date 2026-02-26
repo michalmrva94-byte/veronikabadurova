@@ -185,14 +185,14 @@ function ApprovedDashboard() {
               <p className="text-lg text-foreground/80">
                 {format(new Date(nextBooking.slot.start_time), 'HH:mm')} – {format(new Date(nextBooking.slot.end_time), 'HH:mm')}
               </p>
-              <div className="mt-4 flex items-center gap-3">
-                <Button asChild size="sm" variant="outline">
+              <div className="mt-4 flex flex-col gap-2">
+                <Button asChild size="sm" variant="outline" className="w-full justify-center">
                   <Link to={ROUTES.MY_TRAININGS}>
                     Moje tréningy
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>
                 </Button>
-                <Button size="sm" variant="ghost" onClick={handleAddToCalendar}>
+                <Button size="sm" variant="ghost" className="w-full justify-center" onClick={handleAddToCalendar}>
                   <CalendarPlus className="mr-1 h-4 w-4" />
                   Pridať do kalendára
                 </Button>

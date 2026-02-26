@@ -83,13 +83,12 @@ export function useClientBookings() {
 
       if (updateError) throw updateError;
 
-      // Ak ide o navrhnutý tréning, slot úplne odstrániť
+      // Ak ide o navrhnutý tréning, slot úplne odstrániť cez RPC (obíde RLS)
       if (booking.status === 'awaiting_confirmation') {
-        const { error: slotError } = await supabase
-          .from('training_slots')
-          .delete()
-          .eq('id', booking.slot_id);
-        if (slotError) console.error('Slot delete error:', slotError);
+        await supabase.rpc('delete_proposed_slot', {
+          p_slot_id: booking.slot_id,
+          p_booking_id: bookingId,
+        });
       } else {
         // Bežný tréning — uvoľniť pre last-minute
         const { error: slotError } = await supabase

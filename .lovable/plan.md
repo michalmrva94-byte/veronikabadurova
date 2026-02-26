@@ -2,40 +2,44 @@
 
 ## Problém
 
-Na screenshote vidno, že Marianna (07:15, 07:30) stále svieti žltou farbou s badge "Čaká" v kalendári, aj keď deadline na potvrdenie už dávno vypršal. Kalendár totiž vôbec nekontroluje `confirmation_deadline` — nemá prístup k tomuto údaju.
-
-## Príčina
-
-1. **`useWeeklySlots.ts`** — query na bookings neobsahuje pole `confirmation_deadline`, takže UI nemá ako rozlíšiť aktívny návrh od vypršaného
-2. **`WeeklyCalendarGrid.tsx`** — funkcie `getSlotColor` a `getSlotChipColor` nemajú logiku pre expired stav; badge logika takisto nekontroluje deadline
+Keď tréning bol v stave `awaiting_confirmation` (navrhnutý adminom), ale klient ho nestihol potvrdiť a tréning sa napriek tomu uskutočnil — admin nemá možnosť zmeniť status na "Odplávaný". V `SlotDetailDialog` sa pre stav `awaiting_confirmation` zobrazuje len tlačidlo "Stiahnuť návrh", chýba možnosť označiť ho ako dokončený alebo neúčasť.
 
 ## Riešenie
 
-### 1. `src/hooks/useWeeklySlots.ts` — pridať `confirmation_deadline` do query a interface
+### `src/components/admin/SlotDetailDialog.tsx`
 
-- Rozšíriť `SlotWithBooking.booking` interface o `confirmation_deadline?: string`
-- Pridať `confirmation_deadline` do SELECT query (riadok 34)
-- Pridať `confirmation_deadline` do transformácie (riadok 58)
+Rozšíriť sekciu pre `awaiting_confirmation` (riadky 273–311) o akčné tlačidlá pre admina:
 
-### 2. `src/components/admin/WeeklyCalendarGrid.tsx` — rozlíšiť vypršané návrhy
+**Pre vypršané návrhy** (tréning už prebehol alebo deadline vypršal):
+- **"Označiť ako odplávaný"** — zmení status na `completed`, odpočíta cenu z kreditu klienta (rovnaká logika ako pri `booked`)
+- **"Neúčasť"** — zmení status na `no_show`, účtuje poplatok za neúčasť
+- **"Stiahnuť návrh"** — zostane ako možnosť zrušiť
 
-- Upraviť `getSlotColor` a `getSlotChipColor` — ak je status `awaiting_confirmation` a `confirmation_deadline` < now, použiť červenú/rose farbu (rovnakú ako zrušené) namiesto žltej
-- Upraviť badge logiku v DesktopView (riadky 188–191) — ak je expired, zobraziť badge "Vypršané" namiesto "Čaká"
-- Rovnako v MobileView (riadky 100–101) — ak je expired, zobraziť iný indikátor
+**Pre aktívne návrhy** (deadline ešte nevypršal):
+- Zostane súčasné správanie ("Čaká sa na odpoveď klienta" + "Stiahnuť návrh")
 
-Helper funkcia:
+Logika rozlíšenia:
 ```typescript
-const isExpiredProposal = (slot: SlotWithBooking) => {
-  return slot.booking?.status === 'awaiting_confirmation' 
-    && slot.booking.confirmation_deadline 
-    && new Date(slot.booking.confirmation_deadline) < new Date();
-};
+const expired = booking.confirmation_deadline 
+  ? new Date(booking.confirmation_deadline) < new Date() 
+  : new Date(slot.start_time) < new Date();
 ```
 
-### Zhrnutie zmien
+### Prepojenie s účtovaním
+
+Hook `useCompleteTraining` (už existuje) správne:
+1. Zmení booking status na `completed` / `no_show`
+2. Zavolá RPC `apply_charge` — odpočíta z kreditu, prípadne vytvorí dlh
+3. Vytvorí notifikáciu pre klienta
+4. Invaliduje všetky relevantné query cache
+
+Žiadna zmena v hookoch nie je potrebná — `completeTraining` a `markNoShow` mutácie akceptujú `bookingId`, `clientId`, `price` a `slotId`, čo je presne to, čo máme k dispozícii v dialógu.
+
+### Zhrnutie
 
 | Súbor | Zmena |
 |---|---|
-| `src/hooks/useWeeklySlots.ts` | Pridať `confirmation_deadline` do query a interface |
-| `src/components/admin/WeeklyCalendarGrid.tsx` | Expired návrhy zobraziť červenou s badge "Vypršané" |
+| `src/components/admin/SlotDetailDialog.tsx` | Pridať tlačidlá "Odplávaný" a "Neúčasť" pre vypršané `awaiting_confirmation` bookings |
+
+Žiadne databázové ani hookové zmeny nie sú potrebné.
 

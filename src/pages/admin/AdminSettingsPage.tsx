@@ -29,6 +29,7 @@ interface EmailToggles {
   last_minute: boolean;
   proposal: boolean;
   cancellation: boolean;
+  admin_booking_request: boolean;
 }
 
 const DEFAULT_EMAIL_TOGGLES: EmailToggles = {
@@ -37,6 +38,7 @@ const DEFAULT_EMAIL_TOGGLES: EmailToggles = {
   last_minute: true,
   proposal: true,
   cancellation: true,
+  admin_booking_request: true,
 };
 
 const EMAIL_TOGGLE_ITEMS: { key: keyof EmailToggles; label: string; description: string }[] = [
@@ -45,6 +47,7 @@ const EMAIL_TOGGLE_ITEMS: { key: keyof EmailToggles; label: string; description:
   { key: 'last_minute', label: 'Last-minute ponuka', description: 'Pri zrušení / voľnom termíne' },
   { key: 'proposal', label: 'Návrh tréningu', description: 'Keď admin navrhne termín klientovi' },
   { key: 'cancellation', label: 'Oznámenie o zrušení', description: 'Pri stornovaní tréningu' },
+  { key: 'admin_booking_request', label: 'Nová rezervácia (admin)', description: 'Email pre admina pri novej žiadosti' },
 ];
 
 export default function AdminSettingsPage() {

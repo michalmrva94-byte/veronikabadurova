@@ -7,6 +7,7 @@ import { ReminderEmail } from "../_shared/notification-templates/reminder.tsx";
 import { LastMinuteEmail } from "../_shared/notification-templates/last-minute.tsx";
 import { ProposalEmail } from "../_shared/notification-templates/proposal.tsx";
 import { CancellationEmail } from "../_shared/notification-templates/cancellation.tsx";
+import { AdminBookingRequestEmail } from "../_shared/notification-templates/admin-booking-request.tsx";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
 
@@ -20,7 +21,7 @@ const APP_URL = "https://veronikabadurova.lovable.app";
 const FROM = "Veronika Swim <noreply@veronikaswim.sk>";
 
 interface EmailRequest {
-  type: "confirmation" | "reminder" | "last_minute" | "proposal" | "cancellation";
+  type: "confirmation" | "reminder" | "last_minute" | "proposal" | "cancellation" | "admin_booking_request";
   to: string;
   clientName: string;
   trainingDate?: string;
@@ -111,6 +112,18 @@ serve(async (req: Request) => {
             reason: payload.reason,
             cancelledBy: payload.cancelledBy || "admin",
             cancellationFee: payload.cancellationFee,
+            appUrl: APP_URL,
+          })
+        );
+        break;
+
+      case "admin_booking_request":
+        subject = "Nová žiadosť o tréning — Veronika Swim";
+        html = await renderAsync(
+          React.createElement(AdminBookingRequestEmail, {
+            clientName,
+            trainingDate: payload.trainingDate || "",
+            trainingTime: payload.trainingTime || "",
             appUrl: APP_URL,
           })
         );

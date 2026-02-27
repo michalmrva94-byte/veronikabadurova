@@ -1,30 +1,33 @@
 
 
-## Zmena pravidla deadline-u potvrdenia
+## Plán: Manuálny reminder pre nepotvrdené tréningy
 
-**Teraz:** Deadline = 24h od momentu návrhu (pevný čas).
-**Nové:** Deadline = 24h pred začiatkom tréningu (dynamický, závisí od `start_time`).
+### Čo sa zmení
 
-### Zmeny v 4 súboroch:
+Admin bude môcť v detaile nepotvrdného tréningu (stav `awaiting_confirmation`) kliknúť tlačidlo "Pripomenúť klientovi". Toto odošle:
+1. In-app notifikáciu klientovi
+2. Email pripomienku (ak je email toggle zapnutý)
 
-**1. `src/hooks/useAssignTraining.ts` (riadok 41)**
-- Zmeniť výpočet `confirmation_deadline` z `Date.now() + 24h` na `new Date(start_time) - 24h`
-- Ak je tréning menej ako 24h v budúcnosti, deadline = okamžite (alebo krátky window, napr. 1h)
-- Upraviť text notifikácie z "do 24 hodín" na "najneskôr 24h pred tréningom"
+### 1. `src/components/admin/SlotDetailDialog.tsx`
 
-**2. `src/hooks/useProposedTrainings.ts` (riadok 147, 172-178, 198)**
-- Batch návrhy: namiesto jedného spoločného deadline-u (`addHours(now, 24)`) nastaviť každému bookingu individuálny deadline podľa jeho `start_time`: `new Date(slot.start_time) - 24h`
-- Ak je tréning < 24h v budúcnosti, nastaviť minimálny deadline (napr. 1h od teraz)
-- Upraviť text notifikácie
+V sekcii kde sa zobrazuje "Čaká sa na odpoveď klienta" (riadok 343) pridať tlačidlo:
+- Ikona `Bell` + text "Pripomenúť klientovi"
+- `variant="outline"`, plná šírka
+- Po kliknutí zavolá nový callback `onSendReminder?.(booking.id)`
+- Loading stav počas odosielania
 
-**3. `supabase/functions/check-proposed-deadlines/index.ts`**
-- Pripomienky prepočítať na základe `hoursUntilDeadline` namiesto `hoursSinceCreation`, keďže deadline je teraz dynamický
-- 12h reminder: keď zostáva 12h do deadline-u
-- 1h reminder: keď zostáva 1h do deadline-u
+### 2. `src/pages/admin/AdminCalendarPage.tsx`
 
-**4. `supabase/functions/_shared/notification-templates/proposal.tsx`**
-- Upraviť text z "do 24 hodín" na "najneskôr 24 hodín pred tréningom"
+Pridať handler `handleSendReminder(bookingId)`:
+- Nájde booking podľa ID z existujúcich dát
+- Vloží notifikáciu do `notifications` tabuľky pre klienta: "Pripomienka: Máte nepotvrdený tréning dňa X o Y. Potvrďte ho čo najskôr."
+- Zavolá `sendNotificationEmail` s typom `reminder` a údajmi o tréningu
+- Toast "Pripomienka odoslaná"
+- Predá handler do `SlotDetailDialog` cez props
 
-### Logika minimálneho deadline-u
-Ak admin navrhne tréning, ktorý je o menej ako 25h, deadline by bol v minulosti. Preto: `deadline = max(start_time - 24h, now + 1h)` — klient dostane aspoň 1 hodinu na potvrdenie.
+### Technické detaily
+
+- Využíva existujúci email typ `reminder` — žiadna nová šablóna nie je potrebná
+- Žiadne DB zmeny
+- Žiadne nové edge function
 

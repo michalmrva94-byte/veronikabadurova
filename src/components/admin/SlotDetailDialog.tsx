@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Clock, User, Euro, CheckCircle, XCircle, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Clock, User, Euro, CheckCircle, XCircle, Trash2, AlertTriangle, Loader2, Bell } from 'lucide-react';
 import { BOOKING_STATUS_LABELS, CLIENT_TYPE_LABELS } from '@/lib/constants';
 import { BookingStatus } from '@/types/database';
 import { useState } from 'react';
@@ -37,6 +37,7 @@ interface SlotDetailDialogProps {
   onApprove?: (bookingId: string) => void;
   onReject?: (bookingId: string) => void;
   onDelete?: (slotId: string) => void;
+  onSendReminder?: (bookingId: string) => Promise<void>;
   isProcessing?: boolean;
 }
 
@@ -60,9 +61,11 @@ export function SlotDetailDialog({
   onApprove,
   onReject,
   onDelete,
+  onSendReminder,
   isProcessing,
 }: SlotDetailDialogProps) {
   const [cancelFeePercent, setCancelFeePercent] = useState('0');
+  const [isSendingReminder, setIsSendingReminder] = useState(false);
 
   if (!slot) return null;
 
@@ -340,9 +343,29 @@ export function SlotDetailDialog({
                       </AlertDialog>
                     </>
                   ) : (
-                    <div className="text-center text-sm text-muted-foreground py-2">
-                      Čaká sa na odpoveď klienta
-                    </div>
+                    <>
+                      <div className="text-center text-sm text-muted-foreground py-2">
+                        Čaká sa na odpoveď klienta
+                      </div>
+                      {onSendReminder && (
+                        <Button
+                          variant="outline"
+                          className="w-full gap-2"
+                          disabled={isProcessing || isSendingReminder}
+                          onClick={async () => {
+                            setIsSendingReminder(true);
+                            try {
+                              await onSendReminder(booking.id);
+                            } finally {
+                              setIsSendingReminder(false);
+                            }
+                          }}
+                        >
+                          {isSendingReminder ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+                          Pripomenúť klientovi
+                        </Button>
+                      )}
+                    </>
                   )}
 
                   <AlertDialog>

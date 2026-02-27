@@ -1,4 +1,6 @@
 import { AdminLayout } from '@/components/layout/AdminLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -152,6 +154,44 @@ export default function AdminCalendarPage() {
   const handleYearDayClick = (date: Date) => {
     setSelectedDate(date);
     setViewMode('month');
+  };
+
+  const handleSendReminder = async (bookingId: string) => {
+    // Find the booking from all available slot data
+    const allSlots = [...(weeklySlots || []), ...(selectedDaySlots || [])];
+    const slotWithBooking = allSlots.find(s => s.booking?.id === bookingId);
+    const booking = slotWithBooking?.booking;
+    if (!booking || !slotWithBooking) {
+      toast.error('Booking sa nepodarilo nájsť');
+      return;
+    }
+
+    const trainingDate = format(new Date(slotWithBooking.start_time), 'd. MMMM yyyy', { locale: sk });
+    const trainingTime = format(new Date(slotWithBooking.start_time), 'HH:mm');
+
+    try {
+      // Insert in-app notification
+      await supabase.from('notifications').insert({
+        user_id: (booking.client as any)?.id,
+        title: 'Pripomienka potvrdenia',
+        message: `Pripomienka: Máte nepotvrdený tréning dňa ${trainingDate} o ${trainingTime}. Potvrďte ho čo najskôr.`,
+        type: 'reminder',
+        related_slot_id: slotWithBooking.id,
+      });
+
+      // Send email
+      await sendNotificationEmail({
+        type: 'reminder',
+        to: (booking.client as any)?.email || '',
+        clientName: booking.client?.full_name || '',
+        trainingDate,
+        trainingTime,
+      });
+
+      toast.success('Pripomienka odoslaná');
+    } catch (e: any) {
+      toast.error(e.message || 'Chyba pri odosielaní pripomienky');
+    }
   };
 
   const getDayModifiers = () => {
@@ -383,6 +423,7 @@ export default function AdminCalendarPage() {
         onApprove={handleSlotApprove}
         onReject={handleSlotReject}
         onDelete={handleDeleteSlot}
+        onSendReminder={handleSendReminder}
         isProcessing={isProcessing}
       />
     </AdminLayout>

@@ -1,42 +1,30 @@
 
 
-## Plán: Email notifikácia pre admina pri novej rezervácii
+## Zmena pravidla deadline-u potvrdenia
 
-### Čo sa zmení
+**Teraz:** Deadline = 24h od momentu návrhu (pevný čas).
+**Nové:** Deadline = 24h pred začiatkom tréningu (dynamický, závisí od `start_time`).
 
-Keď klient vytvorí rezerváciu (klikne "Rezervovať"), admin dostane email na pevnú adresu s informáciou kto a kedy si rezervoval tréning.
+### Zmeny v 4 súboroch:
 
-### 1. Nový email typ `admin_booking_request`
+**1. `src/hooks/useAssignTraining.ts` (riadok 41)**
+- Zmeniť výpočet `confirmation_deadline` z `Date.now() + 24h` na `new Date(start_time) - 24h`
+- Ak je tréning menej ako 24h v budúcnosti, deadline = okamžite (alebo krátky window, napr. 1h)
+- Upraviť text notifikácie z "do 24 hodín" na "najneskôr 24h pred tréningom"
 
-**Nový súbor: `supabase/functions/_shared/notification-templates/admin-booking-request.tsx`**
+**2. `src/hooks/useProposedTrainings.ts` (riadok 147, 172-178, 198)**
+- Batch návrhy: namiesto jedného spoločného deadline-u (`addHours(now, 24)`) nastaviť každému bookingu individuálny deadline podľa jeho `start_time`: `new Date(slot.start_time) - 24h`
+- Ak je tréning < 24h v budúcnosti, nastaviť minimálny deadline (napr. 1h od teraz)
+- Upraviť text notifikácie
 
-Email šablóna pre admina s:
-- Meno klienta
-- Dátum a čas tréningu
-- CTA tlačidlo "Zobraziť žiadosti" → link na admin dashboard
+**3. `supabase/functions/check-proposed-deadlines/index.ts`**
+- Pripomienky prepočítať na základe `hoursUntilDeadline` namiesto `hoursSinceCreation`, keďže deadline je teraz dynamický
+- 12h reminder: keď zostáva 12h do deadline-u
+- 1h reminder: keď zostáva 1h do deadline-u
 
-### 2. Rozšíriť `sendNotificationEmail`
+**4. `supabase/functions/_shared/notification-templates/proposal.tsx`**
+- Upraviť text z "do 24 hodín" na "najneskôr 24 hodín pred tréningom"
 
-**Súbor: `src/lib/sendNotificationEmail.ts`**
-
-Pridať nový typ `admin_booking_request` do interface a do toggle checku.
-
-### 3. Rozšíriť edge function
-
-**Súbor: `supabase/functions/send-notification-email/index.ts`**
-
-Pridať `case 'admin_booking_request'` — renderuje novú šablónu, subject: "Nová žiadosť o tréning — Veronika Swim".
-
-### 4. Odoslať email v `useBookings.ts`
-
-**Súbor: `src/hooks/useBookings.ts`**
-
-V `onSuccess` callbacku (kde sa už posielajú in-app notifikácie adminom) pridať volanie `sendNotificationEmail` s typom `admin_booking_request`, pevným `to: 'veronika.duro@gmail.com'`, menom klienta a časom tréningu.
-
-### Technické detaily
-
-- Admin email je hardcoded `veronika.duro@gmail.com` (jediný admin)
-- Email sa posiela z klientskeho kódu cez existujúcu edge function `send-notification-email`
-- Podlieha existujúcemu toggle systému v `app_settings` — admin si môže tento typ vypnúť
-- Žiadne DB zmeny nie sú potrebné
+### Logika minimálneho deadline-u
+Ak admin navrhne tréning, ktorý je o menej ako 25h, deadline by bol v minulosti. Preto: `deadline = max(start_time - 24h, now + 1h)` — klient dostane aspoň 1 hodinu na potvrdenie.
 

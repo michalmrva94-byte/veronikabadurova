@@ -1,33 +1,16 @@
 
 
-## Plán: Manuálny reminder pre nepotvrdené tréningy
+## Zmena deadline-u potvrdenia na 1h pred tréningom
 
-### Čo sa zmení
+Zmení sa výpočet `confirmation_deadline` z `start_time - 24h` na `start_time - 1h`. Minimálny window (1h od teraz) zostáva ako fallback.
 
-Admin bude môcť v detaile nepotvrdného tréningu (stav `awaiting_confirmation`) kliknúť tlačidlo "Pripomenúť klientovi". Toto odošle:
-1. In-app notifikáciu klientovi
-2. Email pripomienku (ak je email toggle zapnutý)
+### Zmeny v 4 súboroch:
 
-### 1. `src/components/admin/SlotDetailDialog.tsx`
+**1. `src/hooks/useAssignTraining.ts`** — zmeniť `24 * 60 * 60 * 1000` na `1 * 60 * 60 * 1000` v deadline výpočte + update textu notifikácie na "najneskôr 1 hodinu pred tréningom"
 
-V sekcii kde sa zobrazuje "Čaká sa na odpoveď klienta" (riadok 343) pridať tlačidlo:
-- Ikona `Bell` + text "Pripomenúť klientovi"
-- `variant="outline"`, plná šírka
-- Po kliknutí zavolá nový callback `onSendReminder?.(booking.id)`
-- Loading stav počas odosielania
+**2. `src/hooks/useProposedTrainings.ts`** — rovnaká zmena deadline výpočtu v batch návrhoch + update textu notifikácií
 
-### 2. `src/pages/admin/AdminCalendarPage.tsx`
+**3. `supabase/functions/check-proposed-deadlines/index.ts`** — upraviť reminder intervaly (napr. 30min a 10min pred deadline-om namiesto 12h a 1h)
 
-Pridať handler `handleSendReminder(bookingId)`:
-- Nájde booking podľa ID z existujúcich dát
-- Vloží notifikáciu do `notifications` tabuľky pre klienta: "Pripomienka: Máte nepotvrdený tréning dňa X o Y. Potvrďte ho čo najskôr."
-- Zavolá `sendNotificationEmail` s typom `reminder` a údajmi o tréningu
-- Toast "Pripomienka odoslaná"
-- Predá handler do `SlotDetailDialog` cez props
-
-### Technické detaily
-
-- Využíva existujúci email typ `reminder` — žiadna nová šablóna nie je potrebná
-- Žiadne DB zmeny
-- Žiadne nové edge function
+**4. `supabase/functions/_shared/notification-templates/proposal.tsx`** — zmeniť text z "24 hodín" na "1 hodinu"
 

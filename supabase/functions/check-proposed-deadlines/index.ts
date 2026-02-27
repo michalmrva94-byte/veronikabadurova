@@ -33,9 +33,7 @@ Deno.serve(async (req) => {
 
     for (const booking of pendingBookings || []) {
       const deadline = new Date(booking.confirmation_deadline)
-      const createdAt = new Date(booking.created_at)
       const hoursUntilDeadline = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60)
-      const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60)
 
       // Expired - cancel and free slot
       if (hoursUntilDeadline <= 0) {
@@ -64,8 +62,8 @@ Deno.serve(async (req) => {
         continue
       }
 
-      // 12h reminder (between 11.5h and 12.5h since creation)
-      if (hoursSinceCreation >= 11.5 && hoursSinceCreation < 12.5) {
+      // 12h before deadline reminder
+      if (hoursUntilDeadline > 11.5 && hoursUntilDeadline <= 12.5) {
         await supabase.from('notifications').insert({
           user_id: booking.client_id,
           title: 'Pripomienka',
@@ -76,7 +74,7 @@ Deno.serve(async (req) => {
       }
 
       // 1h before deadline reminder
-      if (hoursUntilDeadline > 0 && hoursUntilDeadline <= 1.5 && hoursSinceCreation >= 22) {
+      if (hoursUntilDeadline > 0 && hoursUntilDeadline <= 1.5) {
         await supabase.from('notifications').insert({
           user_id: booking.client_id,
           title: 'Posledná hodina na potvrdenie',

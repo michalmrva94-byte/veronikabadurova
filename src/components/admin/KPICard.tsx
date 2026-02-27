@@ -91,11 +91,6 @@ export function KPICard({ icon, title, mainValue, mainColor = 'primary', subValu
               </Popover>
             )}
           </div>
-          {badge && (
-            <Badge variant={badge.variant} className="text-[10px] px-1.5 py-0">
-              {badge.label}
-            </Badge>
-          )}
         </div>
         
         {loading ? (
@@ -107,6 +102,11 @@ export function KPICard({ icon, title, mainValue, mainColor = 'primary', subValu
                 {mainValue}
               </p>
               {trend && <TrendArrow current={trend.current} previous={trend.previous} />}
+              {badge && (
+                <Badge variant={badge.variant} className="text-[10px] px-1.5 py-0.5">
+                  {badge.label}
+                </Badge>
+              )}
             </div>
             {insightText && (
               <p className={`text-[10px] mt-0.5 ${colorMap[insightColor || 'muted']}`}>

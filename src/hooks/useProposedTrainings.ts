@@ -144,8 +144,6 @@ export function useProposedTrainings() {
         ? dates.filter((d) => !conflictDates.has(d.toISOString()))
         : dates;
 
-      const deadline = addHours(new Date(), 24).toISOString();
-
       // 1. Build all slot objects
       const slotObjects = validDates.map((date) => ({
         start_time: date.toISOString(),
@@ -168,15 +166,22 @@ export function useProposedTrainings() {
         throw new Error('Nepodarilo sa vytvoriť tréningové sloty');
       }
 
-      // 3. Build booking objects from returned slot IDs
-      const bookingObjects = slots.map((slot) => ({
-        client_id: clientId,
-        slot_id: slot.id,
-        status: 'awaiting_confirmation' as const,
-        price: DEFAULT_TRAINING_PRICE,
-        confirmation_deadline: deadline,
-        proposed_by: profile.id,
-      }));
+      // 3. Build booking objects — each with individual deadline (24h before training start, min 1h from now)
+      const now = Date.now();
+      const bookingObjects = slots.map((slot) => {
+        const deadline = new Date(Math.max(
+          new Date(slot.start_time).getTime() - 24 * 60 * 60 * 1000,
+          now + 60 * 60 * 1000
+        )).toISOString();
+        return {
+          client_id: clientId,
+          slot_id: slot.id,
+          status: 'awaiting_confirmation' as const,
+          price: DEFAULT_TRAINING_PRICE,
+          confirmation_deadline: deadline,
+          proposed_by: profile.id,
+        };
+      });
 
       // 4. Batch-insert all bookings
       const { data: bookings, error: bookingsError } = await supabase
@@ -195,7 +200,7 @@ export function useProposedTrainings() {
         await supabase.from('notifications').insert({
           user_id: clientId,
           title: 'Nové návrhy tréningov',
-          message: `Veronika vám navrhla ${created} ${created === 1 ? 'tréning' : created < 5 ? 'tréningy' : 'tréningov'}. Potvrďte ich, prosím, do 24 hodín.`,
+          message: `Veronika vám navrhla ${created} ${created === 1 ? 'tréning' : created < 5 ? 'tréningy' : 'tréningov'}. Potvrďte ich najneskôr 24 hodín pred tréningom.`,
           type: 'proposal',
         });
 

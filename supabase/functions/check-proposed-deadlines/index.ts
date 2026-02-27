@@ -62,23 +62,24 @@ Deno.serve(async (req) => {
         continue
       }
 
-      // 12h before deadline reminder
-      if (hoursUntilDeadline > 11.5 && hoursUntilDeadline <= 12.5) {
+      // 30min before deadline reminder
+      const minutesUntilDeadline = hoursUntilDeadline * 60
+      if (minutesUntilDeadline > 25 && minutesUntilDeadline <= 35) {
         await supabase.from('notifications').insert({
           user_id: booking.client_id,
           title: 'Pripomienka',
-          message: `Máte nepotvrdené návrhy tréningov. Potvrďte ich do ${Math.round(hoursUntilDeadline)} hodín.`,
+          message: `Máte nepotvrdené návrhy tréningov. Potvrďte ich do ${Math.round(minutesUntilDeadline)} minút.`,
           type: 'proposal_reminder',
         })
         reminders12h++
       }
 
-      // 1h before deadline reminder
-      if (hoursUntilDeadline > 0 && hoursUntilDeadline <= 1.5) {
+      // 10min before deadline reminder
+      if (minutesUntilDeadline > 0 && minutesUntilDeadline <= 12) {
         await supabase.from('notifications').insert({
           user_id: booking.client_id,
-          title: 'Posledná hodina na potvrdenie',
-          message: 'Návrhy tréningov je možné potvrdiť ešte necelú hodinu.',
+          title: 'Posledných 10 minút na potvrdenie',
+          message: 'Návrhy tréningov je možné potvrdiť ešte niekoľko minút.',
           type: 'proposal_urgent',
         })
         reminders1h++

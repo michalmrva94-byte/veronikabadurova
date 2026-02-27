@@ -21,15 +21,15 @@ export const ProposalEmail = ({ clientName, trainingDate, trainingTime, training
         <Text style={text}>Ahoj {clientName},</Text>
         {trainingCount && trainingCount > 1 ? (
           <Text style={text}>
-            Veronika ti navrhla <strong>{trainingCount} tréningov</strong>. Prvý je naplánovaný na <strong>{trainingDate}</strong> o <strong>{trainingTime}</strong>. Potvrď ich najneskôr 24 hodín pred tréningom.
+            Veronika ti navrhla <strong>{trainingCount} tréningov</strong>. Prvý je naplánovaný na <strong>{trainingDate}</strong> o <strong>{trainingTime}</strong>. Potvrď ich najneskôr 1 hodinu pred tréningom.
           </Text>
         ) : (
           <Text style={text}>
-            Veronika ti navrhla tréning na <strong>{trainingDate}</strong> o <strong>{trainingTime}</strong>. Potvrď ho najneskôr 24 hodín pred tréningom.
+            Veronika ti navrhla tréning na <strong>{trainingDate}</strong> o <strong>{trainingTime}</strong>. Potvrď ho najneskôr 1 hodinu pred tréningom.
           </Text>
         )}
         <Section style={warningBox}>
-          <Text style={warningText}>⏰ Potvrď najneskôr 24 hodín pred tréningom, inak sa termín automaticky uvoľní.</Text>
+          <Text style={warningText}>⏰ Potvrď najneskôr 1 hodinu pred tréningom, inak sa termín automaticky uvoľní.</Text>
         </Section>
         <Section style={buttonContainer}>
           <table cellPadding="0" cellSpacing="0" border={0} style={{ margin: '0 auto' }}>

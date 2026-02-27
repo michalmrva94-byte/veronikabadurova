@@ -1,31 +1,21 @@
 
 
-## Fix: Badge "2 <6h" pretekajúci mimo kartu
+## Zmena deadline-u potvrdenia na 3h pred tréningom (min 1h od návrhu)
 
-### Problém
-V KPICard header riadku sú ikona + title + tooltip + badge v jednom `flex justify-between` riadku. Pri karte "Nepotvrdené" je title dlhý a badge sa vytláča mimo kartu.
+### Zmeny v 4 súboroch:
 
-### Riešenie
-Presunúť badge z header riadku vedľa hlavnej hodnoty (mainValue), kde je dostatok miesta. Badge sa zobrazí napravo od čísla "3" na tom istom riadku.
+**1. `src/hooks/useAssignTraining.ts` (riadok 42)**
+- `1 * 60 * 60 * 1000` → `3 * 60 * 60 * 1000` (3h pred)
+- `30 * 60 * 1000` → `1 * 60 * 60 * 1000` (min 1h od teraz)
+- Text notifikácie: "1 hodinu" → "3 hodiny"
 
-### Zmena v `src/components/admin/KPICard.tsx`
+**2. `src/hooks/useProposedTrainings.ts` (riadok 173)**
+- Rovnaká zmena deadline výpočtu: 3h pred, min 1h od teraz
+- Komentár na riadku 169 aktualizovať
+- Text notifikácie: "1 hodinu" → "3 hodiny"
 
-- **Odstrániť** badge z header sekcie (riadky 94-98)
-- **Pridať** badge vedľa `mainValue` na riadku 105-109, za hodnotu alebo trend arrow:
+**3. `supabase/functions/_shared/notification-templates/proposal.tsx`**
+- Všetky texty "1 hodinu" → "3 hodiny"
 
-```tsx
-<div className="flex items-baseline gap-2">
-  <p className={`text-2xl font-bold tabular-nums ${colorMap[mainColor] || ''}`}>
-    {mainValue}
-  </p>
-  {trend && <TrendArrow current={trend.current} previous={trend.previous} />}
-  {badge && (
-    <Badge variant={badge.variant} className="text-[10px] px-1.5 py-0.5">
-      {badge.label}
-    </Badge>
-  )}
-</div>
-```
-
-Toto zabezpečí, že badge bude vždy vnútri karty, zarovnaný vedľa hlavného čísla.
+**4. Databáza** — aktualizovať existujúce `awaiting_confirmation` bookings na nový deadline `start_time - 3h`
 

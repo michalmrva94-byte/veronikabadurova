@@ -170,8 +170,8 @@ export function useProposedTrainings() {
       const now = Date.now();
       const bookingObjects = slots.map((slot) => {
         const deadline = new Date(Math.max(
-          new Date(slot.start_time).getTime() - 24 * 60 * 60 * 1000,
-          now + 60 * 60 * 1000
+          new Date(slot.start_time).getTime() - 1 * 60 * 60 * 1000,
+          now + 30 * 60 * 1000
         )).toISOString();
         return {
           client_id: clientId,
@@ -200,7 +200,7 @@ export function useProposedTrainings() {
         await supabase.from('notifications').insert({
           user_id: clientId,
           title: 'Nové návrhy tréningov',
-          message: `Veronika vám navrhla ${created} ${created === 1 ? 'tréning' : created < 5 ? 'tréningy' : 'tréningov'}. Potvrďte ich najneskôr 24 hodín pred tréningom.`,
+          message: `Veronika vám navrhla ${created} ${created === 1 ? 'tréning' : created < 5 ? 'tréningy' : 'tréningov'}. Potvrďte ich najneskôr 1 hodinu pred tréningom.`,
           type: 'proposal',
         });
 

@@ -9,6 +9,7 @@ import { sk } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ProposedConfirmDialog } from './ProposedConfirmDialog';
 
 function CountdownBadge({ deadline }: { deadline: string }) {
   const now = new Date();
@@ -71,6 +72,7 @@ export function ProposedTrainingsSection({ proposedBookings }: Props) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [confirmingAll, setConfirmingAll] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [pendingConfirmId, setPendingConfirmId] = useState<string | string[] | null>(null);
 
   if (proposedBookings.length === 0) return null;
 
@@ -149,7 +151,7 @@ export function ProposedTrainingsSection({ proposedBookings }: Props) {
           {proposedBookings.length >= 2 && (
             <Button
               size="sm"
-              onClick={handleConfirmAll}
+              onClick={() => setPendingConfirmId(proposedBookings.map((b) => b.id))}
               disabled={confirmingAll}
               className="flex-1 gap-1.5"
             >
@@ -222,7 +224,7 @@ export function ProposedTrainingsSection({ proposedBookings }: Props) {
                         <Button
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => handleConfirm(booking.id)}
+                          onClick={() => setPendingConfirmId(booking.id)}
                         >
                           <Check className="h-4 w-4" />
                         </Button>
@@ -234,6 +236,28 @@ export function ProposedTrainingsSection({ proposedBookings }: Props) {
             })}
           </CollapsibleContent>
         </Collapsible>
+
+        {/* Confirmation dialog */}
+        <ProposedConfirmDialog
+          isOpen={pendingConfirmId !== null}
+          onClose={() => setPendingConfirmId(null)}
+          isLoading={loadingId !== null || confirmingAll}
+          bookings={
+            pendingConfirmId === null
+              ? []
+              : Array.isArray(pendingConfirmId)
+                ? proposedBookings.filter((b) => pendingConfirmId.includes(b.id))
+                : proposedBookings.filter((b) => b.id === pendingConfirmId)
+          }
+          onConfirm={async () => {
+            if (Array.isArray(pendingConfirmId)) {
+              await handleConfirmAll();
+            } else if (pendingConfirmId) {
+              await handleConfirm(pendingConfirmId);
+            }
+            setPendingConfirmId(null);
+          }}
+        />
       </CardContent>
     </Card>
   );

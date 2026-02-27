@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
 
 interface CreateBookingParams {
   slot_id: string;
@@ -79,6 +80,18 @@ export function useBookings() {
               type: 'booking_request',
             }))
           );
+        }
+
+        // Send email notification to admin
+        if (slot) {
+          const startDate = new Date(slot.start_time);
+          await sendNotificationEmail({
+            type: 'admin_booking_request',
+            to: 'veronika.duro@gmail.com',
+            clientName: clientProfile?.full_name || 'Klient',
+            trainingDate: startDate.toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', year: 'numeric' }),
+            trainingTime: startDate.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
+          });
         }
       } catch (e) {
         console.error('Failed to send admin notification:', e);

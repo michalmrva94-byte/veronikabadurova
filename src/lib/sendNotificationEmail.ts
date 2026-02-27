@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 interface SendNotificationEmailParams {
-  type: 'confirmation' | 'reminder' | 'last_minute' | 'proposal' | 'cancellation';
+  type: 'confirmation' | 'reminder' | 'last_minute' | 'proposal' | 'cancellation' | 'admin_booking_request';
   to: string;
   clientName: string;
   trainingDate?: string;

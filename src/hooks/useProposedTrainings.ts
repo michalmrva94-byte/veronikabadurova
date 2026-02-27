@@ -166,12 +166,12 @@ export function useProposedTrainings() {
         throw new Error('Nepodarilo sa vytvoriť tréningové sloty');
       }
 
-      // 3. Build booking objects — each with individual deadline (24h before training start, min 1h from now)
+      // 3. Build booking objects — each with individual deadline (3h before training start, min 1h from now)
       const now = Date.now();
       const bookingObjects = slots.map((slot) => {
         const deadline = new Date(Math.max(
-          new Date(slot.start_time).getTime() - 1 * 60 * 60 * 1000,
-          now + 30 * 60 * 1000
+          new Date(slot.start_time).getTime() - 3 * 60 * 60 * 1000,
+          now + 1 * 60 * 60 * 1000
         )).toISOString();
         return {
           client_id: clientId,
@@ -200,7 +200,7 @@ export function useProposedTrainings() {
         await supabase.from('notifications').insert({
           user_id: clientId,
           title: 'Nové návrhy tréningov',
-          message: `Veronika vám navrhla ${created} ${created === 1 ? 'tréning' : created < 5 ? 'tréningy' : 'tréningov'}. Potvrďte ich najneskôr 1 hodinu pred tréningom.`,
+          message: `Veronika vám navrhla ${created} ${created === 1 ? 'tréning' : created < 5 ? 'tréningy' : 'tréningov'}. Potvrďte ich najneskôr 3 hodiny pred tréningom.`,
           type: 'proposal',
         });
 

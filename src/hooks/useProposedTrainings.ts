@@ -299,14 +299,9 @@ export function useProposedTrainings() {
           );
 
           // Send push notification to admins
-          const { data: adminProfiles } = await supabase
-            .from('profiles')
-            .select('user_id')
-            .in('id', adminIds);
-
-          const adminUserIds = adminProfiles?.map(a => a.user_id).filter(Boolean) || [];
-          if (adminUserIds.length > 0) {
-            console.log('Sending push to admin user_ids:', adminUserIds);
+          const { data: adminUserIds2 } = await supabase.rpc('get_admin_user_ids');
+          if (adminUserIds2 && adminUserIds2.length > 0) {
+            console.log('Sending push to admin user_ids:', adminUserIds2);
             const slotTime = booking.slot?.start_time
               ? new Date(booking.slot.start_time).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
               : '';
@@ -314,7 +309,7 @@ export function useProposedTrainings() {
               ? new Date(booking.slot.start_time).toLocaleDateString('sk-SK', { day: 'numeric', month: 'numeric' })
               : '';
             sendPushNotification({
-              user_ids: adminUserIds,
+              user_ids: adminUserIds2,
               title: 'Tréning potvrdený ✅',
               body: `${clientName} potvrdil tréning ${slotDay} o ${slotTime}`,
               url: '/admin/kalendar',

@@ -1,39 +1,61 @@
 
+1) DevTools console output during test booking
+- Available console snapshot from your preview: **no logs recorded**.
+- Session replay for this request contains only cursor moves, **no booking interaction events**.
+- Therefore I cannot show runtime booking debug output from this capture (including `useBookings.ts` log), because no booking attempt was captured at message time.
 
-## Root Cause Analysis
+2) Backend function logs (`send-push-notification`) — last 30 minutes
+- Edge function analytics (HTTP invocation logs, last 30 min): **0 entries**.
+- Runtime logs currently available:
+  - `booted`
+  - `Listening on http://localhost:9999/`
+  - `shutdown`
+- Conclusion: in the inspected window, the function was **not invoked** by booking flow.
 
-The code correctly resolves admin auth `user_id` values. The **real bug** is in the edge function's authorization:
+3) Exact `useBookings.ts` block where push is called
+```ts
+// Send push notification to admins
+if (adminIds && adminIds.length > 0) {
+  const { data: adminProfiles } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .in('id', adminIds);
 
-The `send-push-notification` edge function **requires the caller to be an admin** (lines 69-82 of the edge function). But when a **client** creates a booking or confirms a proposed training, the client's JWT is used to invoke the function. The edge function checks `user_roles` for admin role → **returns 403 Forbidden**.
-
-Evidence: No edge function logs exist for recent push attempts, meaning the function either wasn't called or returned an auth error silently.
-
-### Data confirmed correct
-- `get_admin_profile_ids()` returns profile IDs
-- Code then queries `profiles.select('user_id').in('id', adminIds)` → correctly resolves auth UIDs
-- Michal Mrva (`1caa5cf6...`) has a push subscription ✓
-- Veronika Baďurová (`510001b2...`) does NOT have a push subscription yet
-
-### Fix
-
-**`supabase/functions/send-push-notification/index.ts`** — Relax the admin-only check:
-- Any **authenticated** user can call the function with specific `user_ids`
-- Only **admins** can use `send_to_all` (broadcast)
-- This allows client-triggered flows (booking request, proposal confirmation) to send push to admins
-
-Specifically, move the admin check to only guard the `send_to_all` path (around line 77):
-```typescript
-// Any authenticated user can send to specific user_ids
-// Only admins can broadcast to all
-if (send_to_all && !roleData) {
-  return 403 Forbidden
+  const adminUserIds = adminProfiles?.map(a => a.user_id).filter(Boolean) || [];
+  if (adminUserIds.length > 0) {
+    const name = clientProfile?.full_name || 'Klient';
+    console.log('Sending push to admin user_ids:', adminUserIds);
+    sendPushNotification({
+      user_ids: adminUserIds,
+      title: 'Nová požiadavka na tréning 📩',
+      body: `${name} žiada o tréning`,
+      url: '/admin/kalendar',
+    });
+  }
 }
 ```
 
-**Also add `console.log`** before `sendPushNotification` calls in both hooks for debugging, as requested.
+4) Does booking flow reach push code?
+- Push logic is in `createBooking` mutation **`onSuccess`** callback.
+- Inside `onSuccess`, push is in a **`try { ... } catch { ... }`** block.
+- It is **not** inside a catch block, but failures before push (or empty `adminUserIds`) prevent the call.
+- Important: `sendPushNotification(...)` is called **without `await`**, and that helper also catches errors internally, so failures can be quiet.
 
-### Files to change
-1. `supabase/functions/send-push-notification/index.ts` — relax auth to allow authenticated users for targeted push
-2. `src/hooks/useBookings.ts` — add debug console.log
-3. `src/hooks/useProposedTrainings.ts` — add debug console.log
+5) Confirm Veronika `510001b2...` is passed
+- Admin mapping from backend data:
+  - Michal: `1caa5cf6-ec51-4f8b-8450-5ad6270e56a8`
+  - Veronika: `510001b2-a941-4c46-8def-df621c56ae9d`
+- So the target array should include Veronika’s auth UUID **if `adminProfiles` is populated**.
+- Critical finding: this lookup is done from client code via:
+  - `.from('profiles').select('user_id').in('id', adminIds)`
+- Your RLS on `profiles` allows clients to read only their own profile, not admin profiles.  
+  Result: for client-triggered booking, this query likely returns empty array, so:
+  - no `console.log('Sending push...')`
+  - no function call
+  - no edge logs
 
+Additional data check from current DB snapshot
+- `push_subscriptions` currently shows:
+  - `1caa5cf6-...` (Michal, admin)
+  - `ef733181-...` (client)
+- I did **not** see a record for `510001b2-...` in the latest query snapshot.

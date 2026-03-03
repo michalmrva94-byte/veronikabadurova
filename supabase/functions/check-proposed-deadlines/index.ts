@@ -11,10 +11,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
     const now = new Date()
 
@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
     let expired = 0
     let reminders12h = 0
     let reminders1h = 0
+    let reminderEmails = 0
 
     for (const booking of pendingBookings || []) {
       const deadline = new Date(booking.confirmation_deadline)
@@ -62,6 +63,68 @@ Deno.serve(async (req) => {
         continue
       }
 
+      // 48h before training reminder email (±30min tolerance)
+      if (booking.slot && !booking.reminder_sent) {
+        const slotStart = new Date(booking.slot.start_time)
+        const hoursUntilTraining = (slotStart.getTime() - now.getTime()) / (1000 * 60 * 60)
+
+        if (hoursUntilTraining > 47.5 && hoursUntilTraining <= 48.5) {
+          // Get client profile for email
+          const { data: clientProfile } = await supabase
+            .from('profiles')
+            .select('full_name, email, email_notifications')
+            .eq('id', booking.client_id)
+            .single()
+
+          if (clientProfile?.email_notifications && clientProfile.email) {
+            const trainingDate = slotStart.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' })
+            const trainingTime = slotStart.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+            const deadlineDate = deadline.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' })
+            const deadlineTime = deadline.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+
+            // Send reminder email via the send-notification-email function
+            try {
+              const emailRes = await fetch(`${supabaseUrl}/functions/v1/send-notification-email`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${anonKey}`,
+                },
+                body: JSON.stringify({
+                  type: 'proposal_reminder',
+                  to: clientProfile.email,
+                  clientName: clientProfile.full_name,
+                  trainingDate,
+                  trainingTime,
+                  deadlineDate,
+                  deadlineTime,
+                }),
+              })
+
+              if (emailRes.ok) {
+                // Mark reminder as sent
+                await supabase
+                  .from('bookings')
+                  .update({ reminder_sent: true })
+                  .eq('id', booking.id)
+
+                // Also create in-app notification
+                await supabase.from('notifications').insert({
+                  user_id: booking.client_id,
+                  title: 'Nezabudni potvrdiť tréning',
+                  message: `Máš nepotvrdený tréning na ${trainingDate} o ${trainingTime}. Potvrď ho do ${deadlineDate} ${deadlineTime}.`,
+                  type: 'proposal_reminder',
+                })
+
+                reminderEmails++
+              }
+            } catch (e) {
+              console.error('Failed to send proposal reminder email:', e)
+            }
+          }
+        }
+      }
+
       // 30min before deadline reminder
       const minutesUntilDeadline = hoursUntilDeadline * 60
       if (minutesUntilDeadline > 25 && minutesUntilDeadline <= 35) {
@@ -87,7 +150,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ expired, reminders12h, reminders1h, total: pendingBookings?.length || 0 }),
+      JSON.stringify({ expired, reminders12h, reminders1h, reminderEmails, total: pendingBookings?.length || 0 }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

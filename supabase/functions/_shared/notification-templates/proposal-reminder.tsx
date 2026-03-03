@@ -7,41 +7,39 @@ interface Props {
   clientName: string;
   trainingDate: string;
   trainingTime: string;
-  trainingCount?: number;
+  deadlineDate: string;
+  deadlineTime: string;
   appUrl: string;
 }
 
-export const ProposalEmail = ({ clientName, trainingDate, trainingTime, trainingCount, appUrl }: Props) => (
+export const ProposalReminderEmail = ({ clientName, trainingDate, trainingTime, deadlineDate, deadlineTime, appUrl }: Props) => (
   <Html>
     <Head />
-    <Preview>Nový navrhnutý tréning — Veronika Swim</Preview>
+    <Preview>Nezabudni potvrdiť tréning — máš čas do zajtra</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Nový navrhnutý tréning 📋</Heading>
+        <Heading style={h1}>Pripomienka: Potvrď tréning ⏰</Heading>
         <Text style={text}>Ahoj {clientName},</Text>
-        {trainingCount && trainingCount > 1 ? (
-          <Text style={text}>
-            Veronika ti navrhla <strong>{trainingCount} tréningov</strong>. Prvý je naplánovaný na <strong>{trainingDate}</strong> o <strong>{trainingTime}</strong>. Potvrď ich najneskôr 24 hodín pred tréningom.
-          </Text>
-        ) : (
-          <Text style={text}>
-            Veronika ti navrhla tréning na <strong>{trainingDate}</strong> o <strong>{trainingTime}</strong>. Potvrď ho najneskôr 24 hodín pred tréningom.
-          </Text>
-        )}
+        <Text style={text}>
+          Máš navrhnutý tréning na <strong>{trainingDate}</strong> o <strong>{trainingTime}</strong>, ktorý ešte nie je potvrdený.
+        </Text>
         <Section style={warningBox}>
-          <Text style={warningText}>⏰ Potvrď najneskôr 24 hodín pred tréningom, inak sa termín automaticky uvoľní.</Text>
+          <Text style={warningText}>⏰ Potvrdenie je možné do <strong>{deadlineDate}</strong> o <strong>{deadlineTime}</strong>. Po uplynutí deadline sa termín automaticky uvoľní.</Text>
         </Section>
         <Section style={buttonContainer}>
           <table cellPadding="0" cellSpacing="0" border={0} style={{ margin: '0 auto' }}>
             <tr>
               <td align="center" style={buttonTd}>
                 <Link href={`${appUrl}/moje-treningy`} style={buttonLink}>
-                  Pozrieť tréningy
+                  Potvrdiť tréning
                 </Link>
               </td>
             </tr>
           </table>
         </Section>
+        <Text style={secondaryAction}>
+          Nemôžeš prísť? <Link href={`${appUrl}/moje-treningy`} style={secondaryLink}>Odmietni tréning</Link>
+        </Text>
         <Hr style={hr} />
         <Text style={footer}>Veronika Swim · veronikaswim.sk</Text>
       </Container>
@@ -49,7 +47,7 @@ export const ProposalEmail = ({ clientName, trainingDate, trainingTime, training
   </Html>
 )
 
-export default ProposalEmail
+export default ProposalReminderEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }
 const container = { padding: '40px 20px', margin: '0 auto', maxWidth: '480px' }
@@ -60,5 +58,7 @@ const warningText = { color: '#F57F17', fontSize: '14px', margin: '0', fontWeigh
 const buttonContainer = { textAlign: 'center' as const, margin: '32px 0' }
 const buttonTd = { backgroundColor: 'hsl(170, 50%, 45%)', borderRadius: '12px', padding: '12px 32px' }
 const buttonLink = { color: '#ffffff', fontSize: '15px', fontWeight: 'bold' as const, textDecoration: 'none', display: 'inline-block' }
+const secondaryAction = { color: '#666', fontSize: '14px', textAlign: 'center' as const, margin: '0 0 16px' }
+const secondaryLink = { color: 'hsl(170, 50%, 45%)', textDecoration: 'underline' }
 const hr = { borderColor: '#eee', margin: '32px 0' }
 const footer = { color: '#999', fontSize: '12px', textAlign: 'center' as const }

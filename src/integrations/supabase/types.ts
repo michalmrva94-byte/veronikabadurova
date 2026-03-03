@@ -446,6 +446,7 @@ export type Database = {
       }
       generate_referral_code: { Args: never; Returns: string }
       get_admin_profile_ids: { Args: never; Returns: string[] }
+      get_admin_user_ids: { Args: never; Returns: string[] }
       get_my_profile_id: { Args: never; Returns: string }
       get_referrer_name: { Args: { code: string }; Returns: string }
       has_role: {

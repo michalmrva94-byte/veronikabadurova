@@ -96,23 +96,16 @@ export function useBookings() {
         }
 
         // Send push notification to admins
-        if (adminIds && adminIds.length > 0) {
-          const { data: adminProfiles } = await supabase
-            .from('profiles')
-            .select('user_id')
-            .in('id', adminIds);
-
-          const adminUserIds = adminProfiles?.map(a => a.user_id).filter(Boolean) || [];
-          if (adminUserIds.length > 0) {
-            const name = clientProfile?.full_name || 'Klient';
-            console.log('Sending push to admin user_ids:', adminUserIds);
-            sendPushNotification({
-              user_ids: adminUserIds,
-              title: 'Nová požiadavka na tréning 📩',
-              body: `${name} žiada o tréning`,
-              url: '/admin/kalendar',
-            });
-          }
+        const { data: adminUserIds } = await supabase.rpc('get_admin_user_ids');
+        if (adminUserIds && adminUserIds.length > 0) {
+          const name = clientProfile?.full_name || 'Klient';
+          console.log('Sending push to admin user_ids:', adminUserIds);
+          await sendPushNotification({
+            user_ids: adminUserIds,
+            title: 'Nová požiadavka na tréning 📩',
+            body: `${name} žiada o tréning`,
+            url: '/admin/kalendar',
+          });
         }
       } catch (e) {
         console.error('Failed to send admin notification:', e);

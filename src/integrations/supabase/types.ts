@@ -50,6 +50,7 @@ export type Database = {
           is_last_minute: boolean | null
           price: number
           proposed_by: string | null
+          reminder_sent: boolean | null
           slot_id: string
           status: Database["public"]["Enums"]["booking_status"] | null
           updated_at: string
@@ -65,6 +66,7 @@ export type Database = {
           is_last_minute?: boolean | null
           price: number
           proposed_by?: string | null
+          reminder_sent?: boolean | null
           slot_id: string
           status?: Database["public"]["Enums"]["booking_status"] | null
           updated_at?: string
@@ -80,6 +82,7 @@ export type Database = {
           is_last_minute?: boolean | null
           price?: number
           proposed_by?: string | null
+          reminder_sent?: boolean | null
           slot_id?: string
           status?: Database["public"]["Enums"]["booking_status"] | null
           updated_at?: string

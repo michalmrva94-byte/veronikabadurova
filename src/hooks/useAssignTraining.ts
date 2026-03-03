@@ -39,7 +39,7 @@ export function useAssignTraining() {
           price,
           status: 'awaiting_confirmation',
           confirmation_deadline: new Date(Math.max(
-            new Date(start_time).getTime() - 3 * 60 * 60 * 1000,
+            new Date(start_time).getTime() - 24 * 60 * 60 * 1000,
             Date.now() + 1 * 60 * 60 * 1000
           )).toISOString(),
         })
@@ -58,7 +58,7 @@ export function useAssignTraining() {
         .insert({
           user_id: client_id,
           title: 'Navrhnutý tréning',
-          message: 'Veronika vám navrhla nový tréning. Potvrďte ho v sekcii Moje tréningy najneskôr 3 hodiny pred tréningom.',
+          message: 'Veronika vám navrhla nový tréning. Potvrďte ho v sekcii Moje tréningy najneskôr 24 hodín pred tréningom.',
           type: 'booking_proposed',
           related_slot_id: slot.id,
         });

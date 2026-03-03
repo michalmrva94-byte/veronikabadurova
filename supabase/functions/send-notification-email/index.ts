@@ -6,6 +6,7 @@ import { ConfirmationEmail } from "../_shared/notification-templates/confirmatio
 import { ReminderEmail } from "../_shared/notification-templates/reminder.tsx";
 import { LastMinuteEmail } from "../_shared/notification-templates/last-minute.tsx";
 import { ProposalEmail } from "../_shared/notification-templates/proposal.tsx";
+import { ProposalReminderEmail } from "../_shared/notification-templates/proposal-reminder.tsx";
 import { CancellationEmail } from "../_shared/notification-templates/cancellation.tsx";
 import { AdminBookingRequestEmail } from "../_shared/notification-templates/admin-booking-request.tsx";
 
@@ -21,7 +22,7 @@ const APP_URL = "https://veronikabadurova.lovable.app";
 const FROM = "Veronika Swim <noreply@veronikaswim.sk>";
 
 interface EmailRequest {
-  type: "confirmation" | "reminder" | "last_minute" | "proposal" | "cancellation" | "admin_booking_request";
+  type: "confirmation" | "reminder" | "last_minute" | "proposal" | "proposal_reminder" | "cancellation" | "admin_booking_request";
   to: string;
   clientName: string;
   trainingDate?: string;
@@ -33,6 +34,8 @@ interface EmailRequest {
   reason?: string;
   cancelledBy?: "admin" | "client";
   cancellationFee?: string;
+  deadlineDate?: string;
+  deadlineTime?: string;
 }
 
 serve(async (req: Request) => {
@@ -97,6 +100,20 @@ serve(async (req: Request) => {
             trainingDate: payload.trainingDate || "",
             trainingTime: payload.trainingTime || "",
             trainingCount: payload.trainingCount,
+            appUrl: APP_URL,
+          })
+        );
+        break;
+
+      case "proposal_reminder":
+        subject = "Nezabudni potvrdiť tréning — máš čas do zajtra";
+        html = await renderAsync(
+          React.createElement(ProposalReminderEmail, {
+            clientName,
+            trainingDate: payload.trainingDate || "",
+            trainingTime: payload.trainingTime || "",
+            deadlineDate: payload.deadlineDate || "",
+            deadlineTime: payload.deadlineTime || "",
             appUrl: APP_URL,
           })
         );

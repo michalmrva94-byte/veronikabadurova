@@ -50,7 +50,7 @@ export type Database = {
           is_last_minute: boolean | null
           price: number
           proposed_by: string | null
-          reminder_sent: boolean | null
+          reminder_sent: boolean
           slot_id: string
           status: Database["public"]["Enums"]["booking_status"] | null
           updated_at: string
@@ -66,7 +66,7 @@ export type Database = {
           is_last_minute?: boolean | null
           price: number
           proposed_by?: string | null
-          reminder_sent?: boolean | null
+          reminder_sent?: boolean
           slot_id: string
           status?: Database["public"]["Enums"]["booking_status"] | null
           updated_at?: string
@@ -82,7 +82,7 @@ export type Database = {
           is_last_minute?: boolean | null
           price?: number
           proposed_by?: string | null
-          reminder_sent?: boolean | null
+          reminder_sent?: boolean
           slot_id?: string
           status?: Database["public"]["Enums"]["booking_status"] | null
           updated_at?: string
@@ -231,6 +231,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          created_at: string | null
+          id: string
+          subscription: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          subscription: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          subscription?: Json
+          user_id?: string
+        }
+        Relationships: []
       }
       referral_rewards: {
         Row: {

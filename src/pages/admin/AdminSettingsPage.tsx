@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Loader2, Save, Landmark, ShieldAlert, Mail } from 'lucide-react';
+import { CreditCard, Loader2, Save, Landmark, ShieldAlert, Mail, Smartphone } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { usePushNotifications, isSupported as pushSupported } from '@/hooks/usePushNotifications';
 
 interface CancellationFees {
   more_than_48h: number;
@@ -57,6 +58,7 @@ export default function AdminSettingsPage() {
   const [iban, setIban] = useState('');
   const [fees, setFees] = useState<CancellationFees>(DEFAULT_FEES);
   const [emailToggles, setEmailToggles] = useState<EmailToggles>(DEFAULT_EMAIL_TOGGLES);
+  const { isSubscribed, subscribeToPush, unsubscribeFromPush, loading: pushLoading } = usePushNotifications();
 
   useEffect(() => {
     fetchSettings();
@@ -270,6 +272,42 @@ export default function AdminSettingsPage() {
             ))}
           </CardContent>
         </Card>
+
+        {/* Push notifications */}
+        {pushSupported && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Smartphone className="h-5 w-5" />
+                Push notifikácie
+              </CardTitle>
+              <CardDescription>Dostávajte push notifikácie pri nových rezerváciách a potvrdeniach</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Push notifikácie</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isSubscribed ? 'Notifikácie sú zapnuté' : 'Zapnite pre okamžité upozornenia'}
+                  </p>
+                </div>
+                <Switch
+                  checked={isSubscribed}
+                  onCheckedChange={async (checked) => {
+                    if (checked) {
+                      const ok = await subscribeToPush();
+                      if (ok) toast({ title: 'Push notifikácie zapnuté' });
+                    } else {
+                      await unsubscribeFromPush();
+                      toast({ title: 'Push notifikácie vypnuté' });
+                    }
+                  }}
+                  disabled={pushLoading}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Button onClick={handleSave} className="w-full" disabled={isLoading}>
           {isLoading ? (

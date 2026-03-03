@@ -1,64 +1,38 @@
 
 
-## Plán: Deadline 24h + automatický reminder email 48h pred tréningom
+## Plan: Push Notification Infrastructure
 
-### CHANGE 1: Deadline z 3h → 24h pred tréningom
+### Step 1: Generate VAPID Keys
 
-**4 súbory na úpravu:**
+Create `supabase/functions/generate-vapid-keys/index.ts` — a one-time-use edge function that generates a VAPID key pair using the `web-push` npm package and returns `{ publicKey, privateKey }`.
 
-1. **`src/hooks/useAssignTraining.ts`** (riadok 42)
-   - `3 * 60 * 60 * 1000` → `24 * 60 * 60 * 1000`
-   - Notifikácia riadok 61: "3 hodiny" → "24 hodín"
+Add to `supabase/config.toml` with `verify_jwt = false`.
 
-2. **`src/hooks/useProposedTrainings.ts`** (riadok 173, 203)
-   - Deadline výpočet: `3 * 60 * 60 * 1000` → `24 * 60 * 60 * 1000`
-   - Komentár riadok 169: "3h" → "24h"
-   - Notifikácia riadok 203: "3 hodiny" → "24 hodín"
+After deployment, call the function once, then store 3 secrets:
+- `VAPID_PUBLIC_KEY`
+- `VAPID_PRIVATE_KEY`
+- `VAPID_SUBJECT` = `mailto:noreply@veronikaswim.sk`
 
-3. **`supabase/functions/_shared/notification-templates/proposal.tsx`** (riadky 24, 28, 32)
-   - Všetky "3 hodiny" → "24 hodín"
+### Step 2: Database Migration
 
-4. **Databáza** — UPDATE existujúcich `awaiting_confirmation` bookings na `start_time - 24h`
+Single migration with:
 
----
+1. **Create `push_subscriptions` table** with `id`, `user_id` (NOT NULL, references auth.users), `subscription` (jsonb), `created_at`, `UNIQUE(user_id)`. Enable RLS.
 
-### CHANGE 2: Reminder email 48h pred tréningom
+2. **RLS policies:**
+   - Users can INSERT own (`WITH CHECK (auth.uid() = user_id)`)
+   - Users can DELETE own (`USING (auth.uid() = user_id)`)
+   - Users can SELECT own (`USING (auth.uid() = user_id)`)
+   - Admins can SELECT all (`USING (has_role(auth.uid(), 'admin'))`)
 
-**Nový stĺpec v DB:**
-- `ALTER TABLE bookings ADD COLUMN reminder_sent boolean DEFAULT false`
+3. **Fix `reminder_sent`** on bookings — currently nullable, update nulls to false and set NOT NULL.
 
-**Nová email šablóna:**
-- `supabase/functions/_shared/notification-templates/proposal-reminder.tsx`
-- Subject: "Nezabudni potvrdiť tréning — máš čas do zajtra"
-- Obsahuje dátum/čas tréningu, deadline, CTA "Potvrdiť tréning" → `/moje-treningy`, sekundárna akcia "Nemôžem prísť"
+### Step 3: No additional bookings column needed
 
-**Rozšírenie `send-notification-email/index.ts`:**
-- Nový typ `proposal_reminder` v EmailRequest type a switch/case
+The `reminder_sent` column already exists. Only the nullable → NOT NULL fix is needed (included in migration above).
 
-**Rozšírenie `check-proposed-deadlines/index.ts`:**
-- Nová logika: ak tréning začína za ~48h (±30min) a `reminder_sent === false`, odošle reminder email a nastaví `reminder_sent = true`
-
-**Rozšírenie `src/lib/sendNotificationEmail.ts`:**
-- Pridať `proposal_reminder` do typu
-
----
-
-### Technické detaily
-
-Deadline výpočet (obe hooky):
-```typescript
-confirmation_deadline: new Date(Math.max(
-  new Date(start_time).getTime() - 24 * 60 * 60 * 1000, // 24h pred
-  Date.now() + 1 * 60 * 60 * 1000 // min 1h od teraz
-)).toISOString()
-```
-
-Reminder check v edge function (pseudokód):
-```typescript
-const hoursUntilTraining = (slotStart - now) / (1000*60*60)
-if (hoursUntilTraining > 47.5 && hoursUntilTraining <= 48.5 
-    && !booking.reminder_sent) {
-  // send email + set reminder_sent = true
-}
-```
+### Files
+- **Create**: `supabase/functions/generate-vapid-keys/index.ts`
+- **Edit**: `supabase/config.toml` — add function entry
+- **Migration**: new SQL for `push_subscriptions` table + `reminder_sent` NOT NULL fix
 

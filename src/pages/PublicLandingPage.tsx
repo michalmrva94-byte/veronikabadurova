@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/lib/constants';
-import { ArrowRight, UserCheck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import veronikaPhoto from '@/assets/veronika-photo.png';
 import WelcomeScreen from '@/components/landing/WelcomeScreen';
 import LandingHeader from '@/components/landing/LandingHeader';
@@ -94,37 +94,6 @@ export default function PublicLandingPage() {
       >
         <LandingHeader />
         <LandingHero onScrollToContact={scrollToContact} />
-
-        {/* Existing client card */}
-        <motion.section
-          className="px-5 pt-6"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
-          variants={fadeInUp}
-          transition={{ duration: 0.4 }}
-        >
-          <div className="mx-auto max-w-lg ios-card p-4 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-                <UserCheck className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-foreground leading-tight">Ste už môj klient?</h3>
-                <p className="text-xs text-muted-foreground leading-tight mt-0.5">Spravujte si tréningy online.</p>
-              </div>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <Button asChild variant="outline" size="sm" className="rounded-2xl ios-press text-xs h-8 px-3">
-                <Link to={ROUTES.LOGIN}>Prihlásiť sa</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm" className="rounded-2xl ios-press text-xs h-8 px-3">
-                <Link to={ROUTES.REGISTER}>Registrovať sa</Link>
-              </Button>
-            </div>
-          </div>
-        </motion.section>
-
         <AboutVeronika />
         <TargetGroupsSection />
         <HowItWorksSteps />

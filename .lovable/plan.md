@@ -1,35 +1,31 @@
 
 
-## Plan: Add Push Notifications to Admin for Client Actions
+## Findings
 
-### Problem
-When a client requests a training or confirms a proposed training, the admin gets in-app and email notifications but no push notification.
+**Admin has NO push subscription.** The `push_subscriptions` table only contains one record — for client `Veron Badovič`. Neither admin (`Veronika Baďurová` / `Michal Mrva`) has a subscription.
 
-### Key Detail: user_id Mismatch
-The existing `get_admin_profile_ids()` RPC returns **profile IDs** (`profiles.id`), but `sendPushNotification` needs **auth user IDs** (`profiles.user_id`) since `push_subscriptions.user_id` stores `auth.uid()`. We need to query admin auth user_ids separately.
+**Root cause:** The push notification banner and profile toggle only exist in client pages (`DashboardPage` and `ProfilePage`), which use `ClientLayout`. The admin panel has no equivalent UI to enable push notifications.
 
-### Changes
+## Plan
 
-**1. `src/hooks/useBookings.ts`** — Add push after booking creation (in `onSuccess`, alongside existing admin notifications):
-- Import `sendPushNotification`
-- After fetching admin profile IDs and client name, also fetch admin auth `user_id` values from `profiles` table using those profile IDs
-- Fire-and-forget call:
-  ```
-  title: "Nová požiadavka na tréning 📩"
-  body: "<name> žiada o tréning"
-  url: "/admin/kalendar"
-  ```
+### 1. Add push notification toggle to Admin Settings page
 
-**2. `src/hooks/useProposedTrainings.ts`** — Add push after client confirms (in `confirmProposedTraining.mutationFn`, inside the existing admin notification try/catch block):
-- Import `sendPushNotification`
-- After fetching admin profile IDs, also fetch their auth `user_id` values
-- Fire-and-forget call:
-  ```
-  title: "Tréning potvrdený ✅"
-  body: "<name> potvrdil tréning <date> o <time>"
-  url: "/admin/kalendar"
-  ```
+In `src/pages/admin/AdminSettingsPage.tsx`:
+- Import `usePushNotifications` and `isSupported`
+- Add a new Card section (with `Smartphone` icon) titled "Push notifikácie" containing a `Switch` toggle
+- The toggle calls `subscribeToPush()` / `unsubscribeFromPush()` — same pattern as the client `PushToggleRow` in `ProfilePage.tsx`
+- Place it after the Email toggles card
 
-### No other files modified
-The edge function, push subscription infrastructure, and booking logic remain untouched.
+### 2. Add push notification banner to Admin Dashboard
+
+In `src/pages/admin/AdminDashboardPage.tsx`:
+- Import `usePushNotifications`
+- Add a dismissible banner (same pattern as client `DashboardPage`) that appears if:
+  - Push is supported
+  - Permission is not `granted`
+  - Not dismissed within last 7 days
+- "Povoliť" button calls `subscribeToPush()`
+- "Neskôr" dismisses for 7 days (using `localStorage` key `admin_push_dismissed_at`)
+
+No database or edge function changes needed — the existing infrastructure handles everything once the admin has a subscription record.
 

@@ -1,61 +1,53 @@
 
 
-## Plan: Add Push Notification Listeners to Service Worker
+## Plan: Push Notification Permission Request
 
-### Current state
-The app uses `vite-plugin-pwa` in default `generateSW` mode (Workbox auto-generates the SW). There is no custom `sw.ts` file.
+### Prerequisites
+The VAPID keys have not been stored as secrets yet. Before the client-side code works, we need to:
+1. Call the `generate-vapid-keys` edge function to get keys
+2. Store `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` as secrets
+3. Add `VITE_VAPID_PUBLIC_KEY` to `.env` with the public key value
 
-### Changes needed
+### Implementation
 
-**1. Create `src/sw.ts`** — custom service worker source file:
-- Import Workbox precaching via `workbox-precaching` (to keep existing caching behavior)
-- Call `precacheAndRoute(self.__WB_MANIFEST)` to preserve all current caching/routing
-- Add `skipWaiting()` and `clientsClaim()` calls (moved from config)
-- Append the two push notification listeners (push event + notificationclick) exactly as specified
+**1. Create `src/hooks/usePushNotifications.ts`**
 
-**2. Edit `vite.config.ts`** — switch VitePWA from `generateSW` to `injectManifest` mode:
-- Set `strategies: 'injectManifest'`
-- Set `srcDir: 'src'`, `filename: 'sw.ts'`
-- Keep existing manifest, includeAssets, and registerType config unchanged
-- Remove the `workbox` config block (caching config moves into `sw.ts` via Workbox APIs)
-- Add `injectManifest.globPatterns` and `injectManifest.maximumFileSizeToCacheInBytes` to match current workbox settings
+Custom hook with:
+- `isSupported` — checks `serviceWorker`, `PushManager`, `Notification` availability
+- `permission` — reactive state tracking `Notification.permission`
+- `isSubscribed` — checks `push_subscriptions` table for current user
+- `subscribeToPush()` — requests permission, subscribes via `pushManager.subscribe()` with VAPID key, upserts to `push_subscriptions` (using `user_id = auth.uid()` since the table references `auth.users` directly, not profiles)
+- `unsubscribeFromPush()` — calls `sub.unsubscribe()`, deletes from table
+- `urlBase64ToUint8Array()` helper inline
 
-### What stays the same
-- All PWA metadata (manifest, icons, theme colors)
-- `registerType: 'autoUpdate'`
-- Runtime caching for Supabase API calls
-- `navigateFallbackDenylist` for OAuth
+Note: `push_subscriptions.user_id` references `auth.users(id)` directly, so we use `user.id` from auth, not `profile.id`.
 
-### Technical detail
+**2. Add `VITE_VAPID_PUBLIC_KEY` to `.env`**
 
-The `sw.ts` file will use Workbox modules directly:
-```ts
-import { precacheAndRoute } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
-import { NetworkFirst } from 'workbox-strategies';
-import { ExpirationPlugin } from 'workbox-expiration';
+First deploy and call `generate-vapid-keys` to obtain the public key, then add it to `.env`.
 
-declare let self: ServiceWorkerGlobalScope;
+**3. Push banner in `DashboardPage.tsx`**
 
-// Existing caching behavior
-precacheAndRoute(self.__WB_MANIFEST);
-self.skipWaiting();
-self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
-});
+Add a dismissible banner inside `ApprovedDashboard`, rendered between the greeting and the hero block. Conditions:
+- `isSupported === true`
+- `Notification.permission === 'default'`
+- `localStorage.getItem('push_dismissed_at')` is null or older than 7 days
 
-// Runtime caching for Supabase
-registerRoute(
-  /^https:\/\/.*\.supabase\.co\/.*/i,
-  new NetworkFirst({ cacheName: 'supabase-cache', plugins: [new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 86400 })] })
-);
+Banner: subtle bar with bell icon, "Povoliť notifikácie o tréningoch" text, "Povoliť" button (calls `subscribeToPush`), "Teraz nie" button (stores timestamp, hides). On success: hide + toast "Notifikácie sú zapnuté ✅".
 
-// Push notification listeners (appended)
-self.addEventListener('push', ...);
-self.addEventListener('notificationclick', ...);
-```
+Not shown to admins — only within `ApprovedDashboard` which is client-only.
+
+**4. Toggle in `ProfilePage.tsx`**
+
+Add a new row in the Notifications card (after the last-minute toggle):
+- Label: "Push notifikácie", sublabel: "Upozornenia o navrhnutých tréningoch"
+- On mount: check `isSubscribed` from hook
+- Toggle ON → `subscribeToPush()`, Toggle OFF → `unsubscribeFromPush()`
+- If `!isSupported` → disabled toggle with note "Váš prehliadač nepodporuje notifikácie"
 
 ### Files
-- **Create**: `src/sw.ts`
-- **Edit**: `vite.config.ts` — switch to injectManifest strategy
+- **Create**: `src/hooks/usePushNotifications.ts`
+- **Edit**: `src/pages/client/DashboardPage.tsx` — add banner
+- **Edit**: `src/pages/client/ProfilePage.tsx` — add push toggle
+- **Edit**: `.env` — add `VITE_VAPID_PUBLIC_KEY` (after obtaining key)
 

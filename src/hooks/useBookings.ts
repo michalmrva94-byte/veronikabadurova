@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
+import { sendPushNotification } from '@/lib/sendPushNotification';
 
 interface CreateBookingParams {
   slot_id: string;
@@ -92,6 +93,25 @@ export function useBookings() {
             trainingDate: startDate.toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', year: 'numeric' }),
             trainingTime: startDate.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
           });
+        }
+
+        // Send push notification to admins
+        if (adminIds && adminIds.length > 0) {
+          const { data: adminProfiles } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .in('id', adminIds);
+
+          const adminUserIds = adminProfiles?.map(a => a.user_id).filter(Boolean) || [];
+          if (adminUserIds.length > 0) {
+            const name = clientProfile?.full_name || 'Klient';
+            sendPushNotification({
+              user_ids: adminUserIds,
+              title: 'Nová požiadavka na tréning 📩',
+              body: `${name} žiada o tréning`,
+              url: '/admin/kalendar',
+            });
+          }
         }
       } catch (e) {
         console.error('Failed to send admin notification:', e);

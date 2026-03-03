@@ -1,38 +1,61 @@
 
 
-## Plan: Push Notification Infrastructure
+## Plan: Add Push Notification Listeners to Service Worker
 
-### Step 1: Generate VAPID Keys
+### Current state
+The app uses `vite-plugin-pwa` in default `generateSW` mode (Workbox auto-generates the SW). There is no custom `sw.ts` file.
 
-Create `supabase/functions/generate-vapid-keys/index.ts` — a one-time-use edge function that generates a VAPID key pair using the `web-push` npm package and returns `{ publicKey, privateKey }`.
+### Changes needed
 
-Add to `supabase/config.toml` with `verify_jwt = false`.
+**1. Create `src/sw.ts`** — custom service worker source file:
+- Import Workbox precaching via `workbox-precaching` (to keep existing caching behavior)
+- Call `precacheAndRoute(self.__WB_MANIFEST)` to preserve all current caching/routing
+- Add `skipWaiting()` and `clientsClaim()` calls (moved from config)
+- Append the two push notification listeners (push event + notificationclick) exactly as specified
 
-After deployment, call the function once, then store 3 secrets:
-- `VAPID_PUBLIC_KEY`
-- `VAPID_PRIVATE_KEY`
-- `VAPID_SUBJECT` = `mailto:noreply@veronikaswim.sk`
+**2. Edit `vite.config.ts`** — switch VitePWA from `generateSW` to `injectManifest` mode:
+- Set `strategies: 'injectManifest'`
+- Set `srcDir: 'src'`, `filename: 'sw.ts'`
+- Keep existing manifest, includeAssets, and registerType config unchanged
+- Remove the `workbox` config block (caching config moves into `sw.ts` via Workbox APIs)
+- Add `injectManifest.globPatterns` and `injectManifest.maximumFileSizeToCacheInBytes` to match current workbox settings
 
-### Step 2: Database Migration
+### What stays the same
+- All PWA metadata (manifest, icons, theme colors)
+- `registerType: 'autoUpdate'`
+- Runtime caching for Supabase API calls
+- `navigateFallbackDenylist` for OAuth
 
-Single migration with:
+### Technical detail
 
-1. **Create `push_subscriptions` table** with `id`, `user_id` (NOT NULL, references auth.users), `subscription` (jsonb), `created_at`, `UNIQUE(user_id)`. Enable RLS.
+The `sw.ts` file will use Workbox modules directly:
+```ts
+import { precacheAndRoute } from 'workbox-precaching';
+import { registerRoute } from 'workbox-routing';
+import { NetworkFirst } from 'workbox-strategies';
+import { ExpirationPlugin } from 'workbox-expiration';
 
-2. **RLS policies:**
-   - Users can INSERT own (`WITH CHECK (auth.uid() = user_id)`)
-   - Users can DELETE own (`USING (auth.uid() = user_id)`)
-   - Users can SELECT own (`USING (auth.uid() = user_id)`)
-   - Admins can SELECT all (`USING (has_role(auth.uid(), 'admin'))`)
+declare let self: ServiceWorkerGlobalScope;
 
-3. **Fix `reminder_sent`** on bookings — currently nullable, update nulls to false and set NOT NULL.
+// Existing caching behavior
+precacheAndRoute(self.__WB_MANIFEST);
+self.skipWaiting();
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
 
-### Step 3: No additional bookings column needed
+// Runtime caching for Supabase
+registerRoute(
+  /^https:\/\/.*\.supabase\.co\/.*/i,
+  new NetworkFirst({ cacheName: 'supabase-cache', plugins: [new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 86400 })] })
+);
 
-The `reminder_sent` column already exists. Only the nullable → NOT NULL fix is needed (included in migration above).
+// Push notification listeners (appended)
+self.addEventListener('push', ...);
+self.addEventListener('notificationclick', ...);
+```
 
 ### Files
-- **Create**: `supabase/functions/generate-vapid-keys/index.ts`
-- **Edit**: `supabase/config.toml` — add function entry
-- **Migration**: new SQL for `push_subscriptions` table + `reminder_sent` NOT NULL fix
+- **Create**: `src/sw.ts`
+- **Edit**: `vite.config.ts` — switch to injectManifest strategy
 

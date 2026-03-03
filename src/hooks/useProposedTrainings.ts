@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { DEFAULT_TRAINING_PRICE } from '@/lib/constants';
 import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
+import { sendPushNotification } from '@/lib/sendPushNotification';
 import { addHours, setHours, setMinutes, addDays, startOfWeek, getDay } from 'date-fns';
 
 export interface DayTimeSelection {
@@ -296,6 +297,28 @@ export function useProposedTrainings() {
               related_slot_id: booking.slot_id,
             }))
           );
+
+          // Send push notification to admins
+          const { data: adminProfiles } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .in('id', adminIds);
+
+          const adminUserIds = adminProfiles?.map(a => a.user_id).filter(Boolean) || [];
+          if (adminUserIds.length > 0) {
+            const slotTime = booking.slot?.start_time
+              ? new Date(booking.slot.start_time).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+              : '';
+            const slotDay = booking.slot?.start_time
+              ? new Date(booking.slot.start_time).toLocaleDateString('sk-SK', { day: 'numeric', month: 'numeric' })
+              : '';
+            sendPushNotification({
+              user_ids: adminUserIds,
+              title: 'Tréning potvrdený ✅',
+              body: `${clientName} potvrdil tréning ${slotDay} o ${slotTime}`,
+              url: '/admin/kalendar',
+            });
+          }
         }
       } catch (e) {
         console.error('Failed to send admin confirmation notification:', e);

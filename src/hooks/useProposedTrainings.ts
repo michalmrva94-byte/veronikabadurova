@@ -306,6 +306,7 @@ export function useProposedTrainings() {
 
           const adminUserIds = adminProfiles?.map(a => a.user_id).filter(Boolean) || [];
           if (adminUserIds.length > 0) {
+            console.log('Sending push to admin user_ids:', adminUserIds);
             const slotTime = booking.slot?.start_time
               ? new Date(booking.slot.start_time).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
               : '';

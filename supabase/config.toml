@@ -11,3 +11,5 @@ project_id = "yyusjqaehwvqmbzivwsv"
     verify_jwt = false
   [functions.delete-client]
     verify_jwt = false
+  [functions.generate-vapid-keys]
+    verify_jwt = false

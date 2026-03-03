@@ -20,6 +20,7 @@ import { useAdminBookings, AdminBookingWithDetails } from '@/hooks/useAdminBooki
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
+import { sendPushNotification } from '@/lib/sendPushNotification';
 
 function CancelledTrainingCard({
   booking,
@@ -225,6 +226,17 @@ export default function AdminBroadcastPage() {
       }
 
       toast.success(`Broadcast odoslaný ${lastMinuteClients.length} klientom!`);
+
+      // Send push notification to all last-minute clients
+      const pushUserIds = lastMinuteClients.map(c => c.user_id);
+      if (pushUserIds.length > 0) {
+        sendPushNotification({
+          user_ids: pushUserIds,
+          title,
+          body: message,
+          url: broadcastSlotId ? `/last-minute` : '/',
+        });
+      }
       setTitle('');
       setMessage('');
       setBroadcastSlotId(null);

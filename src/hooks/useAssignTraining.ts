@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
+import { sendPushNotification } from '@/lib/sendPushNotification';
 
 interface AssignTrainingParams {
   start_time: string;
@@ -70,7 +71,7 @@ export function useAssignTraining() {
       // Send email notification if enabled
       const { data: clientProfile } = await supabase
         .from('profiles')
-        .select('full_name, email, email_notifications')
+        .select('full_name, email, email_notifications, user_id')
         .eq('id', client_id)
         .single();
 
@@ -82,6 +83,17 @@ export function useAssignTraining() {
           clientName: clientProfile.full_name,
           trainingDate: slotStart.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' }),
           trainingTime: slotStart.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
+        });
+      }
+
+      // Send push notification
+      if (clientProfile?.user_id) {
+        const slotStart = new Date(start_time);
+        sendPushNotification({
+          user_ids: [clientProfile.user_id],
+          title: 'Navrhnutý tréning 🏊‍♀️',
+          body: `Veronika vám navrhla tréning na ${slotStart.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' })} o ${slotStart.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })}`,
+          url: '/dashboard',
         });
       }
 

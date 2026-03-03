@@ -8,8 +8,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? "";
+const subject = vapidSubject.startsWith("mailto:") ? vapidSubject : `mailto:${vapidSubject}`;
 webpush.setVapidDetails(
-  Deno.env.get("VAPID_SUBJECT")!,
+  subject,
   Deno.env.get("VAPID_PUBLIC_KEY")!,
   Deno.env.get("VAPID_PRIVATE_KEY")!
 );

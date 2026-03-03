@@ -66,22 +66,24 @@ serve(async (req: Request) => {
 
     const callerId = claimsData.claims.sub;
 
-    // Check admin role
-    const { data: roleData } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", callerId)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (!roleData) {
-      return new Response(
-        JSON.stringify({ error: "Forbidden — admin only" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const payload: PushRequest = await req.json();
+
+    // Only admins can broadcast to all; any authenticated user can send to specific user_ids
+    if (payload.send_to_all) {
+      const { data: roleData } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", callerId)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (!roleData) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden — admin only for broadcast" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
     const { title, body, url, actions, user_ids, send_to_all } = payload;
 
     if (!title || !body) {

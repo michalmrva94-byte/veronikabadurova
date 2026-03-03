@@ -105,6 +105,7 @@ export function useBookings() {
           const adminUserIds = adminProfiles?.map(a => a.user_id).filter(Boolean) || [];
           if (adminUserIds.length > 0) {
             const name = clientProfile?.full_name || 'Klient';
+            console.log('Sending push to admin user_ids:', adminUserIds);
             sendPushNotification({
               user_ids: adminUserIds,
               title: 'Nová požiadavka na tréning 📩',

@@ -1,21 +1,64 @@
 
 
-## Zmena deadline-u potvrdenia na 3h pred tréningom (min 1h od návrhu)
+## Plán: Deadline 24h + automatický reminder email 48h pred tréningom
 
-### Zmeny v 4 súboroch:
+### CHANGE 1: Deadline z 3h → 24h pred tréningom
 
-**1. `src/hooks/useAssignTraining.ts` (riadok 42)**
-- `1 * 60 * 60 * 1000` → `3 * 60 * 60 * 1000` (3h pred)
-- `30 * 60 * 1000` → `1 * 60 * 60 * 1000` (min 1h od teraz)
-- Text notifikácie: "1 hodinu" → "3 hodiny"
+**4 súbory na úpravu:**
 
-**2. `src/hooks/useProposedTrainings.ts` (riadok 173)**
-- Rovnaká zmena deadline výpočtu: 3h pred, min 1h od teraz
-- Komentár na riadku 169 aktualizovať
-- Text notifikácie: "1 hodinu" → "3 hodiny"
+1. **`src/hooks/useAssignTraining.ts`** (riadok 42)
+   - `3 * 60 * 60 * 1000` → `24 * 60 * 60 * 1000`
+   - Notifikácia riadok 61: "3 hodiny" → "24 hodín"
 
-**3. `supabase/functions/_shared/notification-templates/proposal.tsx`**
-- Všetky texty "1 hodinu" → "3 hodiny"
+2. **`src/hooks/useProposedTrainings.ts`** (riadok 173, 203)
+   - Deadline výpočet: `3 * 60 * 60 * 1000` → `24 * 60 * 60 * 1000`
+   - Komentár riadok 169: "3h" → "24h"
+   - Notifikácia riadok 203: "3 hodiny" → "24 hodín"
 
-**4. Databáza** — aktualizovať existujúce `awaiting_confirmation` bookings na nový deadline `start_time - 3h`
+3. **`supabase/functions/_shared/notification-templates/proposal.tsx`** (riadky 24, 28, 32)
+   - Všetky "3 hodiny" → "24 hodín"
+
+4. **Databáza** — UPDATE existujúcich `awaiting_confirmation` bookings na `start_time - 24h`
+
+---
+
+### CHANGE 2: Reminder email 48h pred tréningom
+
+**Nový stĺpec v DB:**
+- `ALTER TABLE bookings ADD COLUMN reminder_sent boolean DEFAULT false`
+
+**Nová email šablóna:**
+- `supabase/functions/_shared/notification-templates/proposal-reminder.tsx`
+- Subject: "Nezabudni potvrdiť tréning — máš čas do zajtra"
+- Obsahuje dátum/čas tréningu, deadline, CTA "Potvrdiť tréning" → `/moje-treningy`, sekundárna akcia "Nemôžem prísť"
+
+**Rozšírenie `send-notification-email/index.ts`:**
+- Nový typ `proposal_reminder` v EmailRequest type a switch/case
+
+**Rozšírenie `check-proposed-deadlines/index.ts`:**
+- Nová logika: ak tréning začína za ~48h (±30min) a `reminder_sent === false`, odošle reminder email a nastaví `reminder_sent = true`
+
+**Rozšírenie `src/lib/sendNotificationEmail.ts`:**
+- Pridať `proposal_reminder` do typu
+
+---
+
+### Technické detaily
+
+Deadline výpočet (obe hooky):
+```typescript
+confirmation_deadline: new Date(Math.max(
+  new Date(start_time).getTime() - 24 * 60 * 60 * 1000, // 24h pred
+  Date.now() + 1 * 60 * 60 * 1000 // min 1h od teraz
+)).toISOString()
+```
+
+Reminder check v edge function (pseudokód):
+```typescript
+const hoursUntilTraining = (slotStart - now) / (1000*60*60)
+if (hoursUntilTraining > 47.5 && hoursUntilTraining <= 48.5 
+    && !booking.reminder_sent) {
+  // send email + set reminder_sent = true
+}
+```
 

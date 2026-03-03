@@ -6,7 +6,7 @@ import {
   Users, Calendar, CreditCard, Clock,
   ChevronRight, Bell, Loader2, CalendarCheck,
   AlertTriangle, Euro, Megaphone, CheckCircle, XCircle,
-  Activity, TrendingDown, BarChart3
+  Activity, TrendingDown, BarChart3, Smartphone, X
 } from 'lucide-react';
 import { useAdminBookings, AdminBookingWithDetails } from '@/hooks/useAdminBookings';
 import { useAdminDashboardStats, DashboardDateRange, getDefaultRange } from '@/hooks/useAdminDashboardStats';
@@ -18,9 +18,10 @@ import { DashboardHistoryPicker } from '@/components/admin/DashboardHistoryPicke
 import { KPICard } from '@/components/admin/KPICard';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { format, differenceInHours } from 'date-fns';
 import { sk } from 'date-fns/locale';
+import { usePushNotifications, isSupported as pushSupported } from '@/hooks/usePushNotifications';
 
 type QuickPeriod = 'week' | 'month';
 
@@ -43,6 +44,13 @@ export default function AdminDashboardPage() {
   const [processingAction, setProcessingAction] = useState<string | null>(null);
   const [quickPeriod, setQuickPeriod] = useState<QuickPeriod>('week');
   const [customRange, setCustomRange] = useState<DashboardDateRange | null>(null);
+  const [pushDismissed, setPushDismissed] = useState(() => {
+    const ts = localStorage.getItem('admin_push_dismissed_at');
+    return ts ? Date.now() - Number(ts) < 7 * 24 * 60 * 60 * 1000 : false;
+  });
+
+  const { permission, subscribeToPush, isSubscribed } = usePushNotifications();
+  const showPushBanner = pushSupported && permission !== 'granted' && !isSubscribed && !pushDismissed;
 
   const activeRange = customRange || getDefaultRange(quickPeriod);
   
@@ -155,6 +163,49 @@ export default function AdminDashboardPage() {
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Riadiaci panel</p>
         </div>
+
+        {/* Push notification banner */}
+        {showPushBanner && (
+          <div className="rounded-xl bg-primary/10 p-4 flex items-start gap-3">
+            <Smartphone className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0 space-y-2">
+              <p className="text-sm font-medium">Povoľte push notifikácie</p>
+              <p className="text-xs text-muted-foreground">
+                Budete okamžite informovaná o nových rezerváciách a potvrdeniach.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    const ok = await subscribeToPush();
+                    if (ok) toast.success('Push notifikácie zapnuté');
+                  }}
+                >
+                  Povoliť
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    localStorage.setItem('admin_push_dismissed_at', String(Date.now()));
+                    setPushDismissed(true);
+                  }}
+                >
+                  Neskôr
+                </Button>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem('admin_push_dismissed_at', String(Date.now()));
+                setPushDismissed(true);
+              }}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         {/* Period Toggle */}
         <div className="flex items-center gap-2 flex-wrap">

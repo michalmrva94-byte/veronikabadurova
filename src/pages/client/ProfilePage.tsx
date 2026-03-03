@@ -9,7 +9,41 @@ import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Bell, Mail, Phone, Loader2, Zap } from 'lucide-react';
+import { User, Bell, Mail, Phone, Loader2, Zap, Smartphone } from 'lucide-react';
+import { usePushNotifications, isSupported as pushSupported } from '@/hooks/usePushNotifications';
+
+function PushToggleRow() {
+  const { isSubscribed, subscribeToPush, unsubscribeFromPush, loading } = usePushNotifications();
+
+  const handleToggle = async (checked: boolean) => {
+    if (checked) {
+      await subscribeToPush();
+    } else {
+      await unsubscribeFromPush();
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="space-y-0.5">
+        <div className="flex items-center gap-2">
+          <Smartphone className="h-4 w-4 text-muted-foreground" />
+          <Label>Push notifikácie</Label>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {pushSupported
+            ? 'Upozornenia o navrhnutých tréningoch'
+            : 'Váš prehliadač nepodporuje notifikácie'}
+        </p>
+      </div>
+      <Switch
+        checked={isSubscribed}
+        onCheckedChange={handleToggle}
+        disabled={!pushSupported || loading}
+      />
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const { profile, refreshProfile } = useAuth();
@@ -182,6 +216,10 @@ export default function ProfilePage() {
                 disabled={isLoading}
               />
             </div>
+
+            <Separator />
+
+            <PushToggleRow />
           </CardContent>
         </Card>
 

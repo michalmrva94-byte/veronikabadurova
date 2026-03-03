@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/lib/constants';
-import { Calendar, Loader2, ClockIcon, Ban, Wallet, ChevronDown, ArrowRight, Flame, CalendarPlus } from 'lucide-react';
+import { Calendar, Loader2, ClockIcon, Ban, Wallet, ChevronDown, ArrowRight, Flame, CalendarPlus, Bell, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useClientBookings } from '@/hooks/useClientBookings';
@@ -12,6 +12,8 @@ import { ProposedTrainingsSection, getStatusBadge } from '@/components/client/Pr
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { format, startOfWeek, startOfMonth, subWeeks, endOfWeek } from 'date-fns';
 import { sk } from 'date-fns/locale';
+import { useState, useEffect } from 'react';
+import { usePushNotifications, isSupported as pushSupported } from '@/hooks/usePushNotifications';
 
 function PendingApprovalScreen({ name }: { name: string }) {
   return (
@@ -146,6 +148,31 @@ function ApprovedDashboard() {
     toast.success('Súbor kalendára stiahnutý');
   };
 
+  const { subscribeToPush } = usePushNotifications();
+  const [showPushBanner, setShowPushBanner] = useState(false);
+
+  useEffect(() => {
+    if (!pushSupported) return;
+    if (Notification.permission !== 'default') return;
+    const dismissed = localStorage.getItem('push_dismissed_at');
+    if (dismissed) {
+      const daysSince = (Date.now() - Number(dismissed)) / (1000 * 60 * 60 * 24);
+      if (daysSince < 7) return;
+    }
+    setShowPushBanner(true);
+  }, []);
+
+  const handleAllowPush = async () => {
+    const ok = await subscribeToPush();
+    setShowPushBanner(false);
+    if (ok) toast.success('Notifikácie sú zapnuté ✅');
+  };
+
+  const handleDismissPush = () => {
+    localStorage.setItem('push_dismissed_at', String(Date.now()));
+    setShowPushBanner(false);
+  };
+
   return (
     <ClientLayout>
       <div className="space-y-5 animate-fade-in">
@@ -158,6 +185,20 @@ function ApprovedDashboard() {
             {(nextBooking || proposedBookings.length > 0) ? 'Teším sa na náš najbližší tréning. 💙' : 'Kedy sa vidíme najbližšie? 😊'}
           </p>
         </div>
+
+        {/* Push notification banner */}
+        {showPushBanner && (
+          <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+            <Bell className="h-5 w-5 shrink-0 text-primary" />
+            <p className="flex-1 text-sm text-foreground">Povoliť notifikácie o tréningoch</p>
+            <Button size="sm" variant="default" onClick={handleAllowPush} className="shrink-0">
+              Povoliť
+            </Button>
+            <button onClick={handleDismissPush} className="shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         {/* 2. Hero blok -- Najbližší tréning / Akcia */}
         {bookingsLoading ? (

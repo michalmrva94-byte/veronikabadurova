@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Booking, TrainingSlot, Profile } from '@/types/database';
 import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
+import { sendPushNotification } from '@/lib/sendPushNotification';
 
 export type AdminBookingWithDetails = Booking & {
   slot: TrainingSlot;
@@ -88,6 +89,17 @@ export function useAdminBookings() {
           clientName: booking.client.full_name,
           trainingDate: slotStart.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' }),
           trainingTime: slotStart.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
+        });
+      }
+
+      // Send push notification
+      if (booking.client?.user_id) {
+        const slotStart = new Date(booking.slot.start_time);
+        sendPushNotification({
+          user_ids: [booking.client.user_id],
+          title: 'Tréning potvrdený ✅',
+          body: `Váš tréning na ${slotStart.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' })} o ${slotStart.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })} je potvrdený!`,
+          url: '/my-trainings',
         });
       }
 

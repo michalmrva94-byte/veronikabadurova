@@ -142,6 +142,21 @@ export function AdminStatsSection({ stats, isLoading }: AdminStatsSectionProps) 
                       {' '}({(stats?.stornoRate ?? 0).toFixed(0)}%).
                     </p>
                   )}
+                  <div className="mt-3 pt-2 border-t border-border space-y-1.5">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Benchmark</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full shrink-0 bg-success" />
+                      <span className="text-[11px]">&lt; 15% — Výborná stabilita</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full shrink-0 bg-warning" />
+                      <span className="text-[11px]">15–25% — Prijateľná, sleduj trend</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full shrink-0 bg-destructive" />
+                      <span className="text-[11px]">&gt; 25% — Vysoká, zváž opatrenia</span>
+                    </div>
+                  </div>
                 </PopoverContent>
               </Popover>
             }

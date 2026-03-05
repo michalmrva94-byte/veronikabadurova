@@ -1,7 +1,7 @@
 import { AdminDashboardStats } from '@/hooks/useAdminDashboardStats';
 import { Loader2, ChevronDown, TrendingUp, BarChart3, Target, Wallet } from 'lucide-react';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useState } from 'react';
 

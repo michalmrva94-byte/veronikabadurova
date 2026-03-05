@@ -17,22 +17,28 @@ export function useAddCredit() {
     mutationFn: async ({ clientId, amount, description, paidMethod }: AddCreditParams) => {
       if (!adminProfile?.id) throw new Error('Admin nie je prihlásený');
 
-      // Get current client balance
+      // Get current client balance and debt
       const { data: client, error: clientError } = await supabase
         .from('profiles')
-        .select('balance')
+        .select('balance, debt_balance')
         .eq('id', clientId)
         .single();
 
       if (clientError) throw clientError;
 
       const currentBalance = client.balance ?? 0;
+      const currentDebt = client.debt_balance ?? 0;
       const newBalance = currentBalance + amount;
 
-      // Update client balance (only credit, do NOT auto-pay debt)
+      // Auto-offset debt when adding credit
+      const debtReduction = Math.min(Math.max(newBalance, 0), currentDebt);
+      const finalBalance = newBalance - debtReduction;
+      const finalDebt = currentDebt - debtReduction;
+
+      // Update client balance and debt in one call
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ balance: newBalance })
+        .update({ balance: finalBalance, debt_balance: finalDebt })
         .eq('id', clientId);
 
       if (updateError) throw updateError;
@@ -50,7 +56,7 @@ export function useAddCredit() {
           client_id: clientId,
           type: amount >= 0 ? 'deposit' : 'manual_adjustment',
           amount: amount,
-          balance_after: newBalance,
+          balance_after: finalBalance,
           description: description || (amount >= 0 ? 'Vklad kreditu' : 'Manuálna úprava'),
           created_by: adminProfile.id,
           direction: 'in',
@@ -59,7 +65,7 @@ export function useAddCredit() {
 
       if (transactionError) throw transactionError;
 
-      return { newBalance };
+      return { newBalance: finalBalance };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });

@@ -135,9 +135,8 @@ export default function AdminClientDetailPage() {
 
   // Computed stats
   const completedCount = allClientBookings.filter(b => b.status === 'completed').length;
-  const cancelledCount = allClientBookings.filter(b => b.status === 'cancelled').length;
-  const bookedCount = allClientBookings.filter(b => b.status === 'booked').length;
-  const totalRelevant = completedCount + cancelledCount + bookedCount;
+  const cancelledCount = allClientBookings.filter(b => b.status === 'cancelled' || b.status === 'no_show').length;
+  const totalRelevant = completedCount + cancelledCount;
   const stornoRate = totalRelevant > 0 ? (cancelledCount / totalRelevant) * 100 : 0;
   
   const clv = allClientBookings

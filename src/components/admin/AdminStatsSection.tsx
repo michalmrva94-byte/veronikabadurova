@@ -1,7 +1,7 @@
 import { AdminDashboardStats } from '@/hooks/useAdminDashboardStats';
 import { Loader2, ChevronDown, TrendingUp, BarChart3, Target, Wallet } from 'lucide-react';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useState } from 'react';
 
@@ -66,7 +66,7 @@ function InsightText({ insight }: { insight: Insight }) {
 }
 
 function StatCard({ 
-  icon, label, value, insight, loading, className = '' 
+  icon, label, value, insight, loading, className = '', labelInfo
 }: {
   icon: React.ReactNode;
   label: string;
@@ -74,6 +74,7 @@ function StatCard({
   insight: Insight;
   loading?: boolean;
   className?: string;
+  labelInfo?: React.ReactNode;
 }) {
   return (
     <div className={`ios-card p-4 ${className}`}>
@@ -85,7 +86,10 @@ function StatCard({
       ) : (
         <p className="text-2xl font-bold tabular-nums">{value}</p>
       )}
-      <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
+      <div className="mt-0.5 flex items-center gap-1">
+        <p className="text-[11px] text-muted-foreground">{label}</p>
+        {labelInfo}
+      </div>
       {!loading && <InsightText insight={insight} />}
     </div>
   );
@@ -116,6 +120,31 @@ export function AdminStatsSection({ stats, isLoading }: AdminStatsSectionProps) 
             value={`${(stats?.stornoRate ?? 0).toFixed(0)}%`}
             insight={stornoInsight}
             loading={isLoading}
+            labelInfo={
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Vysvetlenie výpočtu miery storna"
+                    className="text-[10px] text-muted-foreground border border-border rounded-full px-1.5 py-0.5 cursor-help"
+                  >
+                    ?
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="top" className="max-w-[280px] p-3 z-50">
+                  <p className="text-xs">
+                    Miera storna = (zrušené + neúčasť) / (completed + cancelled + no_show) × 100.
+                    Do výpočtu sa nezapočítavajú budúce tréningy so statusom booked.
+                  </p>
+                  {!isLoading && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Aktuálne: {stats?.stornoCancelledCount ?? 0} / {stats?.stornoRelevantCount ?? 0}
+                      {' '}({(stats?.stornoRate ?? 0).toFixed(0)}%).
+                    </p>
+                  )}
+                </PopoverContent>
+              </Popover>
+            }
           />
           <StatCard
             icon={<TrendingUp className="h-5 w-5 text-success" />}

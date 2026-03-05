@@ -165,7 +165,9 @@ export default function AdminClientDetailPage() {
     );
   }
 
-  const balance = client.balance ?? 0;
+  const creditBalance = client.balance ?? 0;
+  const debtBalance = (client as any).debt_balance ?? 0;
+  const balance = creditBalance - debtBalance;
 
   return (
     <AdminLayout>

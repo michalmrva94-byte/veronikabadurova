@@ -21,6 +21,9 @@ export interface AdminDashboardStats {
   creditUsage: number;
   netRevenue: number;
   stornoRate: number;
+  stornoRelevantCount: number;
+  stornoCancelledCount: number;
+  stornoCompletedCount: number;
   avgTrainingsPerClient: number;
   slotOccupancy: number;
   // Global
@@ -180,7 +183,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         supabase
           .from('bookings')
           .select('id, status, slot:training_slots(start_time)')
-          .in('status', ['booked', 'completed', 'cancelled', 'no_show'])
+          .in('status', ['completed', 'cancelled', 'no_show'])
           .gte('created_at', '2000-01-01'),
         // Today's bookings for unconfirmed check
         supabase
@@ -265,14 +268,18 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         });
       const regularClients = Array.from(clientTrainingCount.values()).filter(c => c >= 2).length;
 
-      // Storno rate
-      const totalRelevant = allBookings.filter(
-        (b: any) => ['cancelled', 'no_show', 'booked', 'completed'].includes(b.status)
-      ).length;
-      const stornoCount = allBookings.filter(
+      // Storno rate (exclude future/booked trainings)
+      const stornoRelevantBookings = allBookings.filter(
+        (b: any) => ['completed', 'cancelled', 'no_show'].includes(b.status)
+      );
+      const stornoRelevantCount = stornoRelevantBookings.length;
+      const stornoCancelledCount = stornoRelevantBookings.filter(
         (b: any) => b.status === 'cancelled' || b.status === 'no_show'
       ).length;
-      const stornoRate = totalRelevant > 0 ? (stornoCount / totalRelevant) * 100 : 0;
+      const stornoCompletedCount = stornoRelevantBookings.filter(
+        (b: any) => b.status === 'completed'
+      ).length;
+      const stornoRate = stornoRelevantCount > 0 ? (stornoCancelledCount / stornoRelevantCount) * 100 : 0;
 
       // Avg trainings per client per week
       const activeBookings = plannedTrainings + completedTrainings;
@@ -504,6 +511,9 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         creditUsage,
         netRevenue,
         stornoRate,
+        stornoRelevantCount,
+        stornoCancelledCount,
+        stornoCompletedCount,
         avgTrainingsPerClient,
         slotOccupancy,
         unconfirmedBookings,

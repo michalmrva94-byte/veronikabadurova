@@ -148,10 +148,10 @@ export default function AdminClientsPage() {
                   filter === f.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-warning text-warning-foreground'
                 }`}>{pendingClients.length}</span>
               )}
-              {f.key === 'debt' && approvedClients.filter(c => (c.balance ?? 0) < 0).length > 0 && (
+              {f.key === 'debt' && approvedClients.filter(c => getNetBalance(c) < 0).length > 0 && (
                 <span className={`inline-flex items-center justify-center min-w-[16px] h-4 rounded-full text-[10px] font-bold px-1 ${
                   filter === f.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-destructive text-destructive-foreground'
-                }`}>{approvedClients.filter(c => (c.balance ?? 0) < 0).length}</span>
+                }`}>{approvedClients.filter(c => getNetBalance(c) < 0).length}</span>
               )}
             </button>
           ))}

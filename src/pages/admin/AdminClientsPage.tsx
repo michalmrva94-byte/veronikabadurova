@@ -29,12 +29,18 @@ export default function AdminClientsPage() {
   const approvedClients = clients.filter(c => c.approval_status === 'approved');
   const rejectedClients = clients.filter(c => c.approval_status === 'rejected');
 
+  const getNetBalance = (client: (typeof clients)[number]) => {
+    const credit = client.balance ?? 0;
+    const debt = client.debt_balance ?? 0;
+    return credit - debt;
+  };
+
   // Apply filter
   const getFilteredClients = () => {
     let filtered = approvedClients;
     switch (filter) {
       case 'debt':
-        filtered = approvedClients.filter(c => (c.balance ?? 0) < 0);
+        filtered = approvedClients.filter(c => getNetBalance(c) < 0);
         break;
       case 'fixed':
         filtered = approvedClients.filter(c => c.client_type === 'fixed');
@@ -142,10 +148,10 @@ export default function AdminClientsPage() {
                   filter === f.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-warning text-warning-foreground'
                 }`}>{pendingClients.length}</span>
               )}
-              {f.key === 'debt' && approvedClients.filter(c => (c.balance ?? 0) < 0).length > 0 && (
+              {f.key === 'debt' && approvedClients.filter(c => getNetBalance(c) < 0).length > 0 && (
                 <span className={`inline-flex items-center justify-center min-w-[16px] h-4 rounded-full text-[10px] font-bold px-1 ${
                   filter === f.key ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-destructive text-destructive-foreground'
-                }`}>{approvedClients.filter(c => (c.balance ?? 0) < 0).length}</span>
+                }`}>{approvedClients.filter(c => getNetBalance(c) < 0).length}</span>
               )}
             </button>
           ))}
@@ -214,8 +220,8 @@ export default function AdminClientsPage() {
                       <div className="text-right hidden sm:block">
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                           <CreditCard className="h-4 w-4" />
-                          <span className={`${(client.balance ?? 0) < 0 ? 'text-destructive font-medium' : ''}`}>
-                            {client.balance?.toFixed(2) ?? '0.00'}€
+                          <span className={`${getNetBalance(client) < 0 ? 'text-destructive font-medium' : ''}`}>
+                            {getNetBalance(client).toFixed(2)}€
                           </span>
                         </div>
                       </div>

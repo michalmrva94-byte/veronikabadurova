@@ -220,8 +220,8 @@ export default function AdminClientsPage() {
                       <div className="text-right hidden sm:block">
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                           <CreditCard className="h-4 w-4" />
-                          <span className={`${(client.balance ?? 0) < 0 ? 'text-destructive font-medium' : ''}`}>
-                            {client.balance?.toFixed(2) ?? '0.00'}€
+                          <span className={`${getNetBalance(client) < 0 ? 'text-destructive font-medium' : ''}`}>
+                            {getNetBalance(client).toFixed(2)}€
                           </span>
                         </div>
                       </div>

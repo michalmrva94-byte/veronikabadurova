@@ -29,12 +29,18 @@ export default function AdminClientsPage() {
   const approvedClients = clients.filter(c => c.approval_status === 'approved');
   const rejectedClients = clients.filter(c => c.approval_status === 'rejected');
 
+  const getNetBalance = (client: (typeof clients)[number]) => {
+    const credit = client.balance ?? 0;
+    const debt = client.debt_balance ?? 0;
+    return credit - debt;
+  };
+
   // Apply filter
   const getFilteredClients = () => {
     let filtered = approvedClients;
     switch (filter) {
       case 'debt':
-        filtered = approvedClients.filter(c => (c.balance ?? 0) < 0);
+        filtered = approvedClients.filter(c => getNetBalance(c) < 0);
         break;
       case 'fixed':
         filtered = approvedClients.filter(c => c.client_type === 'fixed');

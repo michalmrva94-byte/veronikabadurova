@@ -148,30 +148,6 @@ function ApprovedDashboard() {
     toast.success('Súbor kalendára stiahnutý');
   };
 
-  const { subscribeToPush } = usePushNotifications();
-  const [showPushBanner, setShowPushBanner] = useState(false);
-
-  useEffect(() => {
-    if (!pushSupported) return;
-    if (Notification.permission !== 'default') return;
-    const dismissed = localStorage.getItem('push_dismissed_at');
-    if (dismissed) {
-      const daysSince = (Date.now() - Number(dismissed)) / (1000 * 60 * 60 * 24);
-      if (daysSince < 7) return;
-    }
-    setShowPushBanner(true);
-  }, []);
-
-  const handleAllowPush = async () => {
-    const ok = await subscribeToPush();
-    setShowPushBanner(false);
-    if (ok) toast.success('Notifikácie sú zapnuté ✅');
-  };
-
-  const handleDismissPush = () => {
-    localStorage.setItem('push_dismissed_at', String(Date.now()));
-    setShowPushBanner(false);
-  };
 
   return (
     <ClientLayout>

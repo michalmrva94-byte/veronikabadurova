@@ -13,7 +13,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import { format, startOfWeek, startOfMonth, subWeeks, endOfWeek } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
-import { usePushNotifications, isSupported as pushSupported } from '@/hooks/usePushNotifications';
+import { InstallPushBanner } from '@/components/client/InstallPushBanner';
 
 function PendingApprovalScreen({ name }: { name: string }) {
   return (

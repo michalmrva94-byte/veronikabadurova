@@ -162,19 +162,8 @@ function ApprovedDashboard() {
           </p>
         </div>
 
-        {/* Push notification banner */}
-        {showPushBanner && (
-          <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
-            <Bell className="h-5 w-5 shrink-0 text-primary" />
-            <p className="flex-1 text-sm text-foreground">Povoliť notifikácie o tréningoch</p>
-            <Button size="sm" variant="default" onClick={handleAllowPush} className="shrink-0">
-              Povoliť
-            </Button>
-            <button onClick={handleDismissPush} className="shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
+        {/* Install & Push notification banner */}
+        <InstallPushBanner />
 
         {/* 2. Hero blok -- Najbližší tréning / Akcia */}
         {bookingsLoading ? (

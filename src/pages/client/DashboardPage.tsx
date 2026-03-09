@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/lib/constants';
-import { Calendar, Loader2, ClockIcon, Ban, Wallet, ChevronDown, ArrowRight, Flame, CalendarPlus, Bell, X } from 'lucide-react';
+import { Calendar, Loader2, ClockIcon, Ban, Wallet, ChevronDown, ArrowRight, Flame, CalendarPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useClientBookings } from '@/hooks/useClientBookings';

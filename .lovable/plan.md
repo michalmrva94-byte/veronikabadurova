@@ -1,61 +1,37 @@
 
-1) DevTools console output during test booking
-- Available console snapshot from your preview: **no logs recorded**.
-- Session replay for this request contains only cursor moves, **no booking interaction events**.
-- Therefore I cannot show runtime booking debug output from this capture (including `useBookings.ts` log), because no booking attempt was captured at message time.
 
-2) Backend function logs (`send-push-notification`) — last 30 minutes
-- Edge function analytics (HTTP invocation logs, last 30 min): **0 entries**.
-- Runtime logs currently available:
-  - `booted`
-  - `Listening on http://localhost:9999/`
-  - `shutdown`
-- Conclusion: in the inspected window, the function was **not invoked** by booking flow.
+## Problem
 
-3) Exact `useBookings.ts` block where push is called
-```ts
-// Send push notification to admins
-if (adminIds && adminIds.length > 0) {
-  const { data: adminProfiles } = await supabase
-    .from('profiles')
-    .select('user_id')
-    .in('id', adminIds);
+When a client cancels a training, the admin receives **neither an in-app notification, nor an email, nor a push notification**. Looking at `useClientBookings.ts`:
 
-  const adminUserIds = adminProfiles?.map(a => a.user_id).filter(Boolean) || [];
-  if (adminUserIds.length > 0) {
-    const name = clientProfile?.full_name || 'Klient';
-    console.log('Sending push to admin user_ids:', adminUserIds);
-    sendPushNotification({
-      user_ids: adminUserIds,
-      title: 'Nová požiadavka na tréning 📩',
-      body: `${name} žiada o tréning`,
-      url: '/admin/kalendar',
-    });
-  }
-}
+1. **No admin email** -- Line 116 comment explicitly says "handled via in-app notif" — admin email was never implemented for client-side cancellations.
+
+2. **In-app notification likely fails silently** -- In `onSuccess` (line 141), the code re-fetches the cancelled booking with `profiles!bookings_client_id_fkey` foreign key hint. If this hint doesn't match the actual FK constraint name, PostgREST returns an error. The entire block is wrapped in try/catch that silently swallows the error (line 164-166), so no notification is created and no error is visible.
+
+3. **No push notification** -- `sendPushNotification` is never called in the cancellation flow, so admin gets no push either.
+
+## Fix
+
+In `src/hooks/useClientBookings.ts`, update the `onSuccess` callback to:
+
+1. **Fix the booking re-fetch** -- Use a simpler query without the problematic FK hint, or skip the re-fetch entirely since we already have the booking data from `mutationFn`. Pass the needed data (client name, slot time) from `mutationFn` return value to `onSuccess`.
+
+2. **Add admin email notification** -- Send a cancellation email to admin (Veronika) using `sendNotificationEmail` with type `'cancellation'` and `cancelledBy: 'client'`.
+
+3. **Add admin push notification** -- Call `sendPushNotification` targeting admin user IDs (via `get_admin_user_ids` RPC).
+
+### Concrete changes
+
+**Return more data from mutationFn** so `onSuccess` doesn't need to re-fetch:
+```typescript
+return { cancellationFee, clientName: profile.full_name, slotStart: slot.start_time };
 ```
 
-4) Does booking flow reach push code?
-- Push logic is in `createBooking` mutation **`onSuccess`** callback.
-- Inside `onSuccess`, push is in a **`try { ... } catch { ... }`** block.
-- It is **not** inside a catch block, but failures before push (or empty `adminUserIds`) prevent the call.
-- Important: `sendPushNotification(...)` is called **without `await`**, and that helper also catches errors internally, so failures can be quiet.
+**Rewrite onSuccess** to:
+- Use returned data instead of re-querying
+- Insert in-app notifications for admins (using `get_admin_profile_ids`)
+- Send cancellation email to admin email
+- Send push notification to admin user IDs (using `get_admin_user_ids`)
 
-5) Confirm Veronika `510001b2...` is passed
-- Admin mapping from backend data:
-  - Michal: `1caa5cf6-ec51-4f8b-8450-5ad6270e56a8`
-  - Veronika: `510001b2-a941-4c46-8def-df621c56ae9d`
-- So the target array should include Veronika’s auth UUID **if `adminProfiles` is populated**.
-- Critical finding: this lookup is done from client code via:
-  - `.from('profiles').select('user_id').in('id', adminIds)`
-- Your RLS on `profiles` allows clients to read only their own profile, not admin profiles.  
-  Result: for client-triggered booking, this query likely returns empty array, so:
-  - no `console.log('Sending push...')`
-  - no function call
-  - no edge logs
+No database or backend changes needed.
 
-Additional data check from current DB snapshot
-- `push_subscriptions` currently shows:
-  - `1caa5cf6-...` (Michal, admin)
-  - `ef733181-...` (client)
-- I did **not** see a record for `510001b2-...` in the latest query snapshot.

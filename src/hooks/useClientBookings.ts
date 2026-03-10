@@ -4,6 +4,7 @@ import { Booking, TrainingSlot } from '@/types/database';
 import { useAuth } from '@/contexts/AuthContext';
 import { differenceInHours } from 'date-fns';
 import { sendNotificationEmail } from '@/lib/sendNotificationEmail';
+import { sendPushNotification } from '@/lib/sendPushNotification';
 
 export type BookingWithSlot = Booking & { slot: TrainingSlot };
 

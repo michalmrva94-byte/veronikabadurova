@@ -128,38 +128,65 @@ export function useClientBookings() {
         });
       }
 
-      return { cancellationFee };
+      return { cancellationFee, clientName: profile.full_name, slotStart: slot.start_time };
     },
-    onSuccess: async (_data, bookingId) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['training-slots'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
 
-      // Send notification to all admins about cancellation
+      const { clientName, slotStart } = data;
+      const slotDate = new Date(slotStart);
+      const timeStr = slotDate.toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const name = clientName || 'Klient';
+
       try {
-        const { data: booking } = await supabase
-          .from('bookings')
-          .select('slot:training_slots(start_time), client:profiles!bookings_client_id_fkey(full_name)')
-          .eq('id', bookingId)
-          .single();
-
-        const { data: adminIds } = await supabase.rpc('get_admin_profile_ids');
-
-        if (adminIds && adminIds.length > 0) {
-          const slot = booking?.slot as any;
-          const client = booking?.client as any;
-          const timeStr = slot ? new Date(slot.start_time).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-          const name = client?.full_name || 'Klient';
-
+        // In-app notifications for admins
+        const { data: adminProfileIds } = await supabase.rpc('get_admin_profile_ids');
+        if (adminProfileIds && adminProfileIds.length > 0) {
           await supabase.from('notifications').insert(
-            adminIds.map((adminId: string) => ({
+            adminProfileIds.map((adminId: string) => ({
               user_id: adminId,
               title: 'Storno tréningu',
               message: `${name} stornoval/a tréning dňa ${timeStr}.`,
               type: 'booking_cancelled',
             }))
           );
+        }
+
+        // Push notification to admins
+        const { data: adminUserIds } = await supabase.rpc('get_admin_user_ids');
+        if (adminUserIds && adminUserIds.length > 0) {
+          sendPushNotification({
+            user_ids: adminUserIds,
+            title: 'Storno tréningu ❌',
+            body: `${name} stornoval/a tréning dňa ${timeStr}.`,
+            url: '/admin/kalendar',
+          });
+        }
+
+        // Email notification to admin
+        const { data: adminProfiles } = await supabase.rpc('get_admin_profile_ids');
+        if (adminProfiles && adminProfiles.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('email')
+            .in('id', adminProfiles);
+
+          for (const ap of profiles || []) {
+            if (ap.email) {
+              sendNotificationEmail({
+                type: 'cancellation',
+                to: ap.email,
+                clientName: name,
+                trainingDate: slotDate.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' }),
+                trainingTime: slotDate.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
+                cancelledBy: 'client',
+                cancellationFee: data.cancellationFee > 0 ? `${data.cancellationFee.toFixed(2)}€` : undefined,
+              });
+            }
+          }
         }
       } catch (e) {
         console.error('Failed to send admin cancellation notification:', e);

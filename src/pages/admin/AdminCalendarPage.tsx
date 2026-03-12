@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { format, addWeeks, subWeeks, startOfWeek } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { Plus, Clock, Loader2, CalendarDays, CalendarIcon, CalendarRange } from 'lucide-react';

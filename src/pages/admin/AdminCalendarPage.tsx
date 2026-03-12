@@ -34,6 +34,7 @@ export default function AdminCalendarPage() {
   const [isSlotDetailOpen, setIsSlotDetailOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const queryClient = useQueryClient();
   
   const { createSlot, deleteSlot } = useTrainingSlots(selectedDate);
   const { data: weeklySlots, isLoading: weeklyLoading } = useWeeklySlots(weekStart);

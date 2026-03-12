@@ -455,6 +455,7 @@ export default function AdminCalendarPage() {
         clients={clients}
         onCreateSlot={handleAddSlot}
         onAssignTraining={handleAssignTraining}
+        onCreateBlockedSlot={handleCreateBlockedSlot}
         isLoading={createSlot.isPending || assignTraining.isPending}
       />
       <SlotDetailDialog
@@ -468,6 +469,7 @@ export default function AdminCalendarPage() {
         onReject={handleSlotReject}
         onDelete={handleDeleteSlot}
         onSendReminder={handleSendReminder}
+        onBlockedComplete={handleBlockedComplete}
         isProcessing={isProcessing}
       />
     </AdminLayout>

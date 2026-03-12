@@ -89,6 +89,8 @@ export function useAdminFinancesStats(period: FinancePeriod = 'month', customRan
         prevDepositsRes,
         creditUsageRes,
         profilesRes,
+        blockedEarnedRes,
+        prevBlockedEarnedRes,
       ] = await Promise.all([
         // earned: training + cancellation in current period
         supabase
@@ -129,6 +131,22 @@ export function useAdminFinancesStats(period: FinancePeriod = 'month', customRan
         supabase
           .from('profiles')
           .select('balance, debt_balance'),
+        // blocked completed slots in current period
+        supabase
+          .from('training_slots')
+          .select('blocked_price, start_time')
+          .eq('is_blocked', true)
+          .eq('blocked_completed', true)
+          .gte('start_time', dates.currentStart)
+          .lte('start_time', dates.currentEnd),
+        // blocked completed slots in prev period
+        supabase
+          .from('training_slots')
+          .select('blocked_price, start_time')
+          .eq('is_blocked', true)
+          .eq('blocked_completed', true)
+          .gte('start_time', dates.prevStart)
+          .lte('start_time', dates.prevEnd),
       ]);
 
       if (earnedRes.error) throw earnedRes.error;
@@ -137,6 +155,10 @@ export function useAdminFinancesStats(period: FinancePeriod = 'month', customRan
       if (prevDepositsRes.error) throw prevDepositsRes.error;
       if (creditUsageRes.error) throw creditUsageRes.error;
       if (profilesRes.error) throw profilesRes.error;
+
+      // Blocked slot revenue
+      const blockedEarned = (blockedEarnedRes.data || []).reduce((s: number, t: any) => s + (t.blocked_price || 0), 0);
+      const prevBlockedEarned = (prevBlockedEarnedRes.data || []).reduce((s: number, t: any) => s + (t.blocked_price || 0), 0);
 
       const sumAbs = (data: { amount: number }[]) =>
         data.reduce((s, t) => s + Math.abs(t.amount), 0);
@@ -153,8 +175,8 @@ export function useAdminFinancesStats(period: FinancePeriod = 'month', customRan
       });
 
       return {
-        earned: sumAbs(earnedRes.data || []),
-        prevEarned: sumAbs(prevEarnedRes.data || []),
+        earned: sumAbs(earnedRes.data || []) + blockedEarned,
+        prevEarned: sumAbs(prevEarnedRes.data || []) + prevBlockedEarned,
         deposits: sumPositive(depositsRes.data || []),
         prevDeposits: sumPositive(prevDepositsRes.data || []),
         totalDebts,

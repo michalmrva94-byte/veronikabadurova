@@ -56,6 +56,10 @@ export interface TrainingSlot {
   recurring_end_time: string | null;
   is_available: boolean;
   notes: string | null;
+  is_blocked: boolean;
+  blocked_client_name: string | null;
+  blocked_price: number;
+  blocked_completed: boolean;
   created_at: string;
   updated_at: string;
 }

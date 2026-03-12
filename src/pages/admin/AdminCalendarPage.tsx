@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { format, addWeeks, subWeeks, startOfWeek } from 'date-fns';
 import { sk } from 'date-fns/locale';
 import { Plus, Clock, Loader2, CalendarDays, CalendarIcon, CalendarRange } from 'lucide-react';
@@ -33,6 +34,7 @@ export default function AdminCalendarPage() {
   const [isSlotDetailOpen, setIsSlotDetailOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const queryClient = useQueryClient();
   
   const { createSlot, deleteSlot } = useTrainingSlots(selectedDate);
   const { data: weeklySlots, isLoading: weeklyLoading } = useWeeklySlots(weekStart);
@@ -78,6 +80,55 @@ export default function AdminCalendarPage() {
       toast.success('Slot zmazaný');
     } catch (error) {
       toast.error('Nepodarilo sa odstrániť termín.');
+    }
+  };
+
+  const handleCreateBlockedSlot = async (data: {
+    start_time: string;
+    end_time: string;
+    blocked_client_name: string;
+    blocked_price: number;
+    notes?: string;
+  }) => {
+    try {
+      const { error } = await supabase.from('training_slots').insert({
+        start_time: data.start_time,
+        end_time: data.end_time,
+        is_available: false,
+        is_blocked: true,
+        blocked_client_name: data.blocked_client_name,
+        blocked_price: data.blocked_price,
+        notes: data.notes || null,
+        is_recurring: false,
+      });
+      if (error) throw error;
+      toast.success('Termín zablokovaný');
+      setIsCreateDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+    } catch (error) {
+      toast.error('Nepodarilo sa zablokovať termín.');
+    }
+  };
+
+  const handleBlockedComplete = async (slotId: string) => {
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from('training_slots')
+        .update({ blocked_completed: true })
+        .eq('id', slotId);
+      if (error) throw error;
+      toast.success('Externý tréning označený ako odplávaný');
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-finances-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard-stats'] });
+    } catch (e: any) {
+      toast.error(e.message || 'Chyba');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -348,7 +399,12 @@ export default function AdminCalendarPage() {
                                 {format(new Date(slot.start_time), 'HH:mm')} - {format(new Date(slot.end_time), 'HH:mm')}
                               </span>
                             </div>
-                            {slot.booking ? (
+                            {slot.is_blocked ? (
+                              <span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                                🔒 {slot.blocked_client_name || 'Externý'}
+                                {slot.blocked_completed && ' · ✓'}
+                              </span>
+                            ) : slot.booking ? (
                               <span className={cn(
                                 "text-xs font-medium px-2 py-1 rounded-full",
                                 slot.booking.status === 'booked' && "bg-primary/10 text-primary",
@@ -411,6 +467,7 @@ export default function AdminCalendarPage() {
         clients={clients}
         onCreateSlot={handleAddSlot}
         onAssignTraining={handleAssignTraining}
+        onCreateBlockedSlot={handleCreateBlockedSlot}
         isLoading={createSlot.isPending || assignTraining.isPending}
       />
       <SlotDetailDialog
@@ -424,6 +481,7 @@ export default function AdminCalendarPage() {
         onReject={handleSlotReject}
         onDelete={handleDeleteSlot}
         onSendReminder={handleSendReminder}
+        onBlockedComplete={handleBlockedComplete}
         isProcessing={isProcessing}
       />
     </AdminLayout>

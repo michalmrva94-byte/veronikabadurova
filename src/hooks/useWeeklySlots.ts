@@ -16,6 +16,10 @@ export interface SlotWithBooking extends TrainingSlot {
       client_type?: string;
     };
   };
+  is_blocked: boolean;
+  blocked_client_name: string | null;
+  blocked_price: number;
+  blocked_completed: boolean;
 }
 
 export function useWeeklySlots(weekStart: Date) {
@@ -62,8 +66,8 @@ export function useWeeklySlots(weekStart: Date) {
           } : undefined,
         };
       }).filter((slot: SlotWithBooking) => {
-        // Hide orphaned slots: is_available=false and no active booking
-        if (!slot.is_available && !slot.booking) return false;
+        // Hide orphaned slots: is_available=false and no active booking and not blocked
+        if (!slot.is_available && !slot.booking && !slot.is_blocked) return false;
         return true;
       }) as SlotWithBooking[];
     },
@@ -107,10 +111,10 @@ export function useSlotsForMonth(month: Date) {
           b.status === 'booked' || b.status === 'pending' || b.status === 'awaiting_confirmation' || b.status === 'completed' || b.status === 'proposed'
         );
 
-        // Skip orphaned slots: is_available=false and no active booking
-        if (!slot.is_available && !hasActiveBooking) return;
+        // Skip orphaned slots: is_available=false and no active booking and not blocked
+        if (!slot.is_available && !hasActiveBooking && !slot.is_blocked) return;
         
-        if (hasActiveBooking) {
+        if (hasActiveBooking || slot.is_blocked) {
           existing.hasBooked = true;
           existing.bookedCount++;
         } else {

@@ -119,6 +119,8 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         prevTrainingTransRes,
         earnedTransRes,
         prevEarnedTransRes,
+        blockedEarnedRes,
+        prevBlockedEarnedRes,
       ] = await Promise.all([
         // Period bookings with client info
         supabase
@@ -237,6 +239,22 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
           .in('type', ['training', 'cancellation'])
           .gte('created_at', prevStart.toISOString())
           .lte('created_at', prevEnd.toISOString()),
+        // Blocked completed slots in current period
+        supabase
+          .from('training_slots')
+          .select('blocked_price, start_time')
+          .eq('is_blocked', true)
+          .eq('blocked_completed', true)
+          .gte('start_time', start.toISOString())
+          .lte('start_time', end.toISOString()),
+        // Blocked completed slots in prev period
+        supabase
+          .from('training_slots')
+          .select('blocked_price, start_time')
+          .eq('is_blocked', true)
+          .eq('blocked_completed', true)
+          .gte('start_time', prevStart.toISOString())
+          .lte('start_time', prevEnd.toISOString()),
       ]);
 
       // === PERIOD BOOKINGS ===
@@ -498,8 +516,10 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
       const prevNetRevenue = prevDeposits - prevCreditUsage;
 
       // === EARNED (performance metric) ===
-      const earned = (earnedTransRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
-      const prevEarned = (prevEarnedTransRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+      const blockedEarned = (blockedEarnedRes.data || []).reduce((s: number, t: any) => s + (t.blocked_price || 0), 0);
+      const prevBlockedEarned = (prevBlockedEarnedRes.data || []).reduce((s: number, t: any) => s + (t.blocked_price || 0), 0);
+      const earned = (earnedTransRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0) + blockedEarned;
+      const prevEarned = (prevEarnedTransRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0) + prevBlockedEarned;
 
       return {
         activeClients,

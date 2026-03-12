@@ -4,7 +4,7 @@ import { SlotWithBooking } from '@/hooks/useWeeklySlots';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, User, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, User, Plus, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -27,6 +27,11 @@ const isExpiredProposal = (slot: SlotWithBooking) => {
 };
 
 const getSlotColor = (slot: SlotWithBooking) => {
+  if (slot.is_blocked) {
+    return slot.blocked_completed
+      ? 'bg-violet-100 border-violet-500 text-violet-800 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600'
+      : 'bg-slate-100 border-slate-400 text-slate-700 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-600';
+  }
   const status = slot.booking?.status;
   if (isExpiredProposal(slot)) return 'bg-rose-100 border-rose-500 text-rose-800 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-600';
   if (status === 'proposed') return 'bg-muted border-muted-foreground/30 text-muted-foreground';
@@ -38,6 +43,11 @@ const getSlotColor = (slot: SlotWithBooking) => {
 };
 
 const getSlotChipColor = (slot: SlotWithBooking) => {
+  if (slot.is_blocked) {
+    return slot.blocked_completed
+      ? 'bg-violet-100 text-violet-800 border-violet-500 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600'
+      : 'bg-slate-100 text-slate-700 border-slate-400 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-600';
+  }
   const status = slot.booking?.status;
   if (isExpiredProposal(slot)) return 'bg-rose-100 text-rose-800 border-rose-500 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-600';
   if (status === 'proposed') return 'bg-muted text-muted-foreground border-muted-foreground/30';
@@ -101,19 +111,31 @@ function MobileView({
                     )}
                   >
                     <span>{format(new Date(slot.start_time), 'HH:mm')}</span>
-                    {slot.booking?.client && (
-                      <span className="opacity-80 truncate max-w-[60px]">
-                        {slot.booking.client.full_name.split(' ')[0]}
-                      </span>
-                    )}
-                    {isExpiredProposal(slot) && (
-                      <span className="text-[9px]">⚠</span>
-                    )}
-                    {!isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
-                      <span className="text-[9px]">⏳</span>
-                    )}
-                    {slot.booking?.status === 'completed' && (
-                      <span className="text-[9px]">✓</span>
+                    {slot.is_blocked ? (
+                      <>
+                        <Lock className="h-3 w-3" />
+                        <span className="opacity-80 truncate max-w-[60px]">
+                          {slot.blocked_client_name?.split(' ')[0] || 'Ext.'}
+                        </span>
+                        {slot.blocked_completed && <span className="text-[9px]">✓</span>}
+                      </>
+                    ) : (
+                      <>
+                        {slot.booking?.client && (
+                          <span className="opacity-80 truncate max-w-[60px]">
+                            {slot.booking.client.full_name.split(' ')[0]}
+                          </span>
+                        )}
+                        {isExpiredProposal(slot) && (
+                          <span className="text-[9px]">⚠</span>
+                        )}
+                        {!isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
+                          <span className="text-[9px]">⏳</span>
+                        )}
+                        {slot.booking?.status === 'completed' && (
+                          <span className="text-[9px]">✓</span>
+                        )}
+                      </>
                     )}
                   </button>
                 ))
@@ -186,10 +208,17 @@ function DesktopView({
                     )}
                   >
                     <div className="flex items-center gap-1 font-medium">
-                      <Clock className="h-3 w-3" />
+                      {slot.is_blocked ? <Lock className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                       {format(new Date(slot.start_time), 'HH:mm')}
                     </div>
-                    {slot.booking?.client && (
+                    {slot.is_blocked ? (
+                      <div className="flex items-center gap-1 mt-1 text-xs opacity-80">
+                        <User className="h-3 w-3" />
+                        <span className="truncate">
+                          {slot.blocked_client_name?.split(' ')[0] || 'Ext.'}
+                        </span>
+                      </div>
+                    ) : slot.booking?.client && (
                       <div className="flex items-center gap-1 mt-1 text-xs opacity-80">
                         <User className="h-3 w-3" />
                         <span className="truncate">
@@ -197,22 +226,27 @@ function DesktopView({
                         </span>
                       </div>
                     )}
-                    {isExpiredProposal(slot) && (
+                    {slot.is_blocked && (
+                      <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-slate-400 text-slate-600 dark:text-slate-400">
+                        {slot.blocked_completed ? '✓ Ext.' : '🔒 Ext.'}
+                      </Badge>
+                    )}
+                    {!slot.is_blocked && isExpiredProposal(slot) && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-rose-500 text-rose-700 dark:text-rose-400">
                         Vypršané
                       </Badge>
                     )}
-                    {!isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
+                    {!slot.is_blocked && !isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">
                         Čaká
                       </Badge>
                     )}
-                    {slot.booking?.status === 'proposed' && (
+                    {!slot.is_blocked && slot.booking?.status === 'proposed' && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">
                         Návrh
                       </Badge>
                     )}
-                    {slot.booking?.status === 'completed' && (
+                    {!slot.is_blocked && slot.booking?.status === 'completed' && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-success text-success">
                         ✓
                       </Badge>
@@ -304,6 +338,10 @@ export function WeeklyCalendarGrid({
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-rose-100 border border-rose-500" />
           <span>Zrušené</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-slate-100 border border-slate-400" />
+          <span>Externý</span>
         </div>
       </div>
     </div>

@@ -119,6 +119,8 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         prevTrainingTransRes,
         earnedTransRes,
         prevEarnedTransRes,
+        blockedEarnedRes,
+        prevBlockedEarnedRes,
       ] = await Promise.all([
         // Period bookings with client info
         supabase

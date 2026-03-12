@@ -81,6 +81,50 @@ export default function AdminCalendarPage() {
     }
   };
 
+  const handleCreateBlockedSlot = async (data: {
+    start_time: string;
+    end_time: string;
+    blocked_client_name: string;
+    blocked_price: number;
+    notes?: string;
+  }) => {
+    try {
+      const { error } = await supabase.from('training_slots').insert({
+        start_time: data.start_time,
+        end_time: data.end_time,
+        is_available: false,
+        is_blocked: true,
+        blocked_client_name: data.blocked_client_name,
+        blocked_price: data.blocked_price,
+        notes: data.notes || null,
+        is_recurring: false,
+      });
+      if (error) throw error;
+      toast.success('Termín zablokovaný');
+      setIsCreateDialogOpen(false);
+      // Invalidate caches
+      createSlot.reset();
+    } catch (error) {
+      toast.error('Nepodarilo sa zablokovať termín.');
+    }
+  };
+
+  const handleBlockedComplete = async (slotId: string) => {
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from('training_slots')
+        .update({ blocked_completed: true })
+        .eq('id', slotId);
+      if (error) throw error;
+      toast.success('Externý tréning označený ako odplávaný');
+    } catch (e: any) {
+      toast.error(e.message || 'Chyba');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const openCreateDialog = (date: Date) => {
     setSelectedDate(date);
     setIsCreateDialogOpen(true);

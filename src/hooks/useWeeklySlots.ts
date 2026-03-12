@@ -114,7 +114,7 @@ export function useSlotsForMonth(month: Date) {
         // Skip orphaned slots: is_available=false and no active booking and not blocked
         if (!slot.is_available && !hasActiveBooking && !slot.is_blocked) return;
         
-        if (hasActiveBooking) {
+        if (hasActiveBooking || slot.is_blocked) {
           existing.hasBooked = true;
           existing.bookedCount++;
         } else {

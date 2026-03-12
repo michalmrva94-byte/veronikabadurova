@@ -1,61 +1,83 @@
 
-1) DevTools console output during test booking
-- Available console snapshot from your preview: **no logs recorded**.
-- Session replay for this request contains only cursor moves, **no booking interaction events**.
-- Therefore I cannot show runtime booking debug output from this capture (including `useBookings.ts` log), because no booking attempt was captured at message time.
 
-2) Backend function logs (`send-push-notification`) — last 30 minutes
-- Edge function analytics (HTTP invocation logs, last 30 min): **0 entries**.
-- Runtime logs currently available:
-  - `booted`
-  - `Listening on http://localhost:9999/`
-  - `shutdown`
-- Conclusion: in the inspected window, the function was **not invoked** by booking flow.
+## Blokovanie času pre externých klientov — s financiami
 
-3) Exact `useBookings.ts` block where push is called
-```ts
-// Send push notification to admins
-if (adminIds && adminIds.length > 0) {
-  const { data: adminProfiles } = await supabase
-    .from('profiles')
-    .select('user_id')
-    .in('id', adminIds);
+### Problém
+Veronika potrebuje v kalendári zablokovať čas pre klientov mimo aplikácie a zároveň chce, aby sa odplávaný tréning započítal do financií (zarobené, dashboard štatistiky).
 
-  const adminUserIds = adminProfiles?.map(a => a.user_id).filter(Boolean) || [];
-  if (adminUserIds.length > 0) {
-    const name = clientProfile?.full_name || 'Klient';
-    console.log('Sending push to admin user_ids:', adminUserIds);
-    sendPushNotification({
-      user_ids: adminUserIds,
-      title: 'Nová požiadavka na tréning 📩',
-      body: `${name} žiada o tréning`,
-      url: '/admin/kalendar',
-    });
-  }
-}
+### Kľúčové rozhodnutie: financie
+Existujúci systém transakcií vyžaduje `client_id` (NOT NULL). Namiesto zložitého refaktoru pridáme finančné údaje priamo na `training_slots`:
+
+- `is_blocked` (boolean) — slot je blokovaný pre externého klienta
+- `blocked_client_name` (text) — meno externého klienta
+- `blocked_price` (numeric) — cena tréningu
+- `blocked_completed` (boolean) — či bol tréning odplávaný
+
+Toto je čisté riešenie, pretože externý klient nemá profil v systéme a transakcie sa na neho nedajú naviazať. Financie pre blokované sloty sa budú počítať z `training_slots` priamo.
+
+### Zmeny
+
+#### 1. Databáza — migrácia
+```sql
+ALTER TABLE training_slots 
+  ADD COLUMN is_blocked boolean NOT NULL DEFAULT false,
+  ADD COLUMN blocked_client_name text,
+  ADD COLUMN blocked_price numeric DEFAULT 0,
+  ADD COLUMN blocked_completed boolean NOT NULL DEFAULT false;
 ```
 
-4) Does booking flow reach push code?
-- Push logic is in `createBooking` mutation **`onSuccess`** callback.
-- Inside `onSuccess`, push is in a **`try { ... } catch { ... }`** block.
-- It is **not** inside a catch block, but failures before push (or empty `adminUserIds`) prevent the call.
-- Important: `sendPushNotification(...)` is called **without `await`**, and that helper also catches errors internally, so failures can be quiet.
+#### 2. CreateTrainingDialog
+Pridať tretiu možnosť do select klienta: **"Externý klient (mimo appky)"**. Keď je zvolená:
+- Zobrazí sa textové pole pre meno klienta
+- Zobrazí sa pole cena
+- Skryje sa štandardný select klientov (nahradí ho toggle/select s 3 možnosťami: Voľný slot / Klient z appky / Externý klient)
+- Tlačidlo: "Blokovať termín"
+- Vytvorí slot s `is_available: false, is_blocked: true, blocked_client_name, blocked_price`
 
-5) Confirm Veronika `510001b2...` is passed
-- Admin mapping from backend data:
-  - Michal: `1caa5cf6-ec51-4f8b-8450-5ad6270e56a8`
-  - Veronika: `510001b2-a941-4c46-8def-df621c56ae9d`
-- So the target array should include Veronika’s auth UUID **if `adminProfiles` is populated**.
-- Critical finding: this lookup is done from client code via:
-  - `.from('profiles').select('user_id').in('id', adminIds)`
-- Your RLS on `profiles` allows clients to read only their own profile, not admin profiles.  
-  Result: for client-triggered booking, this query likely returns empty array, so:
-  - no `console.log('Sending push...')`
-  - no function call
-  - no edge logs
+#### 3. Orphan filter — useWeeklySlots + useSlotsForMonth
+Aktuálny filter (riadok 66): `if (!slot.is_available && !slot.booking) return false;`
+Zmena: `if (!slot.is_available && !slot.booking && !slot.is_blocked) return false;`
 
-Additional data check from current DB snapshot
-- `push_subscriptions` currently shows:
-  - `1caa5cf6-...` (Michal, admin)
-  - `ef733181-...` (client)
-- I did **not** see a record for `510001b2-...` in the latest query snapshot.
+Rovnako v `useSlotsForMonth` (riadok 111): pridať kontrolu `is_blocked` aby sa blokované sloty nezahadzovali.
+
+#### 4. SlotWithBooking interface
+Rozšíriť o `is_blocked`, `blocked_client_name`, `blocked_price`, `blocked_completed`.
+
+#### 5. SlotDetailDialog — zobrazenie blokovaných slotov
+Pre `is_blocked` sloty:
+- Zobraziť šedý/fialový badge **"Externý klient"**
+- Zobraziť meno klienta a cenu
+- Akcie:
+  - **"Odplávaný"** — nastaví `blocked_completed: true`, pridá cenu do financií
+  - **"Zmazať blokáciu"** — vymaže slot
+
+#### 6. Kalendárové zobrazenie (WeeklyCalendarGrid)
+Blokované sloty sa zobrazia s odlišnou farbou (šedá/fialová) a ikonou zámku. Odplavané blokované sloty dostanú zelenú farbu (completed).
+
+#### 7. Financie — useAdminFinances + useAdminDashboardStats
+Pridať do výpočtu metriky "Zarobené" aj sumu z `training_slots WHERE is_blocked = true AND blocked_completed = true` v danom období. Rovnako pre dashboard "earned" metriku. Toto zabezpečí, že externé tréningy sa objavia v celkových príjmoch.
+
+#### 8. Typy — types/database.ts
+Rozšíriť `TrainingSlot` interface o nové stĺpce.
+
+#### 9. RLS
+Existujúce RLS na `training_slots` je dostatočné — admin má ALL prístup, klienti vidia len `is_available: true` sloty (blokované majú `is_available: false`, takže sú automaticky skryté).
+
+### Flow
+```text
+Admin vytvára tréning
+     │
+     ├── Voľný slot (existujúce)
+     ├── Klient z appky (existujúce)  
+     └── Externý klient (NOVÉ)
+           │
+           ├── Zadá meno + cenu
+           ├── Vytvorí blokovaný slot
+           │
+           └── V kalendári vidí slot s menom
+                 │
+                 ├── "Odplávaný" → blocked_completed = true
+                 │                  → započíta sa do financií
+                 └── "Zmazať" → vymaže slot
+```
+

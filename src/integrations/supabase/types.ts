@@ -300,10 +300,14 @@ export type Database = {
       }
       training_slots: {
         Row: {
+          blocked_client_name: string | null
+          blocked_completed: boolean
+          blocked_price: number | null
           created_at: string
           end_time: string
           id: string
           is_available: boolean | null
+          is_blocked: boolean
           is_recurring: boolean | null
           notes: string | null
           recurring_day_of_week: number | null
@@ -313,10 +317,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          blocked_client_name?: string | null
+          blocked_completed?: boolean
+          blocked_price?: number | null
           created_at?: string
           end_time: string
           id?: string
           is_available?: boolean | null
+          is_blocked?: boolean
           is_recurring?: boolean | null
           notes?: string | null
           recurring_day_of_week?: number | null
@@ -326,10 +334,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          blocked_client_name?: string | null
+          blocked_completed?: boolean
+          blocked_price?: number | null
           created_at?: string
           end_time?: string
           id?: string
           is_available?: boolean | null
+          is_blocked?: boolean
           is_recurring?: boolean | null
           notes?: string | null
           recurring_day_of_week?: number | null

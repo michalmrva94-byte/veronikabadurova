@@ -22,9 +22,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, User, Loader2, CalendarIcon } from 'lucide-react';
+import { Clock, User, Loader2, CalendarIcon, Lock, UserX } from 'lucide-react';
 import { Profile } from '@/types/database';
 import { DEFAULT_TRAINING_PRICE } from '@/lib/constants';
+
+type SlotMode = 'free' | 'client' | 'external';
 
 interface CreateTrainingDialogProps {
   open: boolean;
@@ -39,10 +41,15 @@ interface CreateTrainingDialogProps {
     price: number;
     notes?: string;
   }) => Promise<void>;
+  onCreateBlockedSlot?: (data: {
+    start_time: string;
+    end_time: string;
+    blocked_client_name: string;
+    blocked_price: number;
+    notes?: string;
+  }) => Promise<void>;
   isLoading?: boolean;
 }
-
-const NO_CLIENT_VALUE = '__none__';
 
 export function CreateTrainingDialog({
   open,
@@ -51,24 +58,27 @@ export function CreateTrainingDialog({
   clients,
   onCreateSlot,
   onAssignTraining,
+  onCreateBlockedSlot,
   isLoading,
 }: CreateTrainingDialogProps) {
   const [trainingDate, setTrainingDate] = useState<Date>(selectedDate);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
-  const [selectedClient, setSelectedClient] = useState<string>(NO_CLIENT_VALUE);
+  const [mode, setMode] = useState<SlotMode>('free');
+  const [selectedClient, setSelectedClient] = useState<string>('');
   const [price, setPrice] = useState(DEFAULT_TRAINING_PRICE.toString());
   const [notes, setNotes] = useState('');
-
-  const hasClient = selectedClient !== NO_CLIENT_VALUE;
+  const [blockedClientName, setBlockedClientName] = useState('');
 
   const resetForm = () => {
     setTrainingDate(selectedDate);
     setStartTime('09:00');
     setEndTime('10:00');
-    setSelectedClient(NO_CLIENT_VALUE);
+    setMode('free');
+    setSelectedClient('');
     setPrice(DEFAULT_TRAINING_PRICE.toString());
     setNotes('');
+    setBlockedClientName('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,12 +90,20 @@ export function CreateTrainingDialog({
     const startDateTime = setMinutes(setHours(trainingDate, startHour), startMin);
     const endDateTime = setMinutes(setHours(trainingDate, endHour), endMin);
 
-    if (hasClient) {
+    if (mode === 'client' && selectedClient) {
       await onAssignTraining({
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
         client_id: selectedClient,
         price: parseFloat(price),
+        notes: notes || undefined,
+      });
+    } else if (mode === 'external' && blockedClientName.trim()) {
+      await onCreateBlockedSlot?.({
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        blocked_client_name: blockedClientName.trim(),
+        blocked_price: parseFloat(price) || 0,
         notes: notes || undefined,
       });
     } else {
@@ -98,6 +116,10 @@ export function CreateTrainingDialog({
 
     resetForm();
   };
+
+  const canSubmit = mode === 'free' || 
+    (mode === 'client' && selectedClient) || 
+    (mode === 'external' && blockedClientName.trim());
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); onOpenChange(v); }}>
@@ -162,32 +184,97 @@ export function CreateTrainingDialog({
             </div>
           </div>
 
-          {/* Client selection (optional) */}
+          {/* Mode selection */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" />
-              Klient (voliteľné)
-            </Label>
-            <Select value={selectedClient} onValueChange={setSelectedClient}>
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder="Bez klienta – voľný slot" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50">
-                <SelectItem value={NO_CLIENT_VALUE}>Bez klienta – voľný slot</SelectItem>
-                {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    <div className="flex flex-col">
-                      <span>{client.full_name}</span>
-                      <span className="text-xs text-muted-foreground">{client.email}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-sm font-medium">Typ termínu</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setMode('free')}
+                className={cn(
+                  'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-xs font-medium',
+                  mode === 'free' 
+                    ? 'border-primary bg-primary/10 text-primary' 
+                    : 'border-muted bg-muted/30 text-muted-foreground hover:border-foreground/20'
+                )}
+              >
+                <Clock className="h-4 w-4" />
+                Voľný slot
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('client')}
+                className={cn(
+                  'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-xs font-medium',
+                  mode === 'client'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-muted bg-muted/30 text-muted-foreground hover:border-foreground/20'
+                )}
+              >
+                <User className="h-4 w-4" />
+                Klient
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('external')}
+                className={cn(
+                  'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-xs font-medium',
+                  mode === 'external'
+                    ? 'border-violet-500 bg-violet-500/10 text-violet-700 dark:text-violet-400'
+                    : 'border-muted bg-muted/30 text-muted-foreground hover:border-foreground/20'
+                )}
+              >
+                <Lock className="h-4 w-4" />
+                Externý
+              </button>
+            </div>
           </div>
 
-          {/* Price - only when client selected */}
-          {hasClient && (
+          {/* Client selection - only in client mode */}
+          {mode === 'client' && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
+                Klient
+              </Label>
+              <Select value={selectedClient} onValueChange={setSelectedClient}>
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Vybrať klienta..." />
+                </SelectTrigger>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      <div className="flex flex-col">
+                        <span>{client.full_name}</span>
+                        <span className="text-xs text-muted-foreground">{client.email}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* External client name */}
+          {mode === 'external' && (
+            <div className="space-y-2">
+              <Label htmlFor="blocked-client-name" className="text-sm font-medium flex items-center gap-2">
+                <UserX className="h-4 w-4 text-violet-500" />
+                Meno externého klienta
+              </Label>
+              <Input
+                id="blocked-client-name"
+                value={blockedClientName}
+                onChange={(e) => setBlockedClientName(e.target.value)}
+                placeholder="Napr. Mária K."
+                className="h-12"
+                required
+              />
+            </div>
+          )}
+
+          {/* Price - for client and external modes */}
+          {(mode === 'client' || mode === 'external') && (
             <div className="space-y-2">
               <Label htmlFor="create-price" className="text-sm font-medium">
                 Cena (€)
@@ -231,16 +318,21 @@ export function CreateTrainingDialog({
             </Button>
             <Button
               type="submit"
-              className="flex-1 h-12 ios-press"
-              disabled={isLoading}
+              className={cn(
+                "flex-1 h-12 ios-press",
+                mode === 'external' && "bg-violet-600 hover:bg-violet-700 text-white"
+              )}
+              disabled={isLoading || !canSubmit}
             >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Ukladám...
                 </>
-              ) : hasClient ? (
+              ) : mode === 'client' ? (
                 'Priradiť tréning'
+              ) : mode === 'external' ? (
+                'Blokovať termín'
               ) : (
                 'Pridať slot'
               )}

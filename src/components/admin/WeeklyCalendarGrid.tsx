@@ -43,6 +43,11 @@ const getSlotColor = (slot: SlotWithBooking) => {
 };
 
 const getSlotChipColor = (slot: SlotWithBooking) => {
+  if (slot.is_blocked) {
+    return slot.blocked_completed
+      ? 'bg-violet-100 text-violet-800 border-violet-500 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600'
+      : 'bg-slate-100 text-slate-700 border-slate-400 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-600';
+  }
   const status = slot.booking?.status;
   if (isExpiredProposal(slot)) return 'bg-rose-100 text-rose-800 border-rose-500 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-600';
   if (status === 'proposed') return 'bg-muted text-muted-foreground border-muted-foreground/30';

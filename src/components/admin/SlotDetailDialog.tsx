@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Clock, User, Euro, CheckCircle, XCircle, Trash2, AlertTriangle, Loader2, Bell } from 'lucide-react';
+import { Clock, User, Euro, CheckCircle, XCircle, Trash2, AlertTriangle, Loader2, Bell, Lock } from 'lucide-react';
 import { BOOKING_STATUS_LABELS, CLIENT_TYPE_LABELS } from '@/lib/constants';
 import { BookingStatus } from '@/types/database';
 import { useState } from 'react';
@@ -38,6 +38,7 @@ interface SlotDetailDialogProps {
   onReject?: (bookingId: string) => void;
   onDelete?: (slotId: string) => void;
   onSendReminder?: (bookingId: string) => Promise<void>;
+  onBlockedComplete?: (slotId: string) => void;
   isProcessing?: boolean;
 }
 
@@ -62,6 +63,7 @@ export function SlotDetailDialog({
   onReject,
   onDelete,
   onSendReminder,
+  onBlockedComplete,
   isProcessing,
 }: SlotDetailDialogProps) {
   const [cancelFeePercent, setCancelFeePercent] = useState('0');
@@ -74,7 +76,128 @@ export function SlotDetailDialog({
   const booking = slot.booking;
   const status = (booking?.status as BookingStatus) || null;
   const hasBooking = !!booking;
+  const isBlocked = slot.is_blocked;
 
+  // Blocked slot view
+  if (isBlocked) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detail termínu</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-primary" />
+              <span className="font-medium">
+                {format(startTime, 'EEEE d. MMMM yyyy', { locale: sk })}
+              </span>
+            </div>
+            <div className="text-lg font-bold">
+              {format(startTime, 'HH:mm')} – {format(endTime, 'HH:mm')}
+            </div>
+
+            <div className="ios-card p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-violet-500" />
+                <span className="font-semibold">{slot.blocked_client_name || 'Externý klient'}</span>
+              </div>
+              <Badge className="bg-violet-100 text-violet-800 border-violet-300 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600">
+                Externý klient
+              </Badge>
+              {slot.blocked_price > 0 && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Euro className="h-4 w-4 text-muted-foreground" />
+                  <span>{slot.blocked_price.toFixed(2)} €</span>
+                </div>
+              )}
+              {slot.blocked_completed && (
+                <Badge className="bg-success/20 text-success border-success">
+                  Odplávaný ✓
+                </Badge>
+              )}
+            </div>
+
+            {slot.notes && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-sm">
+                <span>📍</span>
+                <span>{slot.notes}</span>
+              </div>
+            )}
+
+            <div className="space-y-2 pt-2">
+              {!slot.blocked_completed && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button className="w-full gap-2" disabled={isProcessing}>
+                      <CheckCircle className="h-4 w-4" />
+                      Označiť ako odplávaný
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Označiť ako odplávaný?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tréning s externým klientom <strong>{slot.blocked_client_name}</strong> bude
+                        označený ako dokončený a suma {slot.blocked_price.toFixed(2)} € sa započíta do financií.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Späť</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => {
+                        onBlockedComplete?.(slot.id);
+                        onOpenChange(false);
+                      }}>
+                        Potvrdiť
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full gap-2" disabled={isProcessing}>
+                    <Trash2 className="h-4 w-4" />
+                    Zmazať blokáciu
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Zmazať blokáciu?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Blokovaný termín pre <strong>{slot.blocked_client_name}</strong> bude odstránený.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Späť</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={() => {
+                        onDelete?.(slot.id);
+                        onOpenChange(false);
+                      }}
+                    >
+                      Zmazať
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+
+            {isProcessing && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Spracovávam...
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Regular slot view (unchanged)
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -403,6 +526,42 @@ export function SlotDetailDialog({
                 </>
               );
             })()}
+
+            {/* Terminal statuses - allow delete */}
+            {(status === 'completed' || status === 'cancelled' || status === 'no_show') && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2 text-destructive"
+                    disabled={isProcessing}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Odstrániť z kalendára
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Odstrániť termín?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Naozaj chcete odstrániť tento termín z kalendára? Transakcie zostanú zachované.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Späť</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={() => {
+                        onDelete?.(slot.id);
+                        onOpenChange(false);
+                      }}
+                    >
+                      Odstrániť
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
 
             {!hasBooking && (
               <AlertDialog>

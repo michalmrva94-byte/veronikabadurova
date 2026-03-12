@@ -121,6 +121,10 @@ export default function AdminCalendarPage() {
         .eq('id', slotId);
       if (error) throw error;
       toast.success('Externý tréning označený ako odplávaný');
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-finances-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard-stats'] });
     } catch (e: any) {
       toast.error(e.message || 'Chyba');
     } finally {

@@ -175,8 +175,8 @@ export function useAdminFinancesStats(period: FinancePeriod = 'month', customRan
       });
 
       return {
-        earned: sumAbs(earnedRes.data || []),
-        prevEarned: sumAbs(prevEarnedRes.data || []),
+        earned: sumAbs(earnedRes.data || []) + blockedEarned,
+        prevEarned: sumAbs(prevEarnedRes.data || []) + prevBlockedEarned,
         deposits: sumPositive(depositsRes.data || []),
         prevDeposits: sumPositive(prevDepositsRes.data || []),
         totalDebts,

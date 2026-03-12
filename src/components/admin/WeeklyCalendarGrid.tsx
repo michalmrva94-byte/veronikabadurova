@@ -208,10 +208,17 @@ function DesktopView({
                     )}
                   >
                     <div className="flex items-center gap-1 font-medium">
-                      <Clock className="h-3 w-3" />
+                      {slot.is_blocked ? <Lock className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                       {format(new Date(slot.start_time), 'HH:mm')}
                     </div>
-                    {slot.booking?.client && (
+                    {slot.is_blocked ? (
+                      <div className="flex items-center gap-1 mt-1 text-xs opacity-80">
+                        <User className="h-3 w-3" />
+                        <span className="truncate">
+                          {slot.blocked_client_name?.split(' ')[0] || 'Ext.'}
+                        </span>
+                      </div>
+                    ) : slot.booking?.client && (
                       <div className="flex items-center gap-1 mt-1 text-xs opacity-80">
                         <User className="h-3 w-3" />
                         <span className="truncate">

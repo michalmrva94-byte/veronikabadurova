@@ -89,6 +89,8 @@ export function useAdminFinancesStats(period: FinancePeriod = 'month', customRan
         prevDepositsRes,
         creditUsageRes,
         profilesRes,
+        blockedEarnedRes,
+        prevBlockedEarnedRes,
       ] = await Promise.all([
         // earned: training + cancellation in current period
         supabase
@@ -129,6 +131,22 @@ export function useAdminFinancesStats(period: FinancePeriod = 'month', customRan
         supabase
           .from('profiles')
           .select('balance, debt_balance'),
+        // blocked completed slots in current period
+        supabase
+          .from('training_slots')
+          .select('blocked_price, start_time')
+          .eq('is_blocked', true)
+          .eq('blocked_completed', true)
+          .gte('start_time', dates.currentStart)
+          .lte('start_time', dates.currentEnd),
+        // blocked completed slots in prev period
+        supabase
+          .from('training_slots')
+          .select('blocked_price, start_time')
+          .eq('is_blocked', true)
+          .eq('blocked_completed', true)
+          .gte('start_time', dates.prevStart)
+          .lte('start_time', dates.prevEnd),
       ]);
 
       if (earnedRes.error) throw earnedRes.error;

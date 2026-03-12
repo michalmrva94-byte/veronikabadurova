@@ -27,6 +27,11 @@ const isExpiredProposal = (slot: SlotWithBooking) => {
 };
 
 const getSlotColor = (slot: SlotWithBooking) => {
+  if (slot.is_blocked) {
+    return slot.blocked_completed
+      ? 'bg-violet-100 border-violet-500 text-violet-800 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600'
+      : 'bg-slate-100 border-slate-400 text-slate-700 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-600';
+  }
   const status = slot.booking?.status;
   if (isExpiredProposal(slot)) return 'bg-rose-100 border-rose-500 text-rose-800 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-600';
   if (status === 'proposed') return 'bg-muted border-muted-foreground/30 text-muted-foreground';

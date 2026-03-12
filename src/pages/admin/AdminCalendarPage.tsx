@@ -104,8 +104,9 @@ export default function AdminCalendarPage() {
       if (error) throw error;
       toast.success('Termín zablokovaný');
       setIsCreateDialogOpen(false);
-      // Invalidate caches
-      createSlot.reset();
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['training-slots'] });
     } catch (error) {
       toast.error('Nepodarilo sa zablokovať termín.');
     }

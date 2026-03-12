@@ -111,19 +111,31 @@ function MobileView({
                     )}
                   >
                     <span>{format(new Date(slot.start_time), 'HH:mm')}</span>
-                    {slot.booking?.client && (
-                      <span className="opacity-80 truncate max-w-[60px]">
-                        {slot.booking.client.full_name.split(' ')[0]}
-                      </span>
-                    )}
-                    {isExpiredProposal(slot) && (
-                      <span className="text-[9px]">⚠</span>
-                    )}
-                    {!isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
-                      <span className="text-[9px]">⏳</span>
-                    )}
-                    {slot.booking?.status === 'completed' && (
-                      <span className="text-[9px]">✓</span>
+                    {slot.is_blocked ? (
+                      <>
+                        <Lock className="h-3 w-3" />
+                        <span className="opacity-80 truncate max-w-[60px]">
+                          {slot.blocked_client_name?.split(' ')[0] || 'Ext.'}
+                        </span>
+                        {slot.blocked_completed && <span className="text-[9px]">✓</span>}
+                      </>
+                    ) : (
+                      <>
+                        {slot.booking?.client && (
+                          <span className="opacity-80 truncate max-w-[60px]">
+                            {slot.booking.client.full_name.split(' ')[0]}
+                          </span>
+                        )}
+                        {isExpiredProposal(slot) && (
+                          <span className="text-[9px]">⚠</span>
+                        )}
+                        {!isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
+                          <span className="text-[9px]">⏳</span>
+                        )}
+                        {slot.booking?.status === 'completed' && (
+                          <span className="text-[9px]">✓</span>
+                        )}
+                      </>
                     )}
                   </button>
                 ))

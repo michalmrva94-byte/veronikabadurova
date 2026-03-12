@@ -16,6 +16,10 @@ export interface SlotWithBooking extends TrainingSlot {
       client_type?: string;
     };
   };
+  is_blocked: boolean;
+  blocked_client_name: string | null;
+  blocked_price: number;
+  blocked_completed: boolean;
 }
 
 export function useWeeklySlots(weekStart: Date) {

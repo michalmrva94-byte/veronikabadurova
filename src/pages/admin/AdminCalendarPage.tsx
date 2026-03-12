@@ -392,7 +392,12 @@ export default function AdminCalendarPage() {
                                 {format(new Date(slot.start_time), 'HH:mm')} - {format(new Date(slot.end_time), 'HH:mm')}
                               </span>
                             </div>
-                            {slot.booking ? (
+                            {slot.is_blocked ? (
+                              <span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                                🔒 {slot.blocked_client_name || 'Externý'}
+                                {slot.blocked_completed && ' · ✓'}
+                              </span>
+                            ) : slot.booking ? (
                               <span className={cn(
                                 "text-xs font-medium px-2 py-1 rounded-full",
                                 slot.booking.status === 'booked' && "bg-primary/10 text-primary",

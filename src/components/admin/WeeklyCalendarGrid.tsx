@@ -226,22 +226,27 @@ function DesktopView({
                         </span>
                       </div>
                     )}
-                    {isExpiredProposal(slot) && (
+                    {slot.is_blocked && (
+                      <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-slate-400 text-slate-600 dark:text-slate-400">
+                        {slot.blocked_completed ? '✓ Ext.' : '🔒 Ext.'}
+                      </Badge>
+                    )}
+                    {!slot.is_blocked && isExpiredProposal(slot) && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-rose-500 text-rose-700 dark:text-rose-400">
                         Vypršané
                       </Badge>
                     )}
-                    {!isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
+                    {!slot.is_blocked && !isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">
                         Čaká
                       </Badge>
                     )}
-                    {slot.booking?.status === 'proposed' && (
+                    {!slot.is_blocked && slot.booking?.status === 'proposed' && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">
                         Návrh
                       </Badge>
                     )}
-                    {slot.booking?.status === 'completed' && (
+                    {!slot.is_blocked && slot.booking?.status === 'completed' && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-success text-success">
                         ✓
                       </Badge>

@@ -4,7 +4,7 @@ import { SlotWithBooking } from '@/hooks/useWeeklySlots';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, User, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, User, Plus, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 

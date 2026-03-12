@@ -516,8 +516,10 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
       const prevNetRevenue = prevDeposits - prevCreditUsage;
 
       // === EARNED (performance metric) ===
-      const earned = (earnedTransRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
-      const prevEarned = (prevEarnedTransRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+      const blockedEarned = (blockedEarnedRes.data || []).reduce((s: number, t: any) => s + (t.blocked_price || 0), 0);
+      const prevBlockedEarned = (prevBlockedEarnedRes.data || []).reduce((s: number, t: any) => s + (t.blocked_price || 0), 0);
+      const earned = (earnedTransRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0) + blockedEarned;
+      const prevEarned = (prevEarnedTransRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0) + prevBlockedEarned;
 
       return {
         activeClients,

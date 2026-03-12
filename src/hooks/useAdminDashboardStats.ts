@@ -237,6 +237,22 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
           .in('type', ['training', 'cancellation'])
           .gte('created_at', prevStart.toISOString())
           .lte('created_at', prevEnd.toISOString()),
+        // Blocked completed slots in current period
+        supabase
+          .from('training_slots')
+          .select('blocked_price, start_time')
+          .eq('is_blocked', true)
+          .eq('blocked_completed', true)
+          .gte('start_time', start.toISOString())
+          .lte('start_time', end.toISOString()),
+        // Blocked completed slots in prev period
+        supabase
+          .from('training_slots')
+          .select('blocked_price, start_time')
+          .eq('is_blocked', true)
+          .eq('blocked_completed', true)
+          .gte('start_time', prevStart.toISOString())
+          .lte('start_time', prevEnd.toISOString()),
       ]);
 
       // === PERIOD BOOKINGS ===

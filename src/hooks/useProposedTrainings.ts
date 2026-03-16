@@ -171,7 +171,7 @@ export function useProposedTrainings() {
       const now = Date.now();
       const bookingObjects = slots.map((slot) => {
         const deadline = new Date(Math.max(
-          new Date(slot.start_time).getTime() - 24 * 60 * 60 * 1000,
+          new Date(slot.start_time).getTime() - 12 * 60 * 60 * 1000,
           now + 1 * 60 * 60 * 1000
         )).toISOString();
         return {

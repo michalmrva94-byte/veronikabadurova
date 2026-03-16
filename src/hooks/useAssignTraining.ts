@@ -40,7 +40,7 @@ export function useAssignTraining() {
           price,
           status: 'awaiting_confirmation',
           confirmation_deadline: new Date(Math.max(
-            new Date(start_time).getTime() - 24 * 60 * 60 * 1000,
+            new Date(start_time).getTime() - 12 * 60 * 60 * 1000,
             Date.now() + 1 * 60 * 60 * 1000
           )).toISOString(),
         })

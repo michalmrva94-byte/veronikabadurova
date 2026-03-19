@@ -7,11 +7,18 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
       manifest: {
         name: 'SwimDesk',
         short_name: 'SwimDesk',
-        description: 'Plavecký klub — booking, výkony, tréner app',
+        description: 'Plavecký klub — portál pre rodičov a správu klubu',
         theme_color: '#0EA5E9',
         background_color: '#ffffff',
         display: 'standalone',

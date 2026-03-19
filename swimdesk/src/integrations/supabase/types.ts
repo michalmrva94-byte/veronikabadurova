@@ -103,7 +103,70 @@ export interface CompetitionResult {
   result_time_ms: number
   place: number | null
   is_personal_record: boolean
+  import_batch_id: string | null
+  import_source: string
   training_groups?: Pick<TrainingGroup, "id" | "display_name" | "slug">
+}
+
+export interface ParentProfile {
+  id: string
+  user_id: string
+  full_name: string
+  email: string
+  phone: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Swimmer {
+  id: string
+  club_id: string
+  parent_id: string
+  full_name: string
+  birth_year: number | null
+  group_id: string | null
+  paysy_member_id: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  training_groups?: Pick<TrainingGroup, "id" | "display_name" | "slug" | "color" | "icon_emoji">
+}
+
+export interface PaysyImportBatch {
+  id: string
+  club_id: string
+  imported_by: string
+  row_count: number
+  filename: string | null
+  season: string | null
+  imported_at: string
+}
+
+export interface PaysyMemberStatus {
+  id: string
+  club_id: string
+  swimmer_id: string | null
+  paysy_member_id: string
+  full_name_csv: string
+  status: string
+  season: string | null
+  valid_until: string | null
+  override_status: string | null
+  override_note: string | null
+  override_by: string | null
+  overridden_at: string | null
+  import_batch_id: string
+  imported_at: string
+  updated_at: string
+  swimmers?: Pick<Swimmer, "id" | "full_name">
+}
+
+export interface SwimdeskPushSubscription {
+  id: string
+  user_id: string
+  club_id: string
+  subscription: Record<string, unknown>
+  created_at: string
 }
 
 export interface Database {
@@ -116,6 +179,11 @@ export interface Database {
       training_schedule: { Row: TrainingScheduleEntry; Insert: Omit<TrainingScheduleEntry, "id">; Update: Partial<TrainingScheduleEntry> }
       news: { Row: NewsArticle; Insert: Omit<NewsArticle, "id">; Update: Partial<NewsArticle> }
       competition_results: { Row: CompetitionResult; Insert: Omit<CompetitionResult, "id">; Update: Partial<CompetitionResult> }
+      parent_profiles: { Row: ParentProfile; Insert: Omit<ParentProfile, "id" | "created_at" | "updated_at">; Update: Partial<ParentProfile> }
+      swimmers: { Row: Swimmer; Insert: Omit<Swimmer, "id" | "created_at" | "updated_at">; Update: Partial<Swimmer> }
+      paysy_import_batches: { Row: PaysyImportBatch; Insert: Omit<PaysyImportBatch, "id" | "imported_at">; Update: Partial<PaysyImportBatch> }
+      paysy_member_status: { Row: PaysyMemberStatus; Insert: Omit<PaysyMemberStatus, "id" | "imported_at" | "updated_at">; Update: Partial<PaysyMemberStatus> }
+      swimdesk_push_subscriptions: { Row: SwimdeskPushSubscription; Insert: Omit<SwimdeskPushSubscription, "id" | "created_at">; Update: Partial<SwimdeskPushSubscription> }
     }
   }
 }

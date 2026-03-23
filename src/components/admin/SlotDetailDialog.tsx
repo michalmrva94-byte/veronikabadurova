@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Clock, User, Euro, CheckCircle, XCircle, Trash2, AlertTriangle, Loader2, Bell, Lock } from 'lucide-react';
+import { Clock, User, Euro, CheckCircle, XCircle, Trash2, AlertTriangle, Loader2, Bell, Lock, StickyNote } from 'lucide-react';
 import { BOOKING_STATUS_LABELS, CLIENT_TYPE_LABELS } from '@/lib/constants';
 import { BookingStatus } from '@/types/database';
 import { useState } from 'react';

@@ -57,6 +57,8 @@ export interface AdminDashboardStats {
   // Earned (performance metric)
   earned: number;
   prevEarned: number;
+  // Storno details
+  stornoDetails: Array<{ clientName: string; slotDate: string; status: 'cancelled' | 'no_show' }>;
 }
 
 export function getDefaultRange(period: 'week' | 'month'): DashboardDateRange {

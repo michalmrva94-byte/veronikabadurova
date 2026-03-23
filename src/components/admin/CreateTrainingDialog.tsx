@@ -87,6 +87,7 @@ export function CreateTrainingDialog({
     setPrice(DEFAULT_TRAINING_PRICE.toString());
     setNotes('');
     setBlockedClientName('');
+    setNoteTitle('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

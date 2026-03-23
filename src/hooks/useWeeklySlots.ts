@@ -117,7 +117,7 @@ export function useSlotsForMonth(month: Date) {
         if (hasActiveBooking || slot.is_blocked) {
           existing.hasBooked = true;
           existing.bookedCount++;
-        } else {
+        } else if (slot.is_available) {
           existing.hasAvailable = true;
           existing.availableCount++;
         }

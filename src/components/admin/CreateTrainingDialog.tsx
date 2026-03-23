@@ -99,7 +99,17 @@ export function CreateTrainingDialog({
     const startDateTime = setMinutes(setHours(trainingDate, startHour), startMin);
     const endDateTime = setMinutes(setHours(trainingDate, endHour), endMin);
 
-    if (mode === 'client' && selectedClient) {
+    if (mode === 'note' && noteTitle.trim()) {
+      // For notes, use full day times
+      const dayStart = setMinutes(setHours(trainingDate, 0), 0);
+      const dayEnd = setMinutes(setHours(trainingDate, 23), 59);
+      await onCreateNote?.({
+        start_time: dayStart.toISOString(),
+        end_time: dayEnd.toISOString(),
+        note_title: noteTitle.trim(),
+        notes: notes || undefined,
+      });
+    } else if (mode === 'client' && selectedClient) {
       await onAssignTraining({
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),

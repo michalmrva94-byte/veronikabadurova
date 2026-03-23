@@ -150,7 +150,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         // Slots in period for occupancy
         supabase
           .from('training_slots')
-          .select('id, start_time, is_available, bookings(id)')
+          .select('id, start_time, is_available, is_note, is_blocked, bookings(id)')
           .gte('start_time', start.toISOString())
           .lte('start_time', end.toISOString()),
         // Profiles with debt
@@ -196,7 +196,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         // This week's slots for occupancy
         supabase
           .from('training_slots')
-          .select('id, start_time, is_available, bookings(id)')
+          .select('id, start_time, is_available, is_note, is_blocked, bookings(id)')
           .gte('start_time', thisWeekStart.toISOString())
           .lte('start_time', thisWeekEnd.toISOString()),
         // Previous period bookings for trends
@@ -208,7 +208,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         // Previous period slots for trend
         supabase
           .from('training_slots')
-          .select('id, start_time, is_available, bookings(id)')
+          .select('id, start_time, is_available, is_note, is_blocked, bookings(id)')
           .gte('start_time', prevStart.toISOString())
           .lte('start_time', prevEnd.toISOString()),
         // Previous period deposit transactions
@@ -306,7 +306,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         : 0;
 
       // === SLOT OCCUPANCY ===
-      const slots = slotsRes.data || [];
+      const slots = (slotsRes.data || []).filter((s: any) => !s.is_note && !s.is_blocked);
       const totalSlots = slots.length;
       const bookedSlots = slots.filter((s: any) => s.bookings && s.bookings.length > 0).length;
       const slotOccupancy = totalSlots > 0 ? (bookedSlots / totalSlots) * 100 : 0;
@@ -446,7 +446,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
       const weeklyStornoRate7d = weeklyTrainingCount7d > 0 ? (weeklyStornoCount / weeklyTrainingCount7d) * 100 : 0;
 
       // This week slot occupancy
-      const thisWeekSlots = thisWeekSlotsRes.data || [];
+      const thisWeekSlots = (thisWeekSlotsRes.data || []).filter((s: any) => !s.is_note && !s.is_blocked);
       const weeklyOpenSlots = thisWeekSlots.filter((s: any) => !s.bookings || s.bookings.length === 0).length;
       const weeklySlotOccupancy = thisWeekSlots.length > 0
         ? ((thisWeekSlots.length - weeklyOpenSlots) / thisWeekSlots.length) * 100
@@ -499,7 +499,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
       const prevActiveClients = prevActiveClientIds.size;
       const prevTrainings = prevAllBookings.filter((b: any) => b.status === 'booked' || b.status === 'completed').length;
 
-      const prevSlots = prevSlotsRes.data || [];
+      const prevSlots = (prevSlotsRes.data || []).filter((s: any) => !s.is_note && !s.is_blocked);
       const prevBookedSlots = prevSlots.filter((s: any) => s.bookings && s.bookings.length > 0).length;
       const prevSlotOccupancy = prevSlots.length > 0 ? (prevBookedSlots / prevSlots.length) * 100 : 0;
 

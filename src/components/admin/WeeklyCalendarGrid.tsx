@@ -362,6 +362,10 @@ export function WeeklyCalendarGrid({
           <div className="w-3 h-3 rounded bg-slate-100 border border-slate-400" />
           <span>Externý</span>
         </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-amber-50 border border-amber-400" />
+          <span>Poznámka</span>
+        </div>
       </div>
     </div>
   );

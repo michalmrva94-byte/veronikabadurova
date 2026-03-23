@@ -499,7 +499,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
       const prevActiveClients = prevActiveClientIds.size;
       const prevTrainings = prevAllBookings.filter((b: any) => b.status === 'booked' || b.status === 'completed').length;
 
-      const prevSlots = prevSlotsRes.data || [];
+      const prevSlots = (prevSlotsRes.data || []).filter((s: any) => !s.is_note && !s.is_blocked);
       const prevBookedSlots = prevSlots.filter((s: any) => s.bookings && s.bookings.length > 0).length;
       const prevSlotOccupancy = prevSlots.length > 0 ? (prevBookedSlots / prevSlots.length) * 100 : 0;
 

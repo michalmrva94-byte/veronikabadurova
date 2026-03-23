@@ -2,7 +2,7 @@ import { format, addDays, startOfWeek, isSameDay, isToday, isBefore } from 'date
 import { sk } from 'date-fns/locale';
 import { SlotWithBooking } from '@/hooks/useWeeklySlots';
 import { Button } from '@/components/ui/button';
-import { Clock, CalendarDays } from 'lucide-react';
+import { Clock, CalendarDays, Pin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TrainingSlot } from '@/types/database';
 

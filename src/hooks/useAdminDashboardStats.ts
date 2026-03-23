@@ -127,7 +127,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         // Period bookings with client info
         supabase
           .from('bookings')
-          .select('id, status, client_id, price, slot:training_slots(start_time)')
+          .select('id, status, client_id, price, slot:training_slots(start_time), client:profiles!bookings_client_id_fkey(full_name)')
           .in('status', ['booked', 'completed', 'cancelled', 'no_show'])
           .gte('created_at', '2000-01-01'),
         // Unconfirmed bookings (global) with deadline

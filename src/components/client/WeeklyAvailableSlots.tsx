@@ -34,6 +34,10 @@ export function WeeklyAvailableSlots({
       .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
   };
 
+  const getNotesByDay = (day: Date) => {
+    return noteSlots.filter((slot) => isSameDay(new Date(slot.start_time), day));
+  };
+
   const now = new Date();
 
   return (

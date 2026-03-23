@@ -48,6 +48,12 @@ interface CreateTrainingDialogProps {
     blocked_price: number;
     notes?: string;
   }) => Promise<void>;
+  onCreateNote?: (data: {
+    start_time: string;
+    end_time: string;
+    note_title: string;
+    notes?: string;
+  }) => Promise<void>;
   isLoading?: boolean;
 }
 

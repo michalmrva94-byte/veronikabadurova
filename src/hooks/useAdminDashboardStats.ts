@@ -446,7 +446,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
       const weeklyStornoRate7d = weeklyTrainingCount7d > 0 ? (weeklyStornoCount / weeklyTrainingCount7d) * 100 : 0;
 
       // This week slot occupancy
-      const thisWeekSlots = thisWeekSlotsRes.data || [];
+      const thisWeekSlots = (thisWeekSlotsRes.data || []).filter((s: any) => !s.is_note && !s.is_blocked);
       const weeklyOpenSlots = thisWeekSlots.filter((s: any) => !s.bookings || s.bookings.length === 0).length;
       const weeklySlotOccupancy = thisWeekSlots.length > 0
         ? ((thisWeekSlots.length - weeklyOpenSlots) / thisWeekSlots.length) * 100

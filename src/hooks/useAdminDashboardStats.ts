@@ -196,7 +196,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         // This week's slots for occupancy
         supabase
           .from('training_slots')
-          .select('id, start_time, is_available, bookings(id)')
+          .select('id, start_time, is_available, is_note, is_blocked, bookings(id)')
           .gte('start_time', thisWeekStart.toISOString())
           .lte('start_time', thisWeekEnd.toISOString()),
         // Previous period bookings for trends

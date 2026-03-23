@@ -112,6 +112,33 @@ export default function AdminCalendarPage() {
     }
   };
 
+  const handleCreateNote = async (data: {
+    start_time: string;
+    end_time: string;
+    note_title: string;
+    notes?: string;
+  }) => {
+    try {
+      const { error } = await supabase.from('training_slots').insert({
+        start_time: data.start_time,
+        end_time: data.end_time,
+        is_available: false,
+        is_note: true,
+        note_title: data.note_title,
+        notes: data.notes || null,
+        is_recurring: false,
+      });
+      if (error) throw error;
+      toast.success('Poznámka pridaná');
+      setIsCreateDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+    } catch (error) {
+      toast.error('Nepodarilo sa pridať poznámku.');
+    }
+  };
+
   const handleBlockedComplete = async (slotId: string) => {
     setIsProcessing(true);
     try {

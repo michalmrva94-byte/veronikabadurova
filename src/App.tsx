@@ -16,6 +16,7 @@ import SDWorkoutsPage from "@/pages/sd/WorkoutsPage";
 import SDGroupsPage from "@/pages/sd/GroupsPage";
 import SDGroupDetailPage from "@/pages/sd/GroupDetailPage";
 import SDSwimmersPage from "@/pages/sd/SwimmersPage";
+import SDSwimmerDetailPage from "@/pages/sd/SwimmerDetailPage";
 import SDLimitsPage from "@/pages/sd/LimitsPage";
 import SDSettingsPage from "@/pages/sd/SettingsPage";
 import NotFound from "@/pages/NotFound";
@@ -43,6 +44,7 @@ const App = () => {
               <Route path={SD_ROUTES.GROUPS} element={<SDProtectedRoute><SDGroupsPage /></SDProtectedRoute>} />
               <Route path={SD_ROUTES.GROUP_DETAIL} element={<SDProtectedRoute><SDGroupDetailPage /></SDProtectedRoute>} />
               <Route path={SD_ROUTES.SWIMMERS} element={<SDProtectedRoute><SDSwimmersPage /></SDProtectedRoute>} />
+              <Route path={SD_ROUTES.SWIMMER_DETAIL} element={<SDProtectedRoute><SDSwimmerDetailPage /></SDProtectedRoute>} />
               <Route path={SD_ROUTES.LIMITS} element={<SDProtectedRoute><SDLimitsPage /></SDProtectedRoute>} />
               <Route path={SD_ROUTES.SETTINGS} element={<SDProtectedRoute><SDSettingsPage /></SDProtectedRoute>} />
 

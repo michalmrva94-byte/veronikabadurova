@@ -212,7 +212,11 @@ export default function SDSwimmersPage() {
             <TableBody>
               {filtered.map((s) => (
                 <TableRow key={s.id}>
-                  <TableCell className="font-medium">{s.last_name} {s.first_name}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link to={`/plavci/${s.id}`} className="text-primary hover:underline">
+                      {s.last_name} {s.first_name}
+                    </Link>
+                  </TableCell>
                   <TableCell>{s.birth_year || '—'}</TableCell>
                   <TableCell>
                     {s.group ? (

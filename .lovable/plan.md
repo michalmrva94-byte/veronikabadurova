@@ -1,33 +1,42 @@
 
 
-## Problém
+## Pridanie detailu storno metriky — zoznam konkrétnych stornovaných tréningov
 
-Poznámkové sloty (`is_note: true`) sa počítajú do obsadenosti a ďalších KPI metrík, pretože dotazy na `training_slots` ich nefiltrujú. Poznámka nemá booking → počíta sa ako "voľný slot" → zvyšuje menovateľ → znižuje obsadenosť.
+### Čo sa zmení
+Po kliknutí na "?" pri Miere storna sa v popoveri okrem vzorca a benchmarkov zobrazí aj **zoznam konkrétnych stornovaných/neúčasťových tréningov** v danom období — meno klienta, dátum tréningu a typ (zrušené / neúčasť).
 
-## Oprava
+### Technické zmeny
 
-**1 súbor: `src/hooks/useAdminDashboardStats.ts`**
+#### 1. `useAdminDashboardStats.ts` — rozšíriť query a výstup
+- Zmeniť period bookings query (riadok 128) — pridať `client:profiles!bookings_client_id_fkey(full_name)` do select, aby sme mali meno klienta
+- Pridať do `AdminDashboardStats` interface nové pole:
+  ```typescript
+  stornoDetails: Array<{ clientName: string; slotDate: string; status: 'cancelled' | 'no_show' }>;
+  ```
+- V logike (riadok 290-296) zozbierať detaily z `stornoRelevantBookings` kde status je `cancelled` alebo `no_show`
 
-### Hlavná obsadenosť (riadky 309-312)
-Filtrovať `is_note` a `is_blocked` sloty z výpočtu:
-```typescript
-const slots = (slotsRes.data || []).filter((s: any) => !s.is_note && !s.is_blocked);
+#### 2. `AdminStatsSection.tsx` — rozšíriť popover
+- Pod existujúci benchmark blok pridať sekciu "Detail storna" so scrollovateľným zoznamom (max-h-[200px])
+- Každý riadok: dátum tréningu, meno klienta, badge (Zrušené / Neúčasť)
+- Ak je zoznam prázdny, zobraziť "Žiadne storná v tomto období"
+
+### Vizuálny návrh
+```text
+┌─────────────────────────────────────┐
+│  Miera storna = ...                 │
+│  Aktuálne: 3 / 12 (25%)            │
+│  ─────────────────────────────────  │
+│  Benchmark                          │
+│  🟢 < 15% — Výborná                │
+│  🟡 15-25% — Prijateľná            │
+│  🔴 > 25% — Vysoká                 │
+│  ─────────────────────────────────  │
+│  Storná v období (3)                │
+│  ┌─────────────────────────────┐    │
+│  │ 18.3. 14:00  Buntová  [Zruš]│   │
+│  │ 15.3. 10:00  Vojtas   [Neúč]│   │
+│  │ 12.3. 16:00  Novák    [Zruš]│   │
+│  └─────────────────────────────┘    │
+└─────────────────────────────────────┘
 ```
-Blokované sloty tiež nemajú booking záznam, takže by tiež skresľovali obsadenosť. Externé tréningy sa počítajú cez `earned` metriku, nie cez obsadenosť.
-
-### Týždenná obsadenosť (riadky 449-453)
-Rovnaký filter:
-```typescript
-const thisWeekSlots = (thisWeekSlotsRes.data || []).filter((s: any) => !s.is_note && !s.is_blocked);
-```
-
-### Predchádzajúce obdobie obsadenosť (riadky 502-504)
-```typescript
-const prevSlots = (prevSlotsRes.data || []).filter((s: any) => !s.is_note && !s.is_blocked);
-```
-
-### Doplnenie `is_note` a `is_blocked` do select dotazov
-Tri dotazy na `training_slots` (riadky 151-155, 197-201, 209-213) potrebujú pridať `is_note, is_blocked` do select, aby filter fungoval.
-
-Žiadne iné zmeny nie sú potrebné — poznámky nemajú bookingy, takže neovplyvňujú storno rate, CLV ani iné booking-based metriky.
 

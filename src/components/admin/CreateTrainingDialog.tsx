@@ -22,11 +22,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, User, Loader2, CalendarIcon, Lock, UserX } from 'lucide-react';
+import { Clock, User, Loader2, CalendarIcon, Lock, UserX, StickyNote } from 'lucide-react';
 import { Profile } from '@/types/database';
 import { DEFAULT_TRAINING_PRICE } from '@/lib/constants';
 
-type SlotMode = 'free' | 'client' | 'external';
+type SlotMode = 'free' | 'client' | 'external' | 'note';
 
 interface CreateTrainingDialogProps {
   open: boolean;

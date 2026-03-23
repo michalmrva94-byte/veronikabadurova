@@ -114,9 +114,13 @@ export function useSlotsForMonth(month: Date) {
         );
 
         // Skip orphaned slots: is_available=false and no active booking and not blocked
-        if (!slot.is_available && !hasActiveBooking && !slot.is_blocked) return;
+        if (!slot.is_available && !hasActiveBooking && !slot.is_blocked && !slot.is_note) return;
         
-        if (hasActiveBooking || slot.is_blocked) {
+        if (slot.is_note) {
+          // Notes don't count as available or booked, just mark the day
+          existing.hasBooked = true;
+          existing.bookedCount++;
+        } else if (hasActiveBooking || slot.is_blocked) {
           existing.hasBooked = true;
           existing.bookedCount++;
         } else if (slot.is_available) {

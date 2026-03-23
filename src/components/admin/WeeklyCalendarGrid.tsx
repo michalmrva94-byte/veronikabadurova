@@ -27,6 +27,9 @@ const isExpiredProposal = (slot: SlotWithBooking) => {
 };
 
 const getSlotColor = (slot: SlotWithBooking) => {
+  if (slot.is_note) {
+    return 'bg-amber-50 border-amber-400 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-600';
+  }
   if (slot.is_blocked) {
     return slot.blocked_completed
       ? 'bg-violet-100 border-violet-500 text-violet-800 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600'

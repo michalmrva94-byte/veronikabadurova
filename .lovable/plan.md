@@ -1,42 +1,17 @@
 
 
-## Pridanie detailu storno metriky — zoznam konkrétnych stornovaných tréningov
+## Vymazanie testovacieho storna
 
-### Čo sa zmení
-Po kliknutí na "?" pri Miere storna sa v popoveri okrem vzorca a benchmarkov zobrazí aj **zoznam konkrétnych stornovaných/neúčasťových tréningov** v danom období — meno klienta, dátum tréningu a typ (zrušené / neúčasť).
+### Nájdené záznamy
+- **Booking**: `fb82cb90-24da-4851-abff-a6a0a8b5ce81` — Veronika Baďurová, storno z 23.3.2026, tréning 26.3. o 9:00, poplatok 0€, žiadne transakcie
+- **Notifikácia**: `c1be1b24-2c71-4f13-8039-ce6b4b56220b` — "Zmena termínu" spojená s daným slotom
+- **Slot**: `02a3e2ea-fd41-4261-8f6a-ac05a800c5cb` — je to blokovaný slot (externý klient), ten ponecháme
 
-### Technické zmeny
-
-#### 1. `useAdminDashboardStats.ts` — rozšíriť query a výstup
-- Zmeniť period bookings query (riadok 128) — pridať `client:profiles!bookings_client_id_fkey(full_name)` do select, aby sme mali meno klienta
-- Pridať do `AdminDashboardStats` interface nové pole:
-  ```typescript
-  stornoDetails: Array<{ clientName: string; slotDate: string; status: 'cancelled' | 'no_show' }>;
-  ```
-- V logike (riadok 290-296) zozbierať detaily z `stornoRelevantBookings` kde status je `cancelled` alebo `no_show`
-
-#### 2. `AdminStatsSection.tsx` — rozšíriť popover
-- Pod existujúci benchmark blok pridať sekciu "Detail storna" so scrollovateľným zoznamom (max-h-[200px])
-- Každý riadok: dátum tréningu, meno klienta, badge (Zrušené / Neúčasť)
-- Ak je zoznam prázdny, zobraziť "Žiadne storná v tomto období"
-
-### Vizuálny návrh
-```text
-┌─────────────────────────────────────┐
-│  Miera storna = ...                 │
-│  Aktuálne: 3 / 12 (25%)            │
-│  ─────────────────────────────────  │
-│  Benchmark                          │
-│  🟢 < 15% — Výborná                │
-│  🟡 15-25% — Prijateľná            │
-│  🔴 > 25% — Vysoká                 │
-│  ─────────────────────────────────  │
-│  Storná v období (3)                │
-│  ┌─────────────────────────────┐    │
-│  │ 18.3. 14:00  Buntová  [Zruš]│   │
-│  │ 15.3. 10:00  Vojtas   [Neúč]│   │
-│  │ 12.3. 16:00  Novák    [Zruš]│   │
-│  └─────────────────────────────┘    │
-└─────────────────────────────────────┘
+### Zmeny (migrácia)
+```sql
+DELETE FROM notifications WHERE id = 'c1be1b24-2c71-4f13-8039-ce6b4b56220b';
+DELETE FROM bookings WHERE id = 'fb82cb90-24da-4851-abff-a6a0a8b5ce81';
 ```
+
+Toto odstráni testovací booking a súvisiacu notifikáciu. Slot zostane nedotknutý (je to blokovaný externý tréning). Žiadne transakcie neexistujú, takže financie nie sú ovplyvnené. Štatistika storna sa automaticky opraví — tento booking sa prestane počítať do metriky "Miera storna".
 

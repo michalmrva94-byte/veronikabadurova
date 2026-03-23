@@ -208,7 +208,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         // Previous period slots for trend
         supabase
           .from('training_slots')
-          .select('id, start_time, is_available, bookings(id)')
+          .select('id, start_time, is_available, is_note, is_blocked, bookings(id)')
           .gte('start_time', prevStart.toISOString())
           .lte('start_time', prevEnd.toISOString()),
         // Previous period deposit transactions

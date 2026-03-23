@@ -138,7 +138,8 @@ export function CreateTrainingDialog({
 
   const canSubmit = mode === 'free' || 
     (mode === 'client' && selectedClient) || 
-    (mode === 'external' && blockedClientName.trim());
+    (mode === 'external' && blockedClientName.trim()) ||
+    (mode === 'note' && noteTitle.trim());
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); onOpenChange(v); }}>

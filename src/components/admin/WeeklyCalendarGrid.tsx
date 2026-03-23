@@ -116,8 +116,12 @@ function MobileView({
                       getSlotChipColor(slot)
                     )}
                   >
-                    <span>{format(new Date(slot.start_time), 'HH:mm')}</span>
-                    {slot.is_blocked ? (
+                    <span>{slot.is_note ? '📌' : format(new Date(slot.start_time), 'HH:mm')}</span>
+                    {slot.is_note ? (
+                      <span className="opacity-80 truncate max-w-[80px]">
+                        {slot.note_title || 'Poznámka'}
+                      </span>
+                    ) : slot.is_blocked ? (
                       <>
                         <Lock className="h-3 w-3" />
                         <span className="opacity-80 truncate max-w-[60px]">

@@ -373,7 +373,8 @@ export function CreateTrainingDialog({
               type="submit"
               className={cn(
                 "flex-1 h-12 ios-press",
-                mode === 'external' && "bg-violet-600 hover:bg-violet-700 text-white"
+                mode === 'external' && "bg-violet-600 hover:bg-violet-700 text-white",
+                mode === 'note' && "bg-amber-500 hover:bg-amber-600 text-white"
               )}
               disabled={isLoading || !canSubmit}
             >
@@ -386,6 +387,8 @@ export function CreateTrainingDialog({
                 'Priradiť tréning'
               ) : mode === 'external' ? (
                 'Blokovať termín'
+              ) : mode === 'note' ? (
+                'Pridať poznámku'
               ) : (
                 'Pridať slot'
               )}

@@ -65,6 +65,7 @@ export function CreateTrainingDialog({
   onCreateSlot,
   onAssignTraining,
   onCreateBlockedSlot,
+  onCreateNote,
   isLoading,
 }: CreateTrainingDialogProps) {
   const [trainingDate, setTrainingDate] = useState<Date>(selectedDate);

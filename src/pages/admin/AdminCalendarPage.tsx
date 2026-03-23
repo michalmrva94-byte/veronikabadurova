@@ -112,6 +112,33 @@ export default function AdminCalendarPage() {
     }
   };
 
+  const handleCreateNote = async (data: {
+    start_time: string;
+    end_time: string;
+    note_title: string;
+    notes?: string;
+  }) => {
+    try {
+      const { error } = await supabase.from('training_slots').insert({
+        start_time: data.start_time,
+        end_time: data.end_time,
+        is_available: false,
+        is_note: true,
+        note_title: data.note_title,
+        notes: data.notes || null,
+        is_recurring: false,
+      });
+      if (error) throw error;
+      toast.success('Poznámka pridaná');
+      setIsCreateDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['weekly-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['month-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['training-slots'] });
+    } catch (error) {
+      toast.error('Nepodarilo sa pridať poznámku.');
+    }
+  };
+
   const handleBlockedComplete = async (slotId: string) => {
     setIsProcessing(true);
     try {
@@ -394,12 +421,25 @@ export default function AdminCalendarPage() {
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-primary" />
-                              <span className="font-semibold">
-                                {format(new Date(slot.start_time), 'HH:mm')} - {format(new Date(slot.end_time), 'HH:mm')}
-                              </span>
+                              {slot.is_note ? (
+                                <>
+                                  <span className="text-amber-500">📌</span>
+                                  <span className="font-semibold">{slot.note_title || 'Poznámka'}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="h-4 w-4 text-primary" />
+                                  <span className="font-semibold">
+                                    {format(new Date(slot.start_time), 'HH:mm')} - {format(new Date(slot.end_time), 'HH:mm')}
+                                  </span>
+                                </>
+                              )}
                             </div>
-                            {slot.is_blocked ? (
+                            {slot.is_note ? (
+                              <span className="text-xs font-medium px-2 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+                                Poznámka
+                              </span>
+                            ) : slot.is_blocked ? (
                               <span className="text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400">
                                 🔒 {slot.blocked_client_name || 'Externý'}
                                 {slot.blocked_completed && ' · ✓'}
@@ -468,6 +508,7 @@ export default function AdminCalendarPage() {
         onCreateSlot={handleAddSlot}
         onAssignTraining={handleAssignTraining}
         onCreateBlockedSlot={handleCreateBlockedSlot}
+        onCreateNote={handleCreateNote}
         isLoading={createSlot.isPending || assignTraining.isPending}
       />
       <SlotDetailDialog

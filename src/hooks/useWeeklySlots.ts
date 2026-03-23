@@ -20,6 +20,8 @@ export interface SlotWithBooking extends TrainingSlot {
   blocked_client_name: string | null;
   blocked_price: number;
   blocked_completed: boolean;
+  is_note: boolean;
+  note_title: string | null;
 }
 
 export function useWeeklySlots(weekStart: Date) {
@@ -67,7 +69,7 @@ export function useWeeklySlots(weekStart: Date) {
         };
       }).filter((slot: SlotWithBooking) => {
         // Hide orphaned slots: is_available=false and no active booking and not blocked
-        if (!slot.is_available && !slot.booking && !slot.is_blocked) return false;
+        if (!slot.is_available && !slot.booking && !slot.is_blocked && !slot.is_note) return false;
         return true;
       }) as SlotWithBooking[];
     },
@@ -112,9 +114,13 @@ export function useSlotsForMonth(month: Date) {
         );
 
         // Skip orphaned slots: is_available=false and no active booking and not blocked
-        if (!slot.is_available && !hasActiveBooking && !slot.is_blocked) return;
+        if (!slot.is_available && !hasActiveBooking && !slot.is_blocked && !slot.is_note) return;
         
-        if (hasActiveBooking || slot.is_blocked) {
+        if (slot.is_note) {
+          // Notes don't count as available or booked, just mark the day
+          existing.hasBooked = true;
+          existing.bookedCount++;
+        } else if (hasActiveBooking || slot.is_blocked) {
           existing.hasBooked = true;
           existing.bookedCount++;
         } else if (slot.is_available) {

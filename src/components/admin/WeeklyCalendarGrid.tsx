@@ -4,7 +4,7 @@ import { SlotWithBooking } from '@/hooks/useWeeklySlots';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, User, Plus, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { Clock, User, Plus, ChevronLeft, ChevronRight, Lock, StickyNote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -27,6 +27,9 @@ const isExpiredProposal = (slot: SlotWithBooking) => {
 };
 
 const getSlotColor = (slot: SlotWithBooking) => {
+  if (slot.is_note) {
+    return 'bg-amber-50 border-amber-400 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-600';
+  }
   if (slot.is_blocked) {
     return slot.blocked_completed
       ? 'bg-violet-100 border-violet-500 text-violet-800 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600'
@@ -43,6 +46,9 @@ const getSlotColor = (slot: SlotWithBooking) => {
 };
 
 const getSlotChipColor = (slot: SlotWithBooking) => {
+  if (slot.is_note) {
+    return 'bg-amber-50 text-amber-800 border-amber-400 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-600';
+  }
   if (slot.is_blocked) {
     return slot.blocked_completed
       ? 'bg-violet-100 text-violet-800 border-violet-500 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-600'
@@ -110,8 +116,12 @@ function MobileView({
                       getSlotChipColor(slot)
                     )}
                   >
-                    <span>{format(new Date(slot.start_time), 'HH:mm')}</span>
-                    {slot.is_blocked ? (
+                    <span>{slot.is_note ? '📌' : format(new Date(slot.start_time), 'HH:mm')}</span>
+                    {slot.is_note ? (
+                      <span className="opacity-80 truncate max-w-[80px]">
+                        {slot.note_title || 'Poznámka'}
+                      </span>
+                    ) : slot.is_blocked ? (
                       <>
                         <Lock className="h-3 w-3" />
                         <span className="opacity-80 truncate max-w-[60px]">
@@ -208,10 +218,14 @@ function DesktopView({
                     )}
                   >
                     <div className="flex items-center gap-1 font-medium">
-                      {slot.is_blocked ? <Lock className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                      {format(new Date(slot.start_time), 'HH:mm')}
+                      {slot.is_note ? <StickyNote className="h-3 w-3" /> : slot.is_blocked ? <Lock className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                      {slot.is_note ? '📌' : format(new Date(slot.start_time), 'HH:mm')}
                     </div>
-                    {slot.is_blocked ? (
+                    {slot.is_note ? (
+                      <div className="mt-1 text-xs opacity-80 truncate">
+                        {slot.note_title || 'Poznámka'}
+                      </div>
+                    ) : slot.is_blocked ? (
                       <div className="flex items-center gap-1 mt-1 text-xs opacity-80">
                         <User className="h-3 w-3" />
                         <span className="truncate">
@@ -226,27 +240,32 @@ function DesktopView({
                         </span>
                       </div>
                     )}
-                    {slot.is_blocked && (
+                    {slot.is_note && (
+                      <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-amber-400 text-amber-700 dark:text-amber-400">
+                        Poznámka
+                      </Badge>
+                    )}
+                    {!slot.is_note && slot.is_blocked && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-slate-400 text-slate-600 dark:text-slate-400">
                         {slot.blocked_completed ? '✓ Ext.' : '🔒 Ext.'}
                       </Badge>
                     )}
-                    {!slot.is_blocked && isExpiredProposal(slot) && (
+                    {!slot.is_note && !slot.is_blocked && isExpiredProposal(slot) && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-rose-500 text-rose-700 dark:text-rose-400">
                         Vypršané
                       </Badge>
                     )}
-                    {!slot.is_blocked && !isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
+                    {!slot.is_note && !slot.is_blocked && !isExpiredProposal(slot) && (slot.booking?.status === 'pending' || slot.booking?.status === 'awaiting_confirmation') && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">
                         Čaká
                       </Badge>
                     )}
-                    {!slot.is_blocked && slot.booking?.status === 'proposed' && (
+                    {!slot.is_note && !slot.is_blocked && slot.booking?.status === 'proposed' && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">
                         Návrh
                       </Badge>
                     )}
-                    {!slot.is_blocked && slot.booking?.status === 'completed' && (
+                    {!slot.is_note && !slot.is_blocked && slot.booking?.status === 'completed' && (
                       <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 border-success text-success">
                         ✓
                       </Badge>
@@ -342,6 +361,10 @@ export function WeeklyCalendarGrid({
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded bg-slate-100 border border-slate-400" />
           <span>Externý</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded bg-amber-50 border border-amber-400" />
+          <span>Poznámka</span>
         </div>
       </div>
     </div>

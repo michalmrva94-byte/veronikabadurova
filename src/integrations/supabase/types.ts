@@ -308,7 +308,9 @@ export type Database = {
           id: string
           is_available: boolean | null
           is_blocked: boolean
+          is_note: boolean
           is_recurring: boolean | null
+          note_title: string | null
           notes: string | null
           recurring_day_of_week: number | null
           recurring_end_time: string | null
@@ -325,7 +327,9 @@ export type Database = {
           id?: string
           is_available?: boolean | null
           is_blocked?: boolean
+          is_note?: boolean
           is_recurring?: boolean | null
+          note_title?: string | null
           notes?: string | null
           recurring_day_of_week?: number | null
           recurring_end_time?: string | null
@@ -342,7 +346,9 @@ export type Database = {
           id?: string
           is_available?: boolean | null
           is_blocked?: boolean
+          is_note?: boolean
           is_recurring?: boolean | null
+          note_title?: string | null
           notes?: string | null
           recurring_day_of_week?: number | null
           recurring_end_time?: string | null

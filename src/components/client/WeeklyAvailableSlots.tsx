@@ -2,7 +2,7 @@ import { format, addDays, startOfWeek, isSameDay, isToday, isBefore } from 'date
 import { sk } from 'date-fns/locale';
 import { SlotWithBooking } from '@/hooks/useWeeklySlots';
 import { Button } from '@/components/ui/button';
-import { Clock, CalendarDays } from 'lucide-react';
+import { Clock, CalendarDays, Pin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TrainingSlot } from '@/types/database';
 
@@ -25,12 +25,17 @@ export function WeeklyAvailableSlots({
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i));
 
   // Filter only available slots (no booking)
-  const availableSlots = slots.filter((slot) => !slot.booking && !slot.is_blocked);
+  const availableSlots = slots.filter((slot) => !slot.booking && !slot.is_blocked && !slot.is_note);
+  const noteSlots = slots.filter((slot) => slot.is_note);
 
   const getSlotsByDay = (day: Date) => {
     return availableSlots
       .filter((slot) => isSameDay(new Date(slot.start_time), day))
       .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  };
+
+  const getNotesByDay = (day: Date) => {
+    return noteSlots.filter((slot) => isSameDay(new Date(slot.start_time), day));
   };
 
   const now = new Date();
@@ -83,9 +88,10 @@ export function WeeklyAvailableSlots({
       <div className="space-y-3">
         {days.map((day) => {
           const daySlots = getSlotsByDay(day);
+          const dayNotes = getNotesByDay(day);
           const isPast = isBefore(day, now) && !isToday(day);
           
-          if (isPast || daySlots.length === 0) return null;
+          if (isPast || (daySlots.length === 0 && dayNotes.length === 0)) return null;
 
           return (
             <div key={day.toISOString()} className="space-y-2">
@@ -97,6 +103,21 @@ export function WeeklyAvailableSlots({
                   {format(day, 'd. MMMM', { locale: sk })}
                 </span>
               </div>
+
+              {/* Note banners */}
+              {dayNotes.map((note) => (
+                <div
+                  key={note.id}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-400"
+                >
+                  <Pin className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm font-medium">{note.note_title || 'Oznam'}</span>
+                  {note.notes && (
+                    <span className="text-xs text-amber-600 dark:text-amber-500">— {note.notes}</span>
+                  )}
+                </div>
+              ))}
+
               <div className="flex flex-wrap gap-2">
                 {daySlots.map((slot) => (
                   <div key={slot.id} className="flex flex-col items-center gap-0.5">

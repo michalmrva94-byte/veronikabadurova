@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Clock, User, Euro, CheckCircle, XCircle, Trash2, AlertTriangle, Loader2, Bell, Lock } from 'lucide-react';
+import { Clock, User, Euro, CheckCircle, XCircle, Trash2, AlertTriangle, Loader2, Bell, Lock, StickyNote } from 'lucide-react';
 import { BOOKING_STATUS_LABELS, CLIENT_TYPE_LABELS } from '@/lib/constants';
 import { BookingStatus } from '@/types/database';
 import { useState } from 'react';
@@ -77,6 +77,83 @@ export function SlotDetailDialog({
   const status = (booking?.status as BookingStatus) || null;
   const hasBooking = !!booking;
   const isBlocked = slot.is_blocked;
+  const isNote = slot.is_note;
+
+  // Note slot view
+  if (isNote) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Poznámka v kalendári</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-primary" />
+              <span className="font-medium">
+                {format(startTime, 'EEEE d. MMMM yyyy', { locale: sk })}
+              </span>
+            </div>
+
+            <div className="ios-card p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <StickyNote className="h-4 w-4 text-amber-500" />
+                <span className="font-semibold">{slot.note_title || 'Poznámka'}</span>
+              </div>
+              <Badge className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-600">
+                📌 Poznámka
+              </Badge>
+            </div>
+
+            {slot.notes && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-sm">
+                <span>📝</span>
+                <span>{slot.notes}</span>
+              </div>
+            )}
+
+            <div className="space-y-2 pt-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full gap-2" disabled={isProcessing}>
+                    <Trash2 className="h-4 w-4" />
+                    Zmazať poznámku
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Zmazať poznámku?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Poznámka <strong>"{slot.note_title}"</strong> bude odstránená z kalendára.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Späť</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={() => {
+                        onDelete?.(slot.id);
+                        onOpenChange(false);
+                      }}
+                    >
+                      Zmazať
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+
+            {isProcessing && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Spracovávam...
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   // Blocked slot view
   if (isBlocked) {

@@ -57,6 +57,8 @@ export interface AdminDashboardStats {
   // Earned (performance metric)
   earned: number;
   prevEarned: number;
+  // Storno details
+  stornoDetails: Array<{ clientName: string; slotDate: string; status: 'cancelled' | 'no_show' }>;
 }
 
 export function getDefaultRange(period: 'week' | 'month'): DashboardDateRange {
@@ -125,7 +127,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         // Period bookings with client info
         supabase
           .from('bookings')
-          .select('id, status, client_id, price, slot:training_slots(start_time)')
+          .select('id, status, client_id, price, slot:training_slots(start_time), client:profiles!bookings_client_id_fkey(full_name)')
           .in('status', ['booked', 'completed', 'cancelled', 'no_show'])
           .gte('created_at', '2000-01-01'),
         // Unconfirmed bookings (global) with deadline
@@ -298,6 +300,14 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         (b: any) => b.status === 'completed'
       ).length;
       const stornoRate = stornoRelevantCount > 0 ? (stornoCancelledCount / stornoRelevantCount) * 100 : 0;
+      const stornoDetails = stornoRelevantBookings
+        .filter((b: any) => b.status === 'cancelled' || b.status === 'no_show')
+        .map((b: any) => ({
+          clientName: b.client?.full_name || 'Neznámy',
+          slotDate: b.slot?.start_time || b.created_at,
+          status: b.status as 'cancelled' | 'no_show',
+        }))
+        .sort((a: any, b: any) => new Date(b.slotDate).getTime() - new Date(a.slotDate).getTime());
 
       // Avg trainings per client per week
       const activeBookings = plannedTrainings + completedTrainings;
@@ -561,6 +571,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         prevNetRevenue,
         earned,
         prevEarned,
+        stornoDetails,
       };
     },
     staleTime: 30 * 1000,

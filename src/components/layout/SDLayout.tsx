@@ -8,6 +8,7 @@ import {
   Users,
   User,
   Trophy,
+  Sparkles,
   Settings,
   LogOut,
   Menu,
@@ -22,6 +23,7 @@ const navItems = [
   { label: 'Skupiny', icon: Users, path: SD_ROUTES.GROUPS },
   { label: 'Plavci', icon: User, path: SD_ROUTES.SWIMMERS },
   { label: 'Limity SZPS', icon: Trophy, path: SD_ROUTES.LIMITS },
+  { label: 'AI Plány', icon: Sparkles, path: SD_ROUTES.AI_PLANS },
   { label: 'Nastavenia', icon: Settings, path: SD_ROUTES.SETTINGS },
 ];
 

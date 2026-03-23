@@ -14,6 +14,7 @@ export const SD_ROUTES = {
   SWIMMERS: '/plavci',
   SWIMMER_DETAIL: '/plavci/:id',
   LIMITS: '/limity',
+  AI_PLANS: '/plany',
   SETTINGS: '/nastavenia',
 } as const;
 

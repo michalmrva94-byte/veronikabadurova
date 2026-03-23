@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Swimmer, PersonalRecord, SzpsLimit, Discipline } from '@/types/swimdesk';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Calendar, Trophy, Plus, ChevronRight } from 'lucide-react';
+import { Users, Calendar, Trophy, Plus, ChevronRight, Sparkles, AlertTriangle, Lightbulb, TrendingUp } from 'lucide-react';
 
 interface NearLimitEntry {
   swimmer: Swimmer;
@@ -26,6 +26,8 @@ export default function SDDashboardPage() {
   const [records, setRecords] = useState<PersonalRecord[]>([]);
   const [limits, setLimits] = useState<SzpsLimit[]>([]);
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  const [aiInsights, setAiInsights] = useState<Array<{ type: string; message: string }>>([]);
+  const [insightsLoading, setInsightsLoading] = useState(false);
 
   useEffect(() => {
     if (!club?.id) return;
@@ -50,6 +52,52 @@ export default function SDDashboardPage() {
       setLimits((limRes.data || []) as SzpsLimit[]);
       setDisciplines((discRes.data || []) as Discipline[]);
       setLoading(false);
+
+      // Fetch AI insights (cached 4h)
+      fetchInsights(club.id, session);
+    };
+
+    const fetchInsights = async (clubId: string, session: any) => {
+      const cacheKey = `sd_insights_${clubId}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < 4 * 60 * 60 * 1000) {
+            setAiInsights(data);
+            return;
+          }
+        } catch {}
+      }
+
+      setInsightsLoading(true);
+      try {
+        const { data: { session: authSession } } = await supabase.auth.getSession();
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dashboard-insights`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authSession?.access_token}`,
+            },
+            body: JSON.stringify({
+              club_id: clubId,
+              near_limit_swimmers: [],
+              recent_improvements: [],
+              active_plans_count: 0,
+            }),
+            signal: AbortSignal.timeout(20000),
+          }
+        );
+        const data = await res.json();
+        const insights = Array.isArray(data.insights) ? data.insights : [];
+        setAiInsights(insights);
+        localStorage.setItem(cacheKey, JSON.stringify({ data: insights, ts: Date.now() }));
+      } catch {
+        // silently fail — insights are optional
+      }
+      setInsightsLoading(false);
     };
 
     fetchStats();
@@ -218,6 +266,34 @@ export default function SDDashboardPage() {
                 </div>
               </Link>
             ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Insights */}
+      {aiInsights.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              AI Odporúčanie
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {aiInsights.map((insight, i) => {
+              const Icon = insight.type === 'upozornenie' ? AlertTriangle
+                : insight.type === 'trend' ? TrendingUp
+                : Lightbulb;
+              const color = insight.type === 'upozornenie' ? 'text-[#f4a300]'
+                : insight.type === 'trend' ? 'text-[#10b478]'
+                : 'text-primary';
+              return (
+                <div key={i} className="flex items-start gap-3 py-2">
+                  <Icon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${color}`} />
+                  <p className="text-sm">{insight.message}</p>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       )}

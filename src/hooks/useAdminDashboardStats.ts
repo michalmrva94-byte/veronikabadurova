@@ -306,7 +306,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         : 0;
 
       // === SLOT OCCUPANCY ===
-      const slots = slotsRes.data || [];
+      const slots = (slotsRes.data || []).filter((s: any) => !s.is_note && !s.is_blocked);
       const totalSlots = slots.length;
       const bookedSlots = slots.filter((s: any) => s.bookings && s.bookings.length > 0).length;
       const slotOccupancy = totalSlots > 0 ? (bookedSlots / totalSlots) * 100 : 0;

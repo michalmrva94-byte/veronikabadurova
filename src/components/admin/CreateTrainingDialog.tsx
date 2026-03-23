@@ -170,44 +170,46 @@ export function CreateTrainingDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          {/* Time inputs */}
-          <div className="ios-card p-4 space-y-4">
-            <div className="flex gap-4">
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="create-start-time" className="text-sm font-medium flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  Začiatok
-                </Label>
-                <Input
-                  id="create-start-time"
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="h-12 text-center text-lg font-medium"
-                  required
-                />
-              </div>
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="create-end-time" className="text-sm font-medium flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  Koniec
-                </Label>
-                <Input
-                  id="create-end-time"
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="h-12 text-center text-lg font-medium"
-                  required
-                />
+          {/* Time inputs - hidden for note mode */}
+          {mode !== 'note' && (
+            <div className="ios-card p-4 space-y-4">
+              <div className="flex gap-4">
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="create-start-time" className="text-sm font-medium flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    Začiatok
+                  </Label>
+                  <Input
+                    id="create-start-time"
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="h-12 text-center text-lg font-medium"
+                    required
+                  />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="create-end-time" className="text-sm font-medium flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    Koniec
+                  </Label>
+                  <Input
+                    id="create-end-time"
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="h-12 text-center text-lg font-medium"
+                    required
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Mode selection */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Typ termínu</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={() => setMode('free')}
@@ -219,7 +221,7 @@ export function CreateTrainingDialog({
                 )}
               >
                 <Clock className="h-4 w-4" />
-                Voľný slot
+                Voľný
               </button>
               <button
                 type="button"
@@ -246,6 +248,19 @@ export function CreateTrainingDialog({
               >
                 <Lock className="h-4 w-4" />
                 Externý
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('note')}
+                className={cn(
+                  'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-xs font-medium',
+                  mode === 'note'
+                    ? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                    : 'border-muted bg-muted/30 text-muted-foreground hover:border-foreground/20'
+                )}
+              >
+                <StickyNote className="h-4 w-4" />
+                Poznámka
               </button>
             </div>
           </div>

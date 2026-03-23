@@ -308,6 +308,24 @@ export function CreateTrainingDialog({
             </div>
           )}
 
+          {/* Note title */}
+          {mode === 'note' && (
+            <div className="space-y-2">
+              <Label htmlFor="note-title" className="text-sm font-medium flex items-center gap-2">
+                <StickyNote className="h-4 w-4 text-amber-500" />
+                Nadpis poznámky
+              </Label>
+              <Input
+                id="note-title"
+                value={noteTitle}
+                onChange={(e) => setNoteTitle(e.target.value)}
+                placeholder="Napr. Plaváreň zatvorená — Maratón"
+                className="h-12"
+                required
+              />
+            </div>
+          )}
+
           {/* Price - for client and external modes */}
           {(mode === 'client' || mode === 'external') && (
             <div className="space-y-2">

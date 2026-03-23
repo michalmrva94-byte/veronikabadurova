@@ -150,7 +150,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         // Slots in period for occupancy
         supabase
           .from('training_slots')
-          .select('id, start_time, is_available, bookings(id)')
+          .select('id, start_time, is_available, is_note, is_blocked, bookings(id)')
           .gte('start_time', start.toISOString())
           .lte('start_time', end.toISOString()),
         // Profiles with debt

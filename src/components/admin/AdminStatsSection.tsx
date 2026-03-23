@@ -3,6 +3,10 @@ import { Loader2, ChevronDown, TrendingUp, BarChart3, Target, Wallet } from 'luc
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { format } from 'date-fns';
+import { sk } from 'date-fns/locale';
 import { useState } from 'react';
 
 interface AdminStatsSectionProps {

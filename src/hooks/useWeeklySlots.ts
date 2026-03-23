@@ -69,7 +69,7 @@ export function useWeeklySlots(weekStart: Date) {
         };
       }).filter((slot: SlotWithBooking) => {
         // Hide orphaned slots: is_available=false and no active booking and not blocked
-        if (!slot.is_available && !slot.booking && !slot.is_blocked) return false;
+        if (!slot.is_available && !slot.booking && !slot.is_blocked && !slot.is_note) return false;
         return true;
       }) as SlotWithBooking[];
     },

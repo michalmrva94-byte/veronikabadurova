@@ -25,7 +25,8 @@ export function WeeklyAvailableSlots({
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i));
 
   // Filter only available slots (no booking)
-  const availableSlots = slots.filter((slot) => !slot.booking && !slot.is_blocked);
+  const availableSlots = slots.filter((slot) => !slot.booking && !slot.is_blocked && !slot.is_note);
+  const noteSlots = slots.filter((slot) => slot.is_note);
 
   const getSlotsByDay = (day: Date) => {
     return availableSlots

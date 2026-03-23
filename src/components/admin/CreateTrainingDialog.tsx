@@ -76,6 +76,7 @@ export function CreateTrainingDialog({
   const [price, setPrice] = useState(DEFAULT_TRAINING_PRICE.toString());
   const [notes, setNotes] = useState('');
   const [blockedClientName, setBlockedClientName] = useState('');
+  const [noteTitle, setNoteTitle] = useState('');
 
   const resetForm = () => {
     setTrainingDate(selectedDate);

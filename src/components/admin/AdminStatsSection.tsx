@@ -161,6 +161,34 @@ export function AdminStatsSection({ stats, isLoading }: AdminStatsSectionProps) 
                       <span className="text-[11px]">&gt; 25% — Vysoká, zváž opatrenia</span>
                     </div>
                   </div>
+                  {/* Storno details */}
+                  <div className="mt-3 pt-2 border-t border-border">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      Storná v období ({stats?.stornoDetails?.length ?? 0})
+                    </p>
+                    {(stats?.stornoDetails?.length ?? 0) === 0 ? (
+                      <p className="text-[11px] text-muted-foreground italic">Žiadne storná v tomto období</p>
+                    ) : (
+                      <ScrollArea className="max-h-[200px]">
+                        <div className="space-y-1.5">
+                          {stats?.stornoDetails?.map((d, i) => (
+                            <div key={i} className="flex items-center justify-between gap-2 text-[11px]">
+                              <span className="text-muted-foreground shrink-0">
+                                {format(new Date(d.slotDate), 'd.M. HH:mm', { locale: sk })}
+                              </span>
+                              <span className="truncate flex-1">{d.clientName}</span>
+                              <Badge
+                                variant={d.status === 'no_show' ? 'destructive' : 'secondary'}
+                                className="text-[9px] px-1.5 py-0 shrink-0"
+                              >
+                                {d.status === 'no_show' ? 'Neúčasť' : 'Zrušené'}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </div>
                 </PopoverContent>
               </Popover>
             }

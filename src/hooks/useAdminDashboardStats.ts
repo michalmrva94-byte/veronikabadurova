@@ -571,6 +571,7 @@ export function useAdminDashboardStats(range: DashboardDateRange) {
         prevNetRevenue,
         earned,
         prevEarned,
+        stornoDetails,
       };
     },
     staleTime: 30 * 1000,

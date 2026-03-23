@@ -1,4 +1,4 @@
-/* iOS System Fonts - must be first */
+/* Inter Font */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
@@ -6,119 +6,66 @@
 @tailwind utilities;
 
 /* ============================================
-   VERONIKA SWIM - iOS-inspired Design System
-   Clean, Native iOS Feel
+   SwimDesk Coach - Design System
+   Dark Navy Sidebar + Blue Accent
    ============================================ */
 
 @layer base {
   :root {
-    /* Minimal Mint/Sage Design System */
-    --background: 160 25% 94%;
-    --foreground: 0 0% 10%;
+    /* Light, clean content area */
+    --background: 220 20% 97%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Primary - Soft Teal/Mint */
-    --primary: 170 50% 45%;
+    /* Primary - SwimDesk Blue #1A56E8 */
+    --primary: 224 82% 51%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Light Mint */
-    --secondary: 160 20% 96%;
-    --secondary-foreground: 0 0% 25%;
+    /* Secondary */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    /* Muted - Subtle Gray */
-    --muted: 160 10% 95%;
-    --muted-foreground: 0 0% 45%;
+    /* Muted */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    /* Accent - Black for emphasis */
-    --accent: 0 0% 10%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent */
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 11%;
 
-    /* Destructive - Soft Coral */
-    --destructive: 0 70% 60%;
+    /* Destructive */
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Success - Fresh Green */
-    --success: 160 55% 45%;
+    /* Success */
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning - Warm Peach */
-    --warning: 30 80% 60%;
+    /* Warning */
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    /* Borders - Very subtle */
-    --border: 160 10% 90%;
-    --input: 160 10% 92%;
-    --ring: 170 50% 45%;
+    /* Borders */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 224 82% 51%;
 
-    /* Large radius for modern feel */
-    --radius: 1.25rem;
+    --radius: 0.75rem;
 
-    /* Sidebar - Mint themed */
-    --sidebar-background: 160 20% 96%;
-    --sidebar-foreground: 0 0% 15%;
-    --sidebar-primary: 170 50% 45%;
+    /* Sidebar - Dark Navy #0A1628 */
+    --sidebar-background: 220 55% 10%;
+    --sidebar-foreground: 220 20% 80%;
+    --sidebar-primary: 224 82% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 160 15% 94%;
-    --sidebar-accent-foreground: 0 0% 25%;
-    --sidebar-border: 160 10% 90%;
-    --sidebar-ring: 170 50% 45%;
-
-    /* Gradient colors */
-    --gradient-start: 170 45% 50%;
-    --gradient-end: 165 40% 42%;
-  }
-
-  .dark {
-    --background: 160 15% 8%;
-    --foreground: 160 10% 95%;
-
-    --card: 160 12% 12%;
-    --card-foreground: 160 10% 95%;
-
-    --popover: 160 12% 12%;
-    --popover-foreground: 160 10% 95%;
-
-    --primary: 170 45% 50%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 160 12% 18%;
-    --secondary-foreground: 160 10% 85%;
-
-    --muted: 160 10% 18%;
-    --muted-foreground: 160 8% 55%;
-
-    --accent: 0 0% 95%;
-    --accent-foreground: 0 0% 10%;
-
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 0 0% 100%;
-
-    --success: 160 50% 45%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 30 70% 55%;
-    --warning-foreground: 0 0% 100%;
-
-    --border: 160 10% 20%;
-    --input: 160 10% 20%;
-    --ring: 170 45% 50%;
-
-    --sidebar-background: 160 12% 10%;
-    --sidebar-foreground: 160 10% 95%;
-    --sidebar-primary: 170 45% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 160 12% 18%;
-    --sidebar-accent-foreground: 160 10% 85%;
-    --sidebar-border: 160 10% 20%;
-    --sidebar-ring: 170 45% 50%;
-
-    --gradient-start: 170 40% 45%;
-    --gradient-end: 165 35% 38%;
+    --sidebar-accent: 220 40% 18%;
+    --sidebar-accent-foreground: 220 20% 90%;
+    --sidebar-border: 220 40% 18%;
+    --sidebar-ring: 224 82% 51%;
   }
 }
 
@@ -134,174 +81,39 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* iOS-style focus */
   :focus-visible {
-    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
+    @apply outline-none ring-2 ring-primary/40 ring-offset-2 ring-offset-background;
   }
 
-  /* iOS-style headings */
   h1, h2, h3 {
     font-weight: 700;
     letter-spacing: -0.02em;
   }
 
-  h1 {
-    font-size: 2.125rem;
-    line-height: 1.15;
-  }
-
-  h2 {
-    font-size: 1.5rem;
-    line-height: 1.2;
-  }
-
-  h3 {
-    font-size: 1.25rem;
-    line-height: 1.3;
-  }
+  h1 { font-size: 1.875rem; line-height: 1.2; }
+  h2 { font-size: 1.5rem; line-height: 1.25; }
+  h3 { font-size: 1.25rem; line-height: 1.3; }
 }
 
 @layer utilities {
-  /* Glass effect - ultra light */
-  .glass {
-    @apply bg-card/80 backdrop-blur-xl;
-  }
-
-  .glass-strong {
-    @apply bg-card/90 backdrop-blur-2xl backdrop-saturate-150;
-  }
-
-  /* Soft gradient */
-  .gradient-teal {
-    background: linear-gradient(135deg, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
-  }
-
-  .gradient-soft {
-    background: linear-gradient(180deg, hsl(var(--background)), hsl(160 20% 92%));
-  }
-
-  /* Modern floating card with soft shadow */
-  .ios-card {
-    @apply bg-card rounded-3xl;
-    box-shadow: 0 2px 20px -5px rgba(0, 0, 0, 0.06), 0 4px 12px -4px rgba(0, 0, 0, 0.04);
-  }
-
-  .ios-card-elevated {
-    @apply bg-card rounded-3xl;
-    box-shadow: 0 8px 30px -10px rgba(0, 0, 0, 0.1), 0 4px 15px -5px rgba(0, 0, 0, 0.05);
-  }
-
-  /* Floating effect on hover */
-  .card-hover {
-    @apply transition-all duration-300;
-  }
-
-  .card-hover:hover {
-    box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.12), 0 6px 20px -8px rgba(0, 0, 0, 0.06);
-    transform: translateY(-2px);
-  }
-
-  /* iOS Inset grouped style */
-  .ios-inset {
-    @apply bg-card rounded-2xl mx-4;
-  }
-
-  /* Button press effect */
-  .ios-press {
-    @apply active:scale-[0.97] active:opacity-90 transition-all duration-150;
-  }
-
-  /* Modern list item */
-  .ios-list-item {
-    @apply flex items-center justify-between py-4 px-5 bg-card;
-  }
-
-  .ios-list-item:not(:last-child) {
-    @apply border-b border-border/50;
-  }
-
-  /* Safe area padding */
-  .safe-top {
-    padding-top: max(env(safe-area-inset-top), 0.5rem);
-  }
-  
-  .safe-bottom {
-    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
-  }
-
-  /* Hide scrollbar */
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-
-  /* Modern shadows */
-  .shadow-soft {
-    box-shadow: 0 2px 20px -5px rgba(0, 0, 0, 0.06), 0 4px 12px -4px rgba(0, 0, 0, 0.04);
-  }
-
-  .shadow-float {
-    box-shadow: 0 8px 30px -10px rgba(0, 0, 0, 0.1), 0 4px 15px -5px rgba(0, 0, 0, 0.05);
-  }
-
-  .shadow-glow {
-    box-shadow: 0 4px 25px -5px hsl(var(--primary) / 0.25);
-  }
-
-  /* Pill shape for tags and badges */
-  .pill {
-    @apply rounded-full px-4 py-2 text-sm font-medium;
-  }
-
-  /* Black button style from reference */
-  .btn-dark {
-    @apply bg-accent text-accent-foreground rounded-2xl font-semibold transition-all hover:opacity-90;
-  }
 }
 
-/* iOS-style animations */
-@keyframes ios-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-ios-fade-in {
-  animation: ios-fade-in 0.3s ease-out forwards;
-}
-
-/* Custom scrollbar for non-iOS */
+/* Custom scrollbar */
 @supports not (-webkit-touch-callout: none) {
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.3);
-    border-radius: 3px;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
-  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
 }

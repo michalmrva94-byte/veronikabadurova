@@ -495,6 +495,7 @@ export default function AdminCalendarPage() {
         onCreateSlot={handleAddSlot}
         onAssignTraining={handleAssignTraining}
         onCreateBlockedSlot={handleCreateBlockedSlot}
+        onCreateNote={handleCreateNote}
         isLoading={createSlot.isPending || assignTraining.isPending}
       />
       <SlotDetailDialog

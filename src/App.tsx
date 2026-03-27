@@ -1,152 +1,59 @@
-import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { ROUTES } from "@/lib/constants";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { SDAuthProvider } from "@/contexts/SDAuthContext";
+import SDProtectedRoute from "@/components/auth/SDProtectedRoute";
+import { SD_ROUTES } from "@/lib/sd-constants";
 
-// Pages
-import PublicLandingPage from "./pages/PublicLandingPage";
-import ClientsLandingPage from "./pages/ClientsLandingPage";
-import ReferralLandingPage from "./pages/ReferralLandingPage";
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
-import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
-import NotFound from "./pages/NotFound";
-import CancellationPolicyPage from "./pages/CancellationPolicyPage";
-
-// Client pages
-import ClientDashboardPage from "./pages/client/DashboardPage";
-import CalendarPage from "./pages/client/CalendarPage";
-import MyTrainingsPage from "./pages/client/MyTrainingsPage";
-import ProfilePage from "./pages/client/ProfilePage";
-import FinancesPage from "./pages/client/FinancesPage";
-import ReferralPage from "./pages/client/ReferralPage";
-import NotificationsPage from "./pages/client/NotificationsPage";
-import LastMinutePage from "./pages/client/LastMinutePage";
-
-// Admin pages
-import { Navigate } from "react-router-dom";
-import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
-import AdminCalendarPage from "./pages/admin/AdminCalendarPage";
-import AdminClientsPage from "./pages/admin/AdminClientsPage";
-import AdminFinancesPage from "./pages/admin/AdminFinancesPage";
-import AdminFinanceHistoryPage from "./pages/admin/AdminFinanceHistoryPage";
-import AdminBroadcastPage from "./pages/admin/AdminBroadcastPage";
-import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
-import AdminClientDetailPage from "./pages/admin/AdminClientDetailPage";
+// SwimDesk Coach pages
+import SDLoginPage from "@/pages/sd/LoginPage";
+import SDRegisterPage from "@/pages/sd/RegisterPage";
+import SDOnboardingPage from "@/pages/sd/OnboardingPage";
+import SDDashboardPage from "@/pages/sd/DashboardPage";
+import SDWorkoutsPage from "@/pages/sd/WorkoutsPage";
+import SDGroupsPage from "@/pages/sd/GroupsPage";
+import SDGroupDetailPage from "@/pages/sd/GroupDetailPage";
+import SDSwimmersPage from "@/pages/sd/SwimmersPage";
+import SDSwimmerDetailPage from "@/pages/sd/SwimmerDetailPage";
+import SDLimitsPage from "@/pages/sd/LimitsPage";
+import SDPlansPage from "@/pages/sd/AIPlansPage";
+import SDSettingsPage from "@/pages/sd/SettingsPage";
+import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Auto-check for SW updates when app becomes visible (e.g. returning from background)
-  useEffect(() => {
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        navigator.serviceWorker?.getRegistration().then(reg => reg?.update());
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AuthProvider>
+          <SDAuthProvider>
             <Routes>
               {/* Public routes */}
-              <Route path={ROUTES.HOME} element={<PublicLandingPage />} />
-              <Route path={ROUTES.CLIENTS_LANDING} element={<ClientsLandingPage />} />
-              <Route path={ROUTES.REFERRAL_LANDING} element={<ReferralLandingPage />} />
-              <Route path={ROUTES.CANCELLATION_POLICY} element={<CancellationPolicyPage />} />
-              <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-              <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-              <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
-              <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+              <Route path={SD_ROUTES.HOME} element={<Navigate to={SD_ROUTES.LOGIN} replace />} />
+              <Route path={SD_ROUTES.LOGIN} element={<SDLoginPage />} />
+              <Route path={SD_ROUTES.REGISTER} element={<SDRegisterPage />} />
+              <Route path={SD_ROUTES.ONBOARDING} element={<SDOnboardingPage />} />
 
-              {/* Client routes */}
-              <Route
-                path={ROUTES.DASHBOARD}
-                element={<ProtectedRoute><ClientDashboardPage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.CALENDAR}
-                element={<ProtectedRoute><CalendarPage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.MY_TRAININGS}
-                element={<ProtectedRoute><MyTrainingsPage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.PROFILE}
-                element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.FINANCES}
-                element={<ProtectedRoute><FinancesPage /></ProtectedRoute>}
-              />
-              {/* Referral page hidden - can be re-enabled later
-              <Route
-                path={ROUTES.REFERRAL_PAGE}
-                element={<ProtectedRoute><ReferralPage /></ProtectedRoute>}
-              />
-              */}
-              <Route
-                path={ROUTES.NOTIFICATIONS}
-                element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.LAST_MINUTE}
-                element={<ProtectedRoute><LastMinutePage /></ProtectedRoute>}
-              />
-
-              {/* Admin routes */}
-              <Route path={ROUTES.ADMIN.LOGIN} element={<Navigate to={ROUTES.LOGIN} replace />} />
-              <Route
-                path={ROUTES.ADMIN.DASHBOARD}
-                element={<ProtectedRoute requireAdmin><AdminDashboardPage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.ADMIN.CALENDAR}
-                element={<ProtectedRoute requireAdmin><AdminCalendarPage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.ADMIN.CLIENTS}
-                element={<ProtectedRoute requireAdmin><AdminClientsPage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.ADMIN.CLIENT_DETAIL}
-                element={<ProtectedRoute requireAdmin><AdminClientDetailPage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.ADMIN.FINANCES}
-                element={<ProtectedRoute requireAdmin><AdminFinancesPage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.ADMIN.FINANCE_HISTORY}
-                element={<ProtectedRoute requireAdmin><AdminFinanceHistoryPage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.ADMIN.BROADCAST}
-                element={<ProtectedRoute requireAdmin><AdminBroadcastPage /></ProtectedRoute>}
-              />
-              <Route
-                path={ROUTES.ADMIN.SETTINGS}
-                element={<ProtectedRoute requireAdmin><AdminSettingsPage /></ProtectedRoute>}
-              />
+              {/* Protected routes */}
+              <Route path={SD_ROUTES.DASHBOARD} element={<SDProtectedRoute><SDDashboardPage /></SDProtectedRoute>} />
+              <Route path={SD_ROUTES.WORKOUTS} element={<SDProtectedRoute><SDWorkoutsPage /></SDProtectedRoute>} />
+              <Route path={SD_ROUTES.GROUPS} element={<SDProtectedRoute><SDGroupsPage /></SDProtectedRoute>} />
+              <Route path={SD_ROUTES.GROUP_DETAIL} element={<SDProtectedRoute><SDGroupDetailPage /></SDProtectedRoute>} />
+              <Route path={SD_ROUTES.SWIMMERS} element={<SDProtectedRoute><SDSwimmersPage /></SDProtectedRoute>} />
+              <Route path={SD_ROUTES.SWIMMER_DETAIL} element={<SDProtectedRoute><SDSwimmerDetailPage /></SDProtectedRoute>} />
+              <Route path={SD_ROUTES.LIMITS} element={<SDProtectedRoute><SDLimitsPage /></SDProtectedRoute>} />
+              <Route path={SD_ROUTES.AI_PLANS} element={<SDProtectedRoute><SDPlansPage /></SDProtectedRoute>} />
+              <Route path={SD_ROUTES.SETTINGS} element={<SDProtectedRoute><SDSettingsPage /></SDProtectedRoute>} />
 
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </AuthProvider>
+          </SDAuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

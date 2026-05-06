@@ -20,6 +20,7 @@ import SDSwimmerDetailPage from "@/pages/sd/SwimmerDetailPage";
 import SDLimitsPage from "@/pages/sd/LimitsPage";
 import SDPlansPage from "@/pages/sd/AIPlansPage";
 import SDSettingsPage from "@/pages/sd/SettingsPage";
+import DemoShowcase from "@/pages/sd/DemoShowcase";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,9 @@ const App = () => {
               <Route path={SD_ROUTES.LIMITS} element={<SDProtectedRoute><SDLimitsPage /></SDProtectedRoute>} />
               <Route path={SD_ROUTES.AI_PLANS} element={<SDProtectedRoute><SDPlansPage /></SDProtectedRoute>} />
               <Route path={SD_ROUTES.SETTINGS} element={<SDProtectedRoute><SDSettingsPage /></SDProtectedRoute>} />
+
+              {/* Demo showcase (no auth required) */}
+              <Route path="/demo" element={<DemoShowcase />} />
 
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />

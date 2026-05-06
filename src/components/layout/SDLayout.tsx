@@ -27,15 +27,49 @@ const navItems = [
   { label: 'Nastavenia', icon: Settings, path: SD_ROUTES.SETTINGS },
 ];
 
-export default function SDLayout({ children }: { children: React.ReactNode }) {
-  const { profile, club, signOut } = useSDAuth();
+type DemoPage = 'dashboard' | 'swimmers' | 'swimmer-detail' | 'groups' | 'limits' | 'workouts' | 'plans' | 'settings';
+
+interface SDLayoutProps {
+  children: React.ReactNode;
+  demoPageSetter?: (page: DemoPage) => void;
+}
+
+const demoNavMap: Record<string, DemoPage> = {
+  [SD_ROUTES.DASHBOARD]: 'dashboard',
+  [SD_ROUTES.WORKOUTS]: 'workouts',
+  [SD_ROUTES.GROUPS]: 'groups',
+  [SD_ROUTES.SWIMMERS]: 'swimmers',
+  [SD_ROUTES.LIMITS]: 'limits',
+  [SD_ROUTES.AI_PLANS]: 'plans',
+  [SD_ROUTES.SETTINGS]: 'settings',
+};
+
+export default function SDLayout({ children, demoPageSetter }: SDLayoutProps) {
+  const isDemo = !!demoPageSetter;
+  let profile: any = null;
+  let club: any = null;
+  let signOutFn: () => void = () => {};
+
+  if (!isDemo) {
+    const auth = useSDAuth();
+    profile = auth.profile;
+    club = auth.club;
+    signOutFn = auth.signOut;
+  } else {
+    profile = { first_name: 'Michal', last_name: 'Mrva', role: 'admin' };
+    club = { name: 'PK Bratislava' };
+  }
+
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeDemoPage, setActiveDemoPage] = useState<DemoPage>('dashboard');
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate(SD_ROUTES.LOGIN);
+    if (!isDemo) {
+      await signOutFn();
+      navigate(SD_ROUTES.LOGIN);
+    }
   };
 
   const fullName = profile ? `${profile.first_name} ${profile.last_name}` : '';
@@ -77,13 +111,27 @@ export default function SDLayout({ children }: { children: React.ReactNode }) {
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path ||
-              (item.path !== SD_ROUTES.DASHBOARD && location.pathname.startsWith(item.path));
+            const demoPage = demoNavMap[item.path];
+            const isActive = isDemo
+              ? activeDemoPage === demoPage
+              : (location.pathname === item.path || (item.path !== SD_ROUTES.DASHBOARD && location.pathname.startsWith(item.path)));
+
+            const handleClick = (e: React.MouseEvent) => {
+              if (isDemo && demoPageSetter && demoPage) {
+                e.preventDefault();
+                setActiveDemoPage(demoPage);
+                demoPageSetter(demoPage);
+                setSidebarOpen(false);
+              } else {
+                setSidebarOpen(false);
+              }
+            };
+
             return (
               <Link
                 key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
+                to={isDemo ? '#' : item.path}
+                onClick={handleClick}
                 className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                   transition-colors duration-150

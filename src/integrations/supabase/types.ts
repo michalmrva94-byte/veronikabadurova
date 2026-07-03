@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      clubs: {
+        Row: { id: string; name: string; created_at: string }
+        Insert: { id?: string; name: string; created_at?: string }
+        Update: { id?: string; name?: string; created_at?: string }
+        Relationships: []
+      }
+      sd_profiles: {
+        Row: { id: string; user_id: string; club_id: string | null; role: string; first_name: string; last_name: string; created_at: string }
+        Insert: { id?: string; user_id: string; club_id?: string | null; role: string; first_name?: string; last_name?: string; created_at?: string }
+        Update: { id?: string; user_id?: string; club_id?: string | null; role?: string; first_name?: string; last_name?: string; created_at?: string }
+        Relationships: []
+      }
+      groups: {
+        Row: { id: string; club_id: string; name: string; category: string | null; coach_id: string | null; created_at: string }
+        Insert: { id?: string; club_id: string; name: string; category?: string | null; coach_id?: string | null; created_at?: string }
+        Update: { id?: string; club_id?: string; name?: string; category?: string | null; coach_id?: string | null; created_at?: string }
+        Relationships: []
+      }
+      swimmers: {
+        Row: { id: string; club_id: string; group_id: string | null; first_name: string; last_name: string; birth_year: number | null; gender: string | null; paysy_id: string | null; created_at: string }
+        Insert: { id?: string; club_id: string; group_id?: string | null; first_name: string; last_name: string; birth_year?: number | null; gender?: string | null; paysy_id?: string | null; created_at?: string }
+        Update: { id?: string; club_id?: string; group_id?: string | null; first_name?: string; last_name?: string; birth_year?: number | null; gender?: string | null; paysy_id?: string | null; created_at?: string }
+        Relationships: []
+      }
+      disciplines: {
+        Row: { id: string; code: string; name: string; distance: number; stroke: string; pool_size: number }
+        Insert: { id?: string; code: string; name: string; distance: number; stroke: string; pool_size: number }
+        Update: { id?: string; code?: string; name?: string; distance?: number; stroke?: string; pool_size?: number }
+        Relationships: []
+      }
+      szps_limits: {
+        Row: { id: string; discipline_id: string; category: string; gender: string; competition: string; valid_year: number; time_seconds: number }
+        Insert: { id?: string; discipline_id: string; category: string; gender: string; competition: string; valid_year: number; time_seconds: number }
+        Update: { id?: string; discipline_id?: string; category?: string; gender?: string; competition?: string; valid_year?: number; time_seconds?: number }
+        Relationships: []
+      }
+      personal_records: {
+        Row: { id: string; swimmer_id: string; discipline_id: string; time_seconds: number; recorded_at: string; pool_size: number; competition_name: string | null; created_at: string }
+        Insert: { id?: string; swimmer_id: string; discipline_id: string; time_seconds: number; recorded_at?: string; pool_size: number; competition_name?: string | null; created_at?: string }
+        Update: { id?: string; swimmer_id?: string; discipline_id?: string; time_seconds?: number; recorded_at?: string; pool_size?: number; competition_name?: string | null; created_at?: string }
+        Relationships: []
+      }
+      workouts: {
+        Row: { id: string; club_id: string; group_id: string | null; coach_id: string | null; workout_date: string; type: string; title: string; total_meters: number; notes: string | null; created_at: string }
+        Insert: { id?: string; club_id: string; group_id?: string | null; coach_id?: string | null; workout_date: string; type: string; title?: string; total_meters?: number; notes?: string | null; created_at?: string }
+        Update: { id?: string; club_id?: string; group_id?: string | null; coach_id?: string | null; workout_date?: string; type?: string; title?: string; total_meters?: number; notes?: string | null; created_at?: string }
+        Relationships: []
+      }
+      workout_sets: {
+        Row: { id: string; workout_id: string; set_order: number; phase: string; description: string; meters: number; intensity: string; duration_min: number | null; created_at: string }
+        Insert: { id?: string; workout_id: string; set_order?: number; phase: string; description?: string; meters?: number; intensity: string; duration_min?: number | null; created_at?: string }
+        Update: { id?: string; workout_id?: string; set_order?: number; phase?: string; description?: string; meters?: number; intensity?: string; duration_min?: number | null; created_at?: string }
+        Relationships: []
+      }
+      season_plans: {
+        Row: { id: string; swimmer_id: string; discipline_id: string; target_time_seconds: number; weeks: number; start_date: string; ai_plan_json: Json | null; created_by: string | null; created_at: string }
+        Insert: { id?: string; swimmer_id: string; discipline_id: string; target_time_seconds: number; weeks?: number; start_date?: string; ai_plan_json?: Json | null; created_by?: string | null; created_at?: string }
+        Update: { id?: string; swimmer_id?: string; discipline_id?: string; target_time_seconds?: number; weeks?: number; start_date?: string; ai_plan_json?: Json | null; created_by?: string | null; created_at?: string }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           description: string | null

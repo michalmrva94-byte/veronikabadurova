@@ -15,3 +15,9 @@ project_id = "yyusjqaehwvqmbzivwsv"
     verify_jwt = false
   [functions.send-push-notification]
     verify_jwt = false
+  [functions.generate-training-plan]
+    verify_jwt = true
+  [functions.dashboard-insights]
+    verify_jwt = true
+  [functions.send-contact-form]
+    verify_jwt = false

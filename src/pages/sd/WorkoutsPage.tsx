@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSDAuth } from '@/contexts/SDAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Workout, Group } from '@/types/swimdesk';
@@ -10,7 +11,18 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Calendar } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Plus, Calendar, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { sk } from 'date-fns/locale';
@@ -87,6 +99,18 @@ export default function SDWorkoutsPage() {
       fetchData();
     }
     setSaving(false);
+  };
+
+  const handleDelete = async (workoutId: string) => {
+    await supabase.from('workout_sets').delete().eq('workout_id', workoutId);
+    const { error } = await supabase.from('workouts').delete().eq('id', workoutId);
+
+    if (error) {
+      toast({ title: 'Chyba', description: 'Nepodarilo sa vymazať tréning.', variant: 'destructive' });
+    } else {
+      toast({ title: 'Tréning vymazaný' });
+      fetchData();
+    }
   };
 
   return (
@@ -179,12 +203,12 @@ export default function SDWorkoutsPage() {
       ) : (
         <div className="space-y-3">
           {workouts.map((w) => (
-            <Card key={w.id}>
+            <Card key={w.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold">{w.title || 'Bez názvu'}</h3>
-                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                  <Link to={`/treningy/${w.id}`} className="flex-1 min-w-0">
+                    <h3 className="font-semibold hover:text-primary transition-colors">{w.title || 'Bez názvu'}</h3>
+                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
                       <span>{format(new Date(w.workout_date), 'd. MMMM yyyy', { locale: sk })}</span>
                       <span className="text-border">|</span>
                       <span className="inline-block px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
@@ -197,14 +221,37 @@ export default function SDWorkoutsPage() {
                         </>
                       )}
                     </div>
+                    {w.notes && (
+                      <p className="text-sm text-muted-foreground mt-2">{w.notes}</p>
+                    )}
+                  </Link>
+                  <div className="flex items-center gap-2 ml-3 shrink-0">
+                    {w.total_meters > 0 && (
+                      <span className="text-sm font-semibold text-primary">{w.total_meters}m</span>
+                    )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Vymazať tréning</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Naozaj chcete vymazať tento tréning? Táto akcia sa nedá vrátiť.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Zrušiť</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(w.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Vymazať
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
-                  {w.total_meters > 0 && (
-                    <span className="text-sm font-semibold text-primary">{w.total_meters}m</span>
-                  )}
                 </div>
-                {w.notes && (
-                  <p className="text-sm text-muted-foreground mt-2">{w.notes}</p>
-                )}
               </CardContent>
             </Card>
           ))}

@@ -9,6 +9,7 @@ export const SD_ROUTES = {
   ONBOARDING: '/onboarding',
   DASHBOARD: '/dashboard',
   WORKOUTS: '/treningy',
+  WORKOUT_DETAIL: '/treningy/:id',
   GROUPS: '/skupiny',
   GROUP_DETAIL: '/skupiny/:id',
   SWIMMERS: '/plavci',

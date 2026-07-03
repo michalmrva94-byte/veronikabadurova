@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SDAuthProvider } from "@/contexts/SDAuthContext";
 import SDProtectedRoute from "@/components/auth/SDProtectedRoute";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { SD_ROUTES } from "@/lib/sd-constants";
 
 // SwimDesk Coach pages
@@ -13,6 +14,7 @@ import SDRegisterPage from "@/pages/sd/RegisterPage";
 import SDOnboardingPage from "@/pages/sd/OnboardingPage";
 import SDDashboardPage from "@/pages/sd/DashboardPage";
 import SDWorkoutsPage from "@/pages/sd/WorkoutsPage";
+import SDWorkoutDetailPage from "@/pages/sd/WorkoutDetailPage";
 import SDGroupsPage from "@/pages/sd/GroupsPage";
 import SDGroupDetailPage from "@/pages/sd/GroupDetailPage";
 import SDSwimmersPage from "@/pages/sd/SwimmersPage";
@@ -27,6 +29,7 @@ const queryClient = new QueryClient();
 
 const App = () => {
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -43,6 +46,7 @@ const App = () => {
               {/* Protected routes */}
               <Route path={SD_ROUTES.DASHBOARD} element={<SDProtectedRoute><SDDashboardPage /></SDProtectedRoute>} />
               <Route path={SD_ROUTES.WORKOUTS} element={<SDProtectedRoute><SDWorkoutsPage /></SDProtectedRoute>} />
+              <Route path={SD_ROUTES.WORKOUT_DETAIL} element={<SDProtectedRoute><SDWorkoutDetailPage /></SDProtectedRoute>} />
               <Route path={SD_ROUTES.GROUPS} element={<SDProtectedRoute><SDGroupsPage /></SDProtectedRoute>} />
               <Route path={SD_ROUTES.GROUP_DETAIL} element={<SDProtectedRoute><SDGroupDetailPage /></SDProtectedRoute>} />
               <Route path={SD_ROUTES.SWIMMERS} element={<SDProtectedRoute><SDSwimmersPage /></SDProtectedRoute>} />
@@ -61,6 +65,7 @@ const App = () => {
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
